@@ -252,9 +252,17 @@ The set is drawn by day, and **the four sky variants follow it** — a moon at
 night and a sun on the horizon in the polar twilight, on a clear sky and on a
 shower, which is the whole of what the time of day changes. Forty more pictures
 would say the same thing four times over, and words alone said it in a way
-nobody could judge a picture from. Each carries its own label, since `in_words`
-drops the time of day and three entries all saying `clear` would explain
+nobody could judge a picture from. Each carries its own label, since the words
+drop the time of day and three entries all saying `clear sky` would explain
 nothing.
+
+**The legend spells the words out where the table abbreviates them.** `shwrs` is
+something the sixteen-cell forecast column cannot avoid and the legend has no
+reason to keep: three rows of fourteen cells hold `heavy sleet showers and
+thunder` with room over. And a legend is exactly where a reader who does not
+know what `shwrs` means will go to find out, so it had better not be written
+there too. `symbols.in_words` and `symbols.in_full` are the two lengths, over
+one decomposition. The framework's `wrap_within` does the fitting.
 
 The set is drawn by day and **not time-sensitive on purpose.** A legend is a legend and not a forecast, and there is no clock it
 could sensibly follow: not the reader's, since somebody in Britain at midnight

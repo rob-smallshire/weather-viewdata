@@ -35,8 +35,15 @@ _CORES: Final = (
     "fog",
 )
 
-#: What each is called on screen. Only two are not simply themselves.
+#: What each is called on screen, where the room is sixteen cells and the row
+#: has two clocks, a temperature and a wind to carry as well.
 _SAID: Final = {"clearsky": "clear", "partlycloudy": "part cloudy"}
+
+#: And where there is room to say it properly. The legend has a whole cell
+#: three rows deep for each, so nothing there needs abbreviating -- and a
+#: legend is exactly where a reader who does not know what `shwrs` means will
+#: go to find out.
+_SPELLED: Final = {"clearsky": "clear sky", "partlycloudy": "partly cloudy"}
 
 #: How hard it is coming down. Prefixes on the core.
 _INTENSITIES: Final = ("light", "heavy")
@@ -161,6 +168,18 @@ def taken_apart(symbol: str | None) -> Weather | None:
     )
 
 
+def in_full(symbol: str | None) -> str:
+    """The same, spelled out, for somewhere with room for it.
+
+    `shwrs` is an abbreviation the forecast table cannot avoid and the legend
+    has no reason to keep: three rows of fourteen cells hold `heavy sleet
+    showers and thunder` with a cell to spare. And a legend is where a reader
+    who does not know what `shwrs` means will go to find out, so it had better
+    not be written there too.
+    """
+    return _said(symbol, said=_SPELLED, showers="showers", thunder=" and thunder")
+
+
 def in_words(symbol: str | None) -> str:
     """A symbol code, said in as few words as will do.
 
@@ -171,18 +190,25 @@ def in_words(symbol: str | None) -> str:
     The time of day is dropped: the reader can see the hour in the same row, and
     saying "(night)" costs eight cells to repeat what the clock already says.
     """
+    #  No space before the plus: this is the longest thing the column ever has
+    #  to hold and it does not fit as it is.
+    return _said(symbol, said=_SAID, showers="shwrs", thunder="+thunder")
+
+
+def _said(
+    symbol: str | None, *, said: dict[str, str], showers: str, thunder: str
+) -> str:
+    """A code in words, at whichever length the caller has room for."""
     if not symbol:
         return ""
     weather = taken_apart(symbol)
     if weather is None:
         #  Not a shape we know. Hand back what we were given, whole.
         return symbol
-    core = _SAID.get(weather.core, weather.core)
+    core = said.get(weather.core, weather.core)
     words = f"{weather.intensity} {core}".strip()
     if weather.showers:
-        words += " shwrs"
+        words += f" {showers}"
     if weather.thunder:
-        #  No space before the plus: this is the longest thing the column ever
-        #  has to hold and it does not fit as it is.
-        words += "+thunder"
+        words += thunder
     return words

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from sextile.viewdata.controls import Colour
-from sextile.viewdata.wrapping import wrap_text
+from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata import build_application
 from weather_viewdata.application import _WORD_CELLS
 from weather_viewdata.forecast.model import Forecast
@@ -38,7 +38,7 @@ from weather_viewdata.icons import (
     icon_for,
 )
 from weather_viewdata.store import Index
-from weather_viewdata.symbols import PUBLISHED, in_words
+from weather_viewdata.symbols import PUBLISHED, in_full
 
 
 def drawn(code: str) -> WeatherIcon:
@@ -251,22 +251,24 @@ class TestTheLegendPage:
         for code in PUBLISHED:
             #  The first line of the words, because the long ones wrap over two
             #  rows and would not be found whole.
-            first = wrap_text(in_words(code), _WORD_CELLS)[0]
+            first = wrap_within(in_full(code), cells=_WORD_CELLS, rows=BANDS)[0]
             assert first in shown, code
 
     async def test_and_the_four_sky_variants_after_them(self, tmp_path: Path) -> None:
         #  Shown rather than described. The words said what the time of day
         #  changes and a reader could not judge a picture from them.
         shown = await _legend(tmp_path)
-        for said in ("clear at night", "clear in polar", "rain shwrs at"):
+        for said in ("clear sky at", "polar twilight", "rain showers", "at night"):
             assert said in shown, said
 
-    async def test_and_no_name_is_cut_short(self, tmp_path: Path) -> None:
-        #  A legend that truncated its own names would be unreadable exactly
-        #  where it is most needed: `heavy sleet shwrs+thunder` is the longest
-        #  thing met.no says and the one nobody could guess.
+    async def test_and_nothing_is_abbreviated_or_cut(self, tmp_path: Path) -> None:
+        #  A legend is where a reader who does not know what `shwrs` means goes
+        #  to find out, so it had better not be written there too. Three rows
+        #  of fourteen cells hold the longest of them with room over.
         shown = await _legend(tmp_path)
-        assert "shwrs+thunder" in shown
+        assert "shwrs" not in shown
+        for said in ("heavy sleet", "showers and", "thunder"):
+            assert said in shown, said
 
 
 async def _legend(tmp_path: Path) -> str:

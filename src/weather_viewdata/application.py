@@ -66,7 +66,7 @@ from sextile.viewdata.drawing import centred
 from sextile.viewdata.encoding import fitted
 from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
-from sextile.viewdata.wrapping import wrap_text
+from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
@@ -74,7 +74,7 @@ from weather_viewdata.geonames import Place
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
 from weather_viewdata.icons import draw as draw_icon
 from weather_viewdata.store import Index, Nearby
-from weather_viewdata.symbols import PUBLISHED, in_words
+from weather_viewdata.symbols import PUBLISHED, in_full, in_words
 from weather_viewdata.wind import from_the
 
 SERVICE_NAME: Final = "WEATHER"
@@ -523,10 +523,10 @@ class Pictured:
 #: from the day drawings in one piece and only for the 21 codes that have a sky
 #: in them, so forty more pictures would say this four times over.
 _SKIES: Final = (
-    ("clearsky_night", "clear at night"),
-    ("clearsky_polartwilight", "clear in polar twilight"),
-    ("rainshowers_night", "rain shwrs at night"),
-    ("rainshowers_polartwilight", "rain shwrs in twilight"),
+    ("clearsky_night", "clear sky at night"),
+    ("clearsky_polartwilight", "clear sky in polar twilight"),
+    ("rainshowers_night", "rain showers at night"),
+    ("rainshowers_polartwilight", "rain showers in polar twilight"),
 )
 
 
@@ -553,7 +553,7 @@ async def pictures(request: PageRequest) -> Page:
     return SymbolTable(
         title=app.describe(request.address).upper(),
         entries=_in_pairs(
-            [Pictured(code, in_words(code)) for code in PUBLISHED]
+            [Pictured(code, in_full(code)) for code in PUBLISHED]
             + [Pictured(code, words) for code, words in _SKIES]
         ),
         home=app.index,
@@ -599,13 +599,13 @@ class SymbolTable(Template[tuple[Pictured, ...]]):
             picture = icon_for(shown.code)
             if picture is not None:
                 draw_icon(canvas, row, column, picture)
-            #  Wrapped over two rows, because `heavy sleet shwrs+thunder` is
-            #  twenty-five cells and half a row is fourteen. A legend that
-            #  truncated the names would be a legend that could not be read.
-            said = wrap_text(shown.words, _WORD_CELLS)[:2]
-            #  Level with the middle band where there is one line of it, so the
-            #  words read as belonging to the picture beside them.
-            at = row + 1 if len(said) < 2 else row
+            #  The picture is three rows tall and the words get all three, so
+            #  nothing here has to be abbreviated: `heavy sleet showers and
+            #  thunder` is twenty-nine cells and three fourteens is forty-two.
+            said = wrap_within(shown.words, cells=_WORD_CELLS, rows=BANDS)
+            #  Centred against the picture, so a name of one line sits level
+            #  with the cloud rather than perched above it.
+            at = row + (BANDS - len(said)) // 2
             for offset, line in enumerate(said):
                 canvas.frame.set_attribute(
                     at + offset, column + COLUMN_CELLS, Control.ALPHA_WHITE
