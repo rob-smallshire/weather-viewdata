@@ -7,14 +7,19 @@ which is the first thing that went wrong for Stardot.
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Final
 
+from sextile import Sextile
+from sextile.cli import add_form_arguments, add_listening_arguments, render_page, run_service
 from weather_viewdata import __version__
+from weather_viewdata.application import build_application
 from weather_viewdata.dump import CITIES_500, download_dump
+from weather_viewdata.forecast.met import MetNoSource
 from weather_viewdata.importing import import_places
 from weather_viewdata.store import Index
 
@@ -57,12 +62,27 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Import the dump already on disk without asking whether it has changed",
     )
+    #  The service is global -- met.no forecasts anywhere -- but its readers
+    #  are mostly not, this being a retrocomputing curiosity dialled largely
+    #  from Britain. So the ranking leans that way by default and is one flag
+    #  away from leaning elsewhere.
     importing.add_argument(
         "--prefer",
         metavar="COUNTRY",
-        help="Two-letter code whose places outrank others of similar size, such as NO",
+        default="GB",
+        help="Two-letter code whose places win ties against others of similar "
+             "size (default: GB). Use --prefer '' for no preference at all.",
     )
     _add_index_argument(importing)
+
+    render = subcommands.add_parser("render", help="Show a frame without a BBC Micro")
+    render.add_argument("--page", help="Render a page by its number, such as 1 or 32133880")
+    add_form_arguments(render)
+    _add_index_argument(render)
+
+    serve = subcommands.add_parser("serve", help="Answer calls")
+    add_listening_arguments(serve)
+    _add_index_argument(serve)
 
     return parser
 
@@ -92,7 +112,7 @@ def import_command(arguments: argparse.Namespace) -> int:
         taken = import_places(
             arguments.dump,
             index,
-            prefer_country=arguments.prefer,
+            prefer_country=arguments.prefer or None,
             #  Every batch, which at five thousand a line is a readable rate
             #  for a couple of hundred thousand places.
             progress=lambda so_far: log.info("%d places", so_far),
@@ -101,11 +121,19 @@ def import_command(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _application(arguments: argparse.Namespace) -> Sextile:
+    return build_application(source=MetNoSource(), index_filepath=arguments.index)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     arguments = parser.parse_args(argv)
     if arguments.command == "import-places":
         return import_command(arguments)
+    if arguments.command == "render":
+        return asyncio.run(render_page(_application(arguments), arguments))
+    if arguments.command == "serve":
+        return asyncio.run(run_service(_application(arguments), arguments))
     parser.print_help()
     return 1
 

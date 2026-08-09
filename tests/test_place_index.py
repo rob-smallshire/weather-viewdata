@@ -21,14 +21,15 @@ def place(
     population: int = 0,
     feature_code: str = "PPL",
     alternates: tuple[str, ...] = (),
+    at: tuple[float, float] = (0.0, 0.0),
 ) -> Place:
     return Place(
         geoname_id=geoname_id,
         name=name,
         ascii_name=name,
         alternate_names=alternates,
-        latitude=0.0,
-        longitude=0.0,
+        latitude=at[0],
+        longitude=at[1],
         feature_class="P",
         feature_code=feature_code,
         country=country,
@@ -39,15 +40,21 @@ def place(
     )
 
 
-TRONDHEIM = place(3133880, "Trondheim", population=147139, feature_code="PPLA")
-TROMSO = place(3133895, "Tromsø", population=64182, feature_code="PPLA")
-BERGEN = place(3161732, "Bergen", population=213585, feature_code="PPLA")
-BERLIN = place(2950159, "Berlin", country="DE", population=3426354, feature_code="PPLC")
+#: Real positions, so that "nearest" means something here.
+TRONDHEIM = place(3133880, "Trondheim", population=147139, feature_code="PPLA",
+                  at=(63.43049, 10.39506))
+TROMSO = place(3133895, "Tromsø", population=64182, feature_code="PPLA",
+               at=(69.6489, 18.95508))
+BERGEN = place(3161732, "Bergen", population=213585, feature_code="PPLA",
+               at=(60.39299, 5.32415))
+BERLIN = place(2950159, "Berlin", country="DE", population=3426354,
+               feature_code="PPLC", at=(52.52437, 13.41053))
 MUNCHEN = place(
     2867714, "München", country="DE", population=1260391,
     feature_code="PPLA", alternates=("Munich", "Monaco di Baviera"),
+    at=(48.13743, 11.57549),
 )
-TROY = place(5141502, "Troy", country="US", population=49928)
+TROY = place(5141502, "Troy", country="US", population=49928, at=(42.72842, -73.69178))
 
 
 @pytest.fixture
@@ -127,17 +134,35 @@ class TestPreferringSomewhere:
     def test_by_default_size_decides(self, index: Index) -> None:
         assert [found.name for found in index.matching("BER")][0] == "Berlin"
 
-    def test_a_preferred_country_comes_up_first(self) -> None:
+    def test_a_preferred_country_breaks_a_tie(self) -> None:
+        #  Between comparable places. A nudge worth a tenfold of population,
+        #  not an override: this is a global service whose readers mostly
+        #  happen to be in one country.
         with Index.in_memory() as index:
-            index.prefer(country="NO")
-            index.add_places([BERGEN, BERLIN])
-            assert [found.name for found in index.matching("BER")][0] == "Bergen"
+            index.prefer(country="GB")
+            index.add_places([
+                place(1, "Boston", country="GB", population=41340),
+                place(2, "Bostonia", country="US", population=41000),
+            ])
+            assert [found.name for found in index.matching("BOSTON")][0] == "Boston"
 
-    def test_but_it_does_not_hide_anywhere_else(self) -> None:
+    def test_but_does_not_overturn_a_much_larger_place(self) -> None:
+        #  Boston, Lincolnshire is not what a reader keying BOSTON means, and a
+        #  preference strong enough to say otherwise is too strong.
         with Index.in_memory() as index:
-            index.prefer(country="NO")
+            index.prefer(country="GB")
+            index.add_places([
+                place(1, "Boston", country="GB", population=41340),
+                place(2, "Boston", country="US", population=654776,
+                      feature_code="PPLA2"),
+            ])
+            assert [found.country for found in index.matching("BOSTON")][0] == "US"
+
+    def test_and_never_hides_anywhere_else(self) -> None:
+        with Index.in_memory() as index:
+            index.prefer(country="GB")
             index.add_places([BERGEN, BERLIN])
-            assert "Berlin" in [found.name for found in index.matching("BER")]
+            assert {found.name for found in index.matching("BER")} == {"Bergen", "Berlin"}
 
 
 class TestKeepingThePlacesThemselves:
@@ -261,3 +286,57 @@ class TestExactnessIsWorthSomethingRatherThanEverything:
                 place(2, "Beure", country="FR", population=1430, alternates=("Ber",)),
             ])
             assert [found.name for found in index.matching("BER")][0] == "Bergen"
+
+
+class TestTheNearestPlaceToAPoint:
+    """A coordinate page has no name, no clock and no altitude.
+
+    It borrows a name and a clock from whatever is nearest, because timezone
+    borders follow habitation and there is no way to know one from coordinates
+    alone without shipping a boundary dataset for the Arctic Ocean.
+    """
+
+    def test_a_point_in_a_town_finds_that_town(self, index: Index) -> None:
+        found = index.nearest(63.43, 10.40)
+        assert found is not None
+        assert found.name == "Trondheim"
+
+    def test_a_point_between_two_finds_the_closer(self) -> None:
+        with Index.in_memory() as index:
+            index.add_places([
+                place(1, "Near", at=(60.0, 5.0)),
+                place(2, "Far", at=(60.9, 5.0)),
+            ])
+            found = index.nearest(60.1, 5.0)
+            assert found is not None
+            assert found.name == "Near"
+
+    def test_size_does_not_decide_it(self) -> None:
+        #  Unlike a search. The nearest place is a question about distance, and
+        #  a big city half an hour away is the wrong answer to it.
+        with Index.in_memory() as index:
+            index.add_places([
+                place(1, "Hamlet", at=(60.0, 5.0)),
+                place(2, "Metropolis", population=9_000_000, at=(60.5, 5.0)),
+            ])
+            found = index.nearest(60.02, 5.0)
+            assert found is not None
+            assert found.name == "Hamlet"
+
+    def test_longitude_is_scaled_by_the_latitude(self) -> None:
+        #  A degree of longitude is half a degree of latitude at sixty north.
+        #  Unscaled, the two below are equidistant and the tie falls to
+        #  whichever the table yields first; scaled, north is plainly closer.
+        with Index.in_memory() as index:
+            index.add_places([
+                place(1, "North", at=(60.2, 5.0)),
+                place(2, "East", at=(60.0, 5.2)),
+            ])
+            found = index.nearest(60.0, 5.0)
+            assert found is not None
+            assert found.name == "East"
+
+    def test_the_middle_of_an_ocean_finds_nothing(self, index: Index) -> None:
+        #  Rather than the nearest place on earth, which could be a thousand
+        #  miles away and would put the wrong clock on the page.
+        assert index.nearest(0.0, -140.0) is None

@@ -55,10 +55,19 @@ _IMPORTANCE: Final = {
 #: times its size, and not enough to lift a hamlet above a capital.
 EXACTNESS: Final = 2.0
 
-#: What being in the preferred country is worth. Set to outweigh the gap
-#: between a large foreign city and a modest home one -- Berlin is sixteen
-#: times Bergen, which is 1.2 on a log scale -- without hiding anywhere else.
-_HOME_BONUS: Final = 3.0
+#: What being in the preferred country is worth by default, on the same scale
+#: as everything else: a tenfold of population.
+#:
+#: A nudge and not an override, which is the whole difficulty. This is a global
+#: service whose readers happen to mostly be in one country, so home should
+#: break a tie between comparable places and should not put Boston in
+#: Lincolnshire above Boston in Massachusetts. A bonus of 3.0 -- a thousandfold
+#: -- did exactly that.
+HOME_BONUS: Final = 1.0
+
+#: How far from a point we will look for somewhere to borrow a name and a
+#: clock from. A degree of latitude is 111km; beyond that "near" is a stretch.
+_NEARBY: Final = 1.0
 
 _PLACE_COLUMNS: Final = (
     "geoname_id, name, ascii_name, alternate_names, latitude, longitude, "
@@ -74,6 +83,7 @@ class Index:
         self._connection.row_factory = sqlite3.Row
         self._lock = threading.Lock()
         self._preferred_country: str | None = None
+        self._home_bonus = HOME_BONUS
         with self._lock:
             self._connection.executescript(_SCHEMA_FILEPATH.read_text())
 
@@ -110,7 +120,7 @@ class Index:
 
     # -- filling it ---------------------------------------------------------
 
-    def prefer(self, *, country: str) -> None:
+    def prefer(self, *, country: str, worth: float = HOME_BONUS) -> None:
         """Say whose weather this service is mostly about.
 
         Affects places added *after* it is set, the ranking being computed on
@@ -119,6 +129,7 @@ class Index:
         honour a late change would be a great deal of work for nobody.
         """
         self._preferred_country = country
+        self._home_bonus = worth
 
     def add_places(self, places: Iterable[Place]) -> None:
         """Put places in the index, replacing any already held under the same id.
@@ -168,7 +179,7 @@ class Index:
         score = math.log10(place.population + 1)
         score += _IMPORTANCE.get(place.feature_code, 0.0)
         if self._preferred_country is not None and place.country == self._preferred_country:
-            score += _HOME_BONUS
+            score += self._home_bonus
         return score
 
     # -- reading it ---------------------------------------------------------
@@ -219,6 +230,45 @@ class Index:
             row = self._connection.execute(
                 f"SELECT {_PLACE_COLUMNS} FROM places WHERE geoname_id = ?",
                 (geoname_id,),
+            ).fetchone()
+        return _place_from(row) if row is not None else None
+
+    def nearest(self, latitude: float, longitude: float) -> Place | None:
+        """The closest place to a point, or None if nothing is close.
+
+        For a coordinate page, which has no name and no timezone of its own and
+        must borrow both. Unlike a search this is purely about distance: a big
+        city an hour away is the wrong answer to "what is near here".
+
+        Bounded to a degree in each direction, so the middle of the Pacific
+        finds nothing rather than somewhere a thousand miles off with the wrong
+        clock on it. Within that box the earth is flat enough for Pythagoras,
+        with longitude scaled by the cosine of the latitude -- a degree of
+        longitude is half a degree of latitude at sixty north, and unscaled
+        distances would lean east-west everywhere but the equator.
+        """
+        scale = math.cos(math.radians(latitude))
+        with self._lock:
+            row = self._connection.execute(
+                f"SELECT {_PLACE_COLUMNS} FROM places "
+                "WHERE latitude BETWEEN :low AND :high "
+                "  AND longitude BETWEEN :west AND :east "
+                "ORDER BY (latitude - :lat) * (latitude - :lat) "
+                "       + (longitude - :lon) * (longitude - :lon) * :scale * :scale "
+                "LIMIT 1",
+                {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "low": latitude - _NEARBY,
+                    "high": latitude + _NEARBY,
+                    #  Not wrapped across the date line. A point at 179.5E will
+                    #  miss a town at 179.5W, which is a strip of the Pacific
+                    #  with almost nothing in it -- and the page still works,
+                    #  it merely shows times in UTC.
+                    "west": longitude - _NEARBY,
+                    "east": longitude + _NEARBY,
+                    "scale": scale,
+                },
             ).fetchone()
         return _place_from(row) if row is not None else None
 

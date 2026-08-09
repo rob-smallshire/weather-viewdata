@@ -47,3 +47,8 @@ CREATE TABLE IF NOT EXISTS place_keys (
 CREATE INDEX IF NOT EXISTS place_keys_by_place ON place_keys (geoname_id);
 
 CREATE INDEX IF NOT EXISTS places_by_country ON places (country, rank DESC);
+
+--  For finding the place nearest a point, which a coordinate page needs in
+--  order to borrow a name and a timezone. The scan is bounded to a degree
+--  either way, and this is what makes that bound cheap.
+CREATE INDEX IF NOT EXISTS places_by_latitude ON places (latitude);
