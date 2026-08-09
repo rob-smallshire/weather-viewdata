@@ -81,16 +81,15 @@ FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
 #: What this caller's position form is held under.
 POSITION: Final = "position"
 
-#: Where the position form's own rows sit. Blank rows between them and around
-#: them: two labelled fields set solid read as a block of text rather than as
-#: two places to type, and a screen of forty columns has the room.
-LATITUDE_ROW: Final = CONTENT_FIRST_ROW + 3
-LONGITUDE_ROW: Final = LATITUDE_ROW + 2
+#: Where the position form's own rows sit. Each field has its advice on the
+#: row beneath it and a blank row after that: two labelled fields set solid
+#: read as a block of text rather than as two places to type, and a screen of
+#: twenty content rows has the room to spare.
+LATITUDE_ROW: Final = CONTENT_FIRST_ROW + 2
+LONGITUDE_ROW: Final = LATITUDE_ROW + 3
 
-#: Where it says what is nearest to what has been keyed, and beneath that what
-#: the field the caret is in will take.
-NOTE_ROW: Final = LONGITUDE_ROW + 2
-HINT_ROW: Final = NOTE_ROW + 2
+#: Where it says what is nearest to what has been keyed.
+NOTE_ROW: Final = LONGITUDE_ROW + 3
 
 #: Cells a coordinate may take, and the width of the bar that says so. Six is
 #: the longest there is: `-179.9` signed, `179.9W` with the hemisphere. A
@@ -328,9 +327,8 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LATITUDE_ROW,
                 takes=_takes("NS"),
                 width=_POSITION_CELLS,
-                #  Only what this field takes. A reader in the longitude has no
-                #  use for an example latitude, and the row has no room for it.
-                hint="North or south: 54.0N or 54.0",
+                hint="  north or south: 54.0N or 54.0",
+                hint_row=LATITUDE_ROW + 1,
             ),
             Field(
                 name="longitude",
@@ -338,13 +336,13 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LONGITUDE_ROW,
                 takes=_takes("EW"),
                 width=_POSITION_CELLS,
-                hint="East or west: 1.1W or -1.1",
+                hint="  east or west: 1.1W or -1.1",
+                hint_row=LONGITUDE_ROW + 1,
             ),
         ],
         complete=complete,
         note=nearest,
         note_row=NOTE_ROW,
-        hint_row=HINT_ROW,
     )
 
 
