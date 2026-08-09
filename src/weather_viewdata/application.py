@@ -92,9 +92,10 @@ LONGITUDE_ROW: Final = LATITUDE_ROW + 2
 NOTE_ROW: Final = LONGITUDE_ROW + 2
 HINT_ROW: Final = NOTE_ROW + 2
 
-#: Cells a coordinate may take. `-179.9` is six and a hemisphere letter makes
-#: seven; the rest is room to be wrong in and see it.
-_POSITION_CELLS: Final = 8
+#: Cells a coordinate may take, and the width of the bar that says so. Six is
+#: the longest there is: `-179.9` signed, `179.9W` with the hemisphere. A
+#: seventh would be a cell of blue promising room that nothing could go in.
+_POSITION_CELLS: Final = 6
 
 #: What the place index and the forecast source are held under, in what the
 #: service holds. Named constants rather than literals at each use, since a
