@@ -191,11 +191,17 @@ async def by_name(request: PageRequest) -> Page:
     )
     canvas.row(CONTENT_FIRST_ROW).text("Key a place name.", Colour.WHITE)
     draw_form(canvas.frame, form)
+    #  What a reader actually needs to know, rather than what the keypad
+    #  cannot do. It said "no space bar, no accents", and both were wrong: the
+    #  space bar transmits 0x20 like any other key, and no accented letter can
+    #  be typed on this hardware in the first place -- the character set has
+    #  none -- so telling somebody not to use one is telling them not to do
+    #  something they could not do.
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 1).text(
-        "Letters only: no space bar, no accents.", Colour.GREEN
+        "Spaces do not matter: NEW YORK or", Colour.GREEN
     )
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 2).text(
-        "NEWYORK, TROMSO, MUNICH.", Colour.GREEN
+        "NEWYORK. Nor do accents: TROMSO.", Colour.GREEN
     )
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 4).text(
         f"{_places(request.service).held():,} places held.", Colour.WHITE
