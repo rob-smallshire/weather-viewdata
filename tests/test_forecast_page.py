@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from sextile.page import Page
+from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
@@ -263,13 +264,13 @@ class TestSayingTheHourAsAnHour:
         page = await page_for(hourly(6), tmp_path)
         start = this_hour()
         ends = start + timedelta(hours=1)
-        assert f"{start:%H}-{ends:%H} UTC" in text_of(page)
+        assert f"{start:%H}―{ends:%H} UTC" in text_of(page)
 
     async def test_and_so_is_the_local_one(self, tmp_path: Path) -> None:
         page = await page_for(hourly(6), tmp_path)
         start = this_hour().astimezone(OSLO)
         ends = start + timedelta(hours=1)
-        assert f"{start:%H}-{ends:%H} CEST" in text_of(page)
+        assert f"{start:%H}―{ends:%H} CEST" in text_of(page)
 
     async def test_a_moment_covering_six_hours_says_six(self, tmp_path: Path) -> None:
         #  The far end of a forecast is six-hourly, and a range that said one
@@ -279,4 +280,16 @@ class TestSayingTheHourAsAnHour:
         )
         start = this_hour()
         ends = start + timedelta(hours=6)
-        assert f"{start:%H}-{ends:%H} UTC" in text_of(page)
+        assert f"{start:%H}―{ends:%H} UTC" in text_of(page)
+
+    async def test_the_two_ends_are_joined_by_a_long_dash(self, tmp_path: Path) -> None:
+        #  G0 has both, and a range wants the bar that fills the cell: 0x60,
+        #  where ASCII keeps its backtick. Read out of Beebium's font. It is
+        #  not the underscore, whatever a teletext editor's keyboard suggests
+        #  -- 0x5F is the hash, the viewdata command key.
+        page = await page_for(hourly(6), tmp_path)
+        found = page.frame(0)
+        assert found is not None
+        assert 0x60 in found.frame.to_bytes()
+        assert encode_g0("―") == 0x60
+        assert encode_g0("#") == 0x5F

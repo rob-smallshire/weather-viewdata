@@ -122,6 +122,12 @@ _ATTRIBUTE_CELL: Final = 1
 _SECONDS_AN_HOUR: Final = 3600
 _AN_HOUR: Final = timedelta(hours=1)
 
+#: What separates the two ends of a range. A bar the full width of the cell,
+#: which G0 keeps at 0x60 where ASCII has its backtick, rather than the hyphen
+#: at 0x2D -- read out of Beebium's font. Not the underscore, whatever a
+#: teletext editor's keyboard suggests: 0x5F is the hash.
+_TO: Final = "―"
+
 #: A cell for the colour the weather is written in. What is left after the
 #: clocks, the temperature and the wind is the weather's -- counted from the
 #: row rather than worked out here, an attribute costing a cell and
@@ -961,13 +967,19 @@ def _span(moment: Moment, zone: ZoneInfo | None) -> str:
     whole number of hours from UTC. Where it is not -- Kolkata is half an hour
     off and Kathmandu three quarters -- the minutes are shown, and it is the
     offset in brackets that gives way to make room for them.
+
+    **The separator is a long dash and not a hyphen.** G0 has both: 0x2D is the
+    hyphen and 0x60 -- where ASCII keeps its backtick -- is a bar the full width
+    of the cell, which is what a range wants. Read out of Beebium's font rather
+    than guessed. It is *not* the underscore, whatever a teletext editor's
+    keyboard suggests: 0x5F is the hash, the viewdata command key.
     """
     ends = moment.at + (moment.covers or _AN_HOUR)
     start = moment.at.astimezone(zone) if zone is not None else moment.at
     finish = ends.astimezone(zone) if zone is not None else ends
     if start.minute or finish.minute:
-        return f"{start:%H:%M}-{finish:%H:%M}"
-    return f"{start:%H}-{finish:%H}"
+        return f"{start:%H:%M}{_TO}{finish:%H:%M}"
+    return f"{start:%H}{_TO}{finish:%H}"
 
 
 def _figure_runs(moment: Moment) -> list[Run]:

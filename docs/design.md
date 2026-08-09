@@ -399,7 +399,7 @@ weather service must not give.
 NO  63.4N 10.4E  18m
 Issued 12:30 UTC
                                      ▨
-NOW  13-14 UTC  15-16 CEST (UTC+2)   ▨
+NOW  13―14 UTC  15―16 CEST (UTC+2)   ▨
 15.3C SW 2.3m/s 0.4mm/h  heavy rain  ▨
   ····································
   CEST 16  17  18  19  20  21  22  23
@@ -450,8 +450,13 @@ the model run** — measured against a real response, `updated_at` 15:29:25 with
 first moment of 15:00:00 — so a forecast issued at half past can perfectly well
 tell you about the hour that began at the top of it. What was wrong was the word
 `NOW` beside a single time, which promises an instant when the readings are an
-hour's. `13-14` promises the hour, which is what a reader at 13:47 is standing
+hour's. `13―14` promises the hour, which is what a reader at 13:47 is standing
 in.
+
+**Joined by a long dash, not a hyphen.** G0 has both, and a range wants the bar
+that fills the cell: 0x60, where ASCII keeps its backtick. Read out of Beebium's
+font rather than guessed — and it is *not* the underscore, whatever a teletext
+editor's keyboard suggests, since 0x5F is the hash.
 
 Hours alone where the range falls on them, which is everywhere a zone is a whole
 number of hours from UTC; Kolkata is half an hour off and Kathmandu three
