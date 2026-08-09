@@ -173,13 +173,13 @@ SUN_SMALL: Final = _piece("""
 .###..
 """)
 
-#: A crescent, which is the only moon that reads as one at six blocks across.
-#: Facing right because a waxing moon does, and because the cloud beneath is
-#: drawn heavier on the left.
+#: The band-sized moon, lying back on itself as the full-scale one does. Used
+#: wherever a sky shows at night, which is both the dry states and the showers
+#: -- unlike the sun, which has a quieter form for weather that is falling.
 MOON: Final = _piece("""
-..###.
-..#...
-..###.
+...##.
+....##
+.####.
 """)
 
 #: The top of a cloud, for the codes with no sky in them. Overcast is overcast
