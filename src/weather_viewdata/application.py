@@ -40,7 +40,6 @@ from sextile import (
     Sextile,
     Suggest,
     draw_form,
-    keys,
 )
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
@@ -283,8 +282,12 @@ async def by_position(request: PageRequest) -> Page:
         page_number=request.address.frame_number(0),
         prompt=render_footer(
             [
+                #  Not `#`. It moves to the next field from every field but
+                #  the last, so a footer saying "# go there" is false wherever
+                #  the reader most likely is. What it does on the last field is
+                #  marked against that field, where the reader is looking.
                 FooterItem("TAB", "next field", Priority.PRIMARY),
-                FooterItem(keys.CONVENTIONAL_NEXT_FRAME, "go there", Priority.PRIMARY),
+                FooterItem("DEL", "rub out", Priority.SECONDARY),
                 FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),
             ],
             ROOM,
@@ -343,6 +346,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
         complete=complete,
         note=nearest,
         note_row=NOTE_ROW,
+        sends="forecast",
     )
 
 
