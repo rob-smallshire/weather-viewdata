@@ -234,7 +234,12 @@ apart, in the same colours, and nothing between them says where one ends. The
 strip on a forecast page has no such trouble, its pictures being side by side.
 
 The day variants only, with a line saying the sun becomes a moon at night —
-which costs less than another forty drawings. Names wrap over two of the rows,
+which costs less than another forty drawings, and is **not time-sensitive on
+purpose.** A legend is a legend and not a forecast, and there is no clock it
+could sensibly follow: not the reader's, since somebody in Britain at midnight
+may be looking up Auckland at noon, and not any place's either, the page being
+about none of them. Drawn by day and saying what changes at night, it is right
+for every reader at once. Names wrap over two of the rows,
 because `heavy sleet shwrs+thunder` is twenty-five cells and half a row is
 fourteen. Five frames.
 

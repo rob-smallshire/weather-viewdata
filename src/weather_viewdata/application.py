@@ -515,6 +515,13 @@ async def pictures(request: PageRequest) -> Page:
     The day variants, because the night ones differ in exactly one way -- the
     sun becomes a moon -- and saying that in a line costs less than another
     forty pictures.
+
+    **Always the day ones, whatever the hour.** A legend is a legend and not a
+    forecast: there is no clock it could sensibly follow. Not the reader's --
+    somebody in Britain at midnight may be looking up Auckland at noon -- and
+    not any place's either, since the page is about none of them. Drawing the
+    pictures by day and saying what changes at night is the only reading that
+    is right for every reader at once.
     """
     app = _service(request)
     return SymbolTable(
