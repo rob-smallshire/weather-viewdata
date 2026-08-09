@@ -7,14 +7,19 @@ exactly once, in the ranking, and are settled there.
     0                  the title frame
     1                  the main menu
     3                  find a place by name
-    32<geoname-id>     one place's forecast
+    321<geoname-id>    one place's forecast, as a table
     4                  find a point by position
-    42<lat><lon>       one point's forecast
+    421<lat><lon>      one point's forecast, as a table
     9  about   90 goodbye   91 help   92/93/94 the framework's pages
 
 Two ways to name a forecast, failing differently. A named place carries a name,
 a timezone and an altitude, and depends on GeoNames still holding that record.
 A point carries none of those and depends on nothing at all.
+
+Three digits of prefix rather than two, because a forecast is one body of
+numbers with more than one honest way of showing it: the last of them says
+which. The subject follows unchanged, so the same weather is a table at
+`321<geoname-id>` and a graph at `322<geoname-id>`.
 
 The pages are ordinary functions, declared beside one another and given to the
 constructor as a list. Nothing closes over anything: a page takes the index
@@ -61,6 +66,25 @@ from weather_viewdata.symbols import in_words
 SERVICE_NAME: Final = "WEATHER"
 
 DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
+
+#: What kind of page this is, within a namespace whose root is a search frame.
+#: There is only one kind so far, and naming it leaves room beside it for a
+#: page about a place that is not its weather.
+_FORECAST: Final = "2"
+
+#: How a forecast is drawn, as the digit that says so. A forecast is one body
+#: of numbers and there is more than one honest way to show it: a table reads
+#: exactly and a graph reads at a glance, and neither is the poor relation. So
+#: the presentation is part of the address rather than a mode the reader has to
+#: get the frame into -- a number written down fetches back what was written
+#: down, and a reader can key straight to the one they want.
+#:
+#: It goes before the subject and not after because a geoname id has no fixed
+#: width: `321` then the id can be split apart, `32` then the id then a digit
+#: cannot. The cost is that the digit renumbers everything after it, so there
+#: is no reading `323133880` under both schemes and no aliasing the old one.
+TABLE: Final = "1"
+GRAPH: Final = "2"
 
 #: A cell for the colour the weather is written in. What is left after the
 #: clocks, the temperature and the wind is the weather's -- counted from the
@@ -491,13 +515,14 @@ PAGES: Final = (
     PageRoute("3", by_name, name="by_name", title="Find a place by name",
               detail="key its name, as *YORK#",
               keywords=("FIND", "PLACE", "SEARCH")),
-    PageRoute("32{geoname_id:int}", place, name="place", title="One place"),
+    PageRoute(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", place, name="place",
+              title="One place"),
     PageRoute("4", by_position, name="by_position",
               title="Find a point by position",
               detail="anywhere, to a tenth of a degree",
               keywords=("POSITION", "COORDS")),
-    PageRoute("42{lat:latitude}{lon:longitude}", point, name="point",
-              title="One point"),
+    PageRoute(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", point,
+              name="point", title="One point"),
     PageRoute("9", about, name="about", title="About this service",
               keywords=("ABOUT",)),
     PageRoute("90", goodbye, name="goodbye", title="Ring off",

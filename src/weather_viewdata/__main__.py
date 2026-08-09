@@ -76,7 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_index_argument(importing)
 
     render = subcommands.add_parser("render", help="Show a frame without a BBC Micro")
-    render.add_argument("--page", help="Render a page by its number, such as 1 or 32133880")
+    render.add_argument("--page", help="Render a page by its number, such as 1 or 3213133880")
     add_form_arguments(render)
     _add_index_argument(render)
 

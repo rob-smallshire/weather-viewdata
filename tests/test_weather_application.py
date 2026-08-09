@@ -84,6 +84,31 @@ class TestRefusingAStaleIndex:
         await app.shutdown()
 
 
+class TestHowAForecastIsDrawnIsPartOfItsNumber:
+    """The third digit, and why it is the third.
+
+    The same weather can be a table or a graph, and neither is the poor
+    relation, so the presentation is in the address rather than a mode the
+    reader has to get the frame into: a number written down fetches back what
+    was written down.
+
+    It sits before the subject because a geoname id has no fixed width, and a
+    digit after one could not be told from the id itself.
+    """
+
+    def test_a_place_is_numbered_by_its_presentation_then_its_id(self) -> None:
+        app = build_application(source=NoForecasts())
+        assert app.address_for("place", geoname_id=3133880) == PageAddress(
+            "321" + "3133880"
+        )
+
+    def test_a_point_likewise_and_then_its_position(self) -> None:
+        app = build_application(source=NoForecasts())
+        assert app.address_for("point", lat=63.43049, lon=10.39506) == PageAddress(
+            "421" + "1534" + "1904"
+        )
+
+
 class TestBothWaysOfWritingACoordinate:
     """The signs are undocumented rather than unsupported.
 
@@ -117,5 +142,5 @@ class TestBothWaysOfWritingACoordinate:
         await session.receive(b"\x09")
         await session.receive(longitude.encode())
         await session.receive(b"\x5f")
-        assert session.address == PageAddress("4214401789")
+        assert session.address == PageAddress("42114401789")
         await app.shutdown()

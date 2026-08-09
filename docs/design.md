@@ -44,8 +44,8 @@ being observable. See [what it asked for](#what-it-asked-of-the-framework).
 ```
 0                  the title frame the line opens on; # carries on to the index
 1                  the main menu
-3                  find a place by name        32<geoname-id>   its forecast
-4                  find a point by position    42<lat><lon>     its forecast
+3                  find a place by name        321<geoname-id>  its forecast
+4                  find a point by position    421<lat><lon>    its forecast
 9  about   90 goodbye   91 help   92/93/94 the framework's pages
 ```
 
@@ -54,13 +54,30 @@ the second says what kind of page within it. A namespace's root would be its
 index, and here it cannot be — nobody lists 235,176 places on a screen — so the
 root is the page that explains how to search it.
 
+**A third digit says how it is drawn.** A forecast is one body of numbers with
+more than one honest way of showing it — a table reads exactly, a graph reads at
+a glance, a map may follow — and neither is a mode of the other. So the
+presentation is part of the address: `1` a table, `2` a graph, and the subject
+follows unchanged, so the same weather is `321<geoname-id>` and
+`322<geoname-id>`.
+
+That is worth a digit rather than a keypress that toggles, because a page number
+is the thing a reader writes down. A number written down must fetch back what
+was written down; a frame that remembered how it was last looked at would not.
+
+It goes *before* the subject because a geoname id has no width known in advance:
+`321` and then an id can be taken apart, `32` and then an id and then a digit
+cannot. The cost is that the digit renumbers everything after it — `323133880`
+now reads as the graph of 133880 — so there are no aliases for the old numbers
+and none are possible.
+
 **Two ways to name a forecast, and they fail differently.** That is why both
 exist rather than one being the poor relation:
 
 | | carries | depends on |
 |---|---|---|
-| `32<geoname-id>` | a name, a timezone, an altitude | GeoNames still holding that record |
-| `42<lat><lon>` | coordinates, and says so | nothing at all |
+| `321<geoname-id>` | a name, a timezone, an altitude | GeoNames still holding that record |
+| `421<lat><lon>` | coordinates, and says so | nothing at all |
 
 A coordinate page number is stable by construction: 63.4N 10.4E will mean the
 same thing for as long as there is an earth. A geoname id is *nearly* stable —
@@ -76,6 +93,21 @@ move; our window onto the ids did. Pinned as tests in
 so two fields side by side must each be a fixed width. It is 11.1km of latitude
 everywhere and 11.1km of longitude at the equator, narrowing with the cosine:
 5.0km at Trondheim, 2.3km at Longyearbyen.
+
+The position *is* in the page number, though nothing on the frame spells out
+how. 59.7N 10.0E is tenths of a degree, biased into a positive range — south
+pole zero, date line zero — and zero-padded:
+
+```
+59.7N  ->  (59.7 + 90) × 10  =  1497
+10.0E  ->  (10.0 + 180) × 10 = 1900
+                                          421 1497 1900
+```
+
+so the search leaves the reader on `42114971900`, which is the number to write
+down. It is legible with the arithmetic in hand and not otherwise, which is the
+price of having no minus key and no separator. The frame says the position in
+degrees at the top; the number is what fetches it back.
 
 That resolution decides what the page can honestly *be*. Measured against the
 real index, 67% of places share a cell with another and one cell in Hong Kong
@@ -198,8 +230,8 @@ as calm weather, the one wrong answer it must not give.
 ## Drawing a forecast
 
 `_forecast_page` in `application.py` builds it, and `ForecastTable` — a
-`Template[Moment]` — deals the moments into frames. Both `32<geoname-id>` and
-`42<lat><lon>` end here; the only difference is what the preamble says.
+`Template[Moment]` — deals the moments into frames. Both `321<geoname-id>` and
+`421<lat><lon>` end here; the only difference is what the preamble says.
 
 A page with nothing to show says why: no forecast is a `Prose` page explaining
 that met.no did not answer and that it is our trouble rather than the reader's.
@@ -209,7 +241,7 @@ weather service must not give.
 ### What is on it
 
 ```
- TRONDHEIM                    323133880a
+ TRONDHEIM                   3213133880a
   ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮
 NO  63.4N 10.4E  18m
 Times UTC and CEST (UTC+2)
