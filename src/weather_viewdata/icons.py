@@ -179,7 +179,7 @@ SUN_SMALL: Final = _piece("""
 MOON: Final = _piece("""
 ...##.
 ....##
-.####.
+..###.
 """)
 
 #: The top of a cloud, for the codes with no sky in them. Overcast is overcast
