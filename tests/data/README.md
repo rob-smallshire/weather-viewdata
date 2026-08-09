@@ -6,6 +6,7 @@ service actually sends rather than against what we imagine it sends.
 | | |
 |---|---|
 | `trondheim-compact.json` | `locationforecast/2.0/compact` for Trondheim (63.4305, 10.3951, 14m), captured 9 August 2026 |
+| `known-places.txt` | eleven lines of `cities500`, captured 8 August 2026, pinning the ids this service hands out as page numbers |
 
 Prefer re-using these to making fresh requests. met.no asks for traffic to be
 spread out and for responses to be cached, and a test suite that calls a public
