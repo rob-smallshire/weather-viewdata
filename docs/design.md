@@ -246,16 +246,57 @@ weather service must not give.
 NO  63.4N 10.4E  18m
 Times UTC and CEST (UTC+2)
 Issued 12:30 UTC
+
+NOW   13:00   15:00   heavy rain
+15.3C   SW 2.3m/s   0.4mm/h
+
    UTC LOCAL  DEG C  M/S  WEATHER
  13:00  15:00   15.3  2.3 heavy rain
  14:00  16:00   15.1  1.6 rain
- ...                          (15 rows)
+ ...                          (12 rows)
   ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮
  S page down, 0 index
 ```
 
 A real response is **86 moments over ten days**, which comes to **five frames**:
-fifteen rows on the first after the preamble, sixteen on the rest.
+twelve rows on the first after the lead-in, sixteen on the rest.
+
+### The weather now
+
+Two rows at the top, above the table, because a forecast page is mostly about
+later and the first thing a reader wants is now. Before this it was the first
+row of a table of eighty-six, indistinguishable from the hour after it.
+
+**The clocks carry no labels.** `Times UTC and CEST` has just been said a row
+above, and the colours say it again — **yellow for UTC, cyan for the place's own
+clock**, the same convention as the table's two columns — so the four cells go
+on the weather instead.
+
+**The times are the moment's own, not the reader's.** A forecast is held for as
+long as met.no asks it to be, so the hour a reader is standing in may have begun
+forty minutes ago. Saying `13:00` at 13:47 lets them see that; saying `13:47`
+would claim a reading we have not got. `Forecast.current` takes the last moment
+that has *started* rather than the nearest — at 13:59 the weather is still the
+one o'clock hour's — and falls forward to the first moment where the whole
+forecast is still ahead, since an answer fetched at 09:58 can begin at 10:00.
+
+**The weather goes last on its row**, and `RowWriter.runs` trims what will not
+fit, so `heavy sleet shwrs+thunder` costs the end of itself rather than the
+frame. No hand-arithmetic about how many cells are left, which is what got the
+table's weather column wrong the first time.
+
+**A reading with no figure is left out, not dashed.** The opposite of the table
+below, and for a reason: a dash in a column says the column is still there to be
+read, where three words with a gap where the fourth was reads as a fault. The
+rainfall says what period it is for — `0.4mm/h` against `1.7mm/6h` — because
+1.7mm in an hour and 1.7mm over six are different weather.
+
+**Wind direction is sixteen points of the compass**, in `wind.py`, and it is the
+direction the wind blows *from*: `wind_from_direction` is met.no's and
+meteorology's convention, and saying it the other way round would be wrong
+rather than unusual. Sixteen because eight loses the difference between a
+southerly and a south-westerly, and the third letter costs one cell. No arrow:
+the G0 set has three of the four it would need.
 
 **Times in UTC and in the place's own zone.** `zoneinfo` reads the system
 database and GeoNames gives the IANA name per place, so daylight saving is
@@ -301,14 +342,11 @@ no iteration since its first draft.
 - **The resolution changes silently.** met.no is hourly for two or three days
   and six-hourly after, and the rows give no sign of the switch. `Moment.covers`
   knows — it is `1h` or `6h` or `12h` — and nothing uses it.
-- **Precipitation is parsed and not shown.** `Moment.precipitation` in
-  millimetres, over the period `covers` names. Both were deliberately carried
-  through the model because 1.7mm in an hour and 1.7mm over six are different
-  weather; neither reaches the screen.
-- **So are wind direction, cloud cover, humidity and pressure.**
-  `Moment.wind_from` is degrees meteorological — the direction it blows *from* —
-  and `cloud_cover`, `humidity` and `pressure` are all on `Moment` and all
-  unused.
+- **Precipitation reaches the screen only in the now block.** The table's rows
+  still do not show it, though `Moment.precipitation` and `Moment.covers` are
+  there for them.
+- **Cloud cover, humidity and pressure are parsed and unused**, all three on
+  `Moment` and none of them drawn anywhere.
 - **Five frames is a lot of `S`.** A frame is about eight seconds at 1200 baud,
   so reading to the end of the week costs the better part of a minute. A daily
   summary — one row a day, high and low and a symbol — would be a different and

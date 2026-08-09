@@ -71,3 +71,22 @@ class Forecast:
     """In time order. Hourly at first and coarser further out, which is the
     source's doing and is left as it arrives: pretending to an hourly forecast
     ten days ahead would be inventing weather."""
+
+    def current(self, when: datetime) -> Moment | None:
+        """The moment a reader at `when` is standing in.
+
+        The last one that has started, rather than the nearest one: at 12:59 the
+        weather is the noon hour's, and rounding to the nearest would show a
+        reader weather that has not happened yet.
+
+        Falls forward to the first moment where the whole forecast is still
+        ahead -- an answer fetched at 09:58 can begin at 10:00 -- because the
+        nearest thing to now is then the only honest thing to show, and showing
+        nothing would read as a fault.
+        """
+        current = None
+        for moment in self.moments:
+            if moment.at > when:
+                break
+            current = moment
+        return current or (self.moments[0] if self.moments else None)

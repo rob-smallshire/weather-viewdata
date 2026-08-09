@@ -31,7 +31,7 @@ makes the order things were registered in unobservable.
 import asyncio
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -49,8 +49,16 @@ from sextile import (
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.middleware import log_pages
-from sextile.templates import HOME_KEY, Entry, Menu, MenuItem, Prose, Template
-from sextile.viewdata.canvas import Canvas, RowWriter
+from sextile.templates import (
+    HOME_KEY,
+    Entry,
+    Menu,
+    MenuItem,
+    PreambleLine,
+    Prose,
+    Template,
+)
+from sextile.viewdata.canvas import Canvas, RowWriter, Run
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW, draw_chrome
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
@@ -63,6 +71,7 @@ from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
 from weather_viewdata.store import Index, Nearby
 from weather_viewdata.symbols import in_words
+from weather_viewdata.wind import from_the
 
 SERVICE_NAME: Final = "WEATHER"
 
@@ -86,6 +95,9 @@ _FORECAST: Final = "2"
 #: is no reading `323133880` under both schemes and no aliasing the old one.
 TABLE: Final = "1"
 GRAPH: Final = "2"
+
+#: Seconds an hour, for saying what period a rainfall figure covers.
+_SECONDS_AN_HOUR: Final = 3600
 
 #: A cell for the colour the weather is written in. What is left after the
 #: clocks, the temperature and the wind is the weather's -- counted from the
@@ -699,18 +711,80 @@ def _heading(place: Place) -> str:
 
 def _preamble(
     place: Place, forecast: Forecast, near: "Nearby | None"
-) -> Sequence[str]:
-    """What is being forecast, where it is, and how old it is.
+) -> Sequence[PreambleLine]:
+    """Where this is, which clocks it keeps, how old it is, and the weather now.
 
     The issue time is worth a row of twenty. met.no runs its models a few times
     a day, so a forecast fetched at nine may have been made at five -- and a
     reader on a slow line deciding whether to ask again wants to know which.
+
+    Then a blank row, and the weather the reader is standing in. It was the
+    first row of a table of eighty-six before this, which is to say it was
+    indistinguishable from the hour after it.
     """
-    return [
+    lines: list[PreambleLine] = [
         _where(place, near),
         _clocks(place),
         f"Issued {forecast.updated_at:%H:%M} UTC",
     ]
+    now = forecast.current(datetime.now(UTC))
+    if now is not None:
+        lines.append("")
+        lines += _now_lines(now, _zone_of(place))
+    return lines
+
+
+def _now_lines(moment: Moment, zone: ZoneInfo | None) -> list[PreambleLine]:
+    """The weather now, in two rows.
+
+    The clocks carry no `UTC` and no `CEST`: the row above has just said which
+    clocks the page keeps, and the colours say it again -- yellow for UTC, cyan
+    for the place's own -- so the four cells go on the weather instead.
+
+    **The times shown are the moment's own, not the reader's.** A forecast is
+    held for as long as met.no asks it to be, so the hour a reader is standing
+    in may have begun forty minutes ago; saying 10:00 at 10:47 lets them see
+    that for themselves, where saying 10:47 would claim a reading we have not
+    got.
+
+    The weather goes last on its row deliberately. Runs are trimmed to what is
+    left, so the longest symbol met.no has -- `heavy sleet shwrs+thunder`, at
+    twenty-five cells -- costs the end of itself rather than the frame.
+    """
+    clocks = [Run("NOW", Colour.WHITE), Run(f"  {moment.at:%H:%M}", Colour.YELLOW)]
+    if zone is not None:
+        clocks.append(Run(f"  {_local(moment.at, zone)}", Colour.CYAN))
+    clocks.append(Run(f"  {in_words(moment.symbol)}", Colour.GREEN))
+    return [clocks, [Run("   ".join(_figures(moment)), Colour.WHITE)]]
+
+
+def _figures(moment: Moment) -> list[str]:
+    """Temperature, wind and rain, leaving out what there is no reading for.
+
+    Left out rather than dashed, which is what the table below does. A dash in
+    a column means the column is still there to be read; here there are no
+    columns, and three words with a gap where the fourth was reads as a gap.
+    """
+    figures = [f"{_reading(moment.temperature, 1)}C"]
+    speed = f"{_reading(moment.wind_speed, 1)}m/s"
+    bearing = from_the(moment.wind_from)
+    figures.append(f"{bearing} {speed}" if bearing else speed)
+    if moment.precipitation is not None:
+        figures.append(f"{moment.precipitation:.1f}mm{_over(moment.covers)}")
+    return figures
+
+
+def _over(covers: timedelta | None) -> str:
+    """What period a rainfall figure is for.
+
+    1.7mm in an hour and 1.7mm over six are different weather, and the figure
+    alone cannot tell them apart. Said as `/h` rather than `/1h` because that is
+    how a rate is written and it saves a cell.
+    """
+    if covers is None:
+        return ""
+    hours = round(covers.total_seconds() / _SECONDS_AN_HOUR)
+    return "/h" if hours == 1 else f"/{hours}h"
 
 
 def _where(place: Place, near: "Nearby | None") -> str:
