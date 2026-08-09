@@ -528,7 +528,10 @@ async def pictures(request: PageRequest) -> Page:
         title=app.describe(request.address).upper(),
         entries=_in_pairs(PUBLISHED),
         home=app.index,
-        preamble=["By day. At night the sun becomes a moon."],
+        preamble=[
+            "By day. At night the sun is a moon;",
+            "in polar twilight, low on the horizon.",
+        ],
     ).build(request.address)
 
 

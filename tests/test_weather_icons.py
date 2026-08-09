@@ -31,7 +31,9 @@ from weather_viewdata.icons import (
     MOON_FIGURE,
     SUN,
     SUN_FIGURE,
+    SUN_LOW,
     SUN_SMALL,
+    TWILIGHT_FIGURE,
     WeatherIcon,
     icon_for,
 )
@@ -113,11 +115,22 @@ class TestTheSkyOnTop:
     def test_and_the_moon_at_night(self, code: str) -> None:
         assert drawn(code).bands[0].cells == MOON
 
-    def test_polar_twilight_keeps_the_sun(self) -> None:
-        #  The sun is up in some sense or met.no would have said night. Drawing
-        #  a moon in Tromsø in November would be the wrong half of the year.
-        assert drawn("rainshowers_polartwilight").bands[0].cells == SUN_SMALL
-        assert drawn("partlycloudy_polartwilight").bands[0].cells == SUN
+    @pytest.mark.parametrize(
+        "code", ["rainshowers_polartwilight", "partlycloudy_polartwilight"]
+    )
+    def test_polar_twilight_is_a_sun_that_has_not_got_up(self, code: str) -> None:
+        #  Neither of the other two: the sun is below the horizon all day and
+        #  the sky is lit anyway. A moon would be the wrong half of the year,
+        #  and an ordinary sun would say nothing about where the reader is.
+        #
+        #  The same low sun whatever the weather -- where the sun does not get
+        #  up, how high it is says more about the hour than the rain does.
+        assert drawn(code).bands[0].cells == SUN_LOW
+
+    def test_and_a_clear_one_sits_on_the_horizon(self) -> None:
+        assert [band.cells for band in drawn("clearsky_polartwilight").bands] == list(
+            TWILIGHT_FIGURE
+        )
 
     @pytest.mark.parametrize("code", ["rain", "heavysnow", "cloudy", "sleetandthunder"])
     def test_continuous_weather_has_cloud_all_the_way_up(self, code: str) -> None:

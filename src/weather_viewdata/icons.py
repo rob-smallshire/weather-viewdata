@@ -38,7 +38,7 @@ from sextile.viewdata.blocks import Icon, icon
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.charset import mosaic_code
 from sextile.viewdata.controls import Colour, graphics_colour
-from weather_viewdata.symbols import NIGHT, Weather, taken_apart
+from weather_viewdata.symbols import NIGHT, TWILIGHT, Weather, taken_apart
 
 #: Cells an icon occupies each way, and so the shape every piece is drawn to.
 #: Three cells is six blocks across; three rows is nine blocks down.
@@ -173,6 +173,16 @@ SUN_SMALL: Final = _piece("""
 .###..
 """)
 
+#: And lower still for the polar twilight, which is neither of the other two:
+#: the sun is below the horizon all day and the sky is lit anyway. Drawn as the
+#: small sun with its foot flattened into a horizon, so it reads as a sun that
+#: has not got up rather than as a smaller one.
+SUN_LOW: Final = _piece("""
+......
+..#...
+#####.
+""")
+
 #: The band-sized moon, lying back on itself as the full-scale one does. Used
 #: wherever a sky shows at night, which is both the dry states and the showers
 #: -- unlike the sun, which has a quieter form for weather that is falling.
@@ -243,6 +253,21 @@ MOON_FIGURE: Final = _figure("""
 ...###
 .#####
 ..###.
+......
+""")
+
+#: A clear sky in the polar twilight: the sun's upper half on the horizon, the
+#: rays still showing above it. The lower rays are what it loses, which is the
+#: right half to lose.
+TWILIGHT_FIGURE: Final = _figure("""
+......
+......
+.#.#.#
+..###.
+.#####
+######
+......
+......
 ......
 """)
 
@@ -377,6 +402,8 @@ def _figure_for(weather: Weather) -> tuple[tuple[tuple[int, ...], ...], Colour] 
     if weather.core == "clearsky":
         if weather.when == NIGHT:
             return MOON_FIGURE, MOON_COLOUR
+        if weather.when == TWILIGHT:
+            return TWILIGHT_FIGURE, SUN_COLOUR
         return SUN_FIGURE, SUN_COLOUR
     if weather.core == "fog":
         #  The one weather that is not above the reader but around them.
@@ -413,6 +440,10 @@ def _sky(weather: Weather) -> tuple[tuple[int, ...], Colour]:
         return CLOUD_TOP, CLOUD_COLOUR
     if weather.when == NIGHT:
         return MOON, MOON_COLOUR
+    if weather.when == TWILIGHT:
+        #  Whatever the weather. Where the sun does not get up, how high it is
+        #  says more about the hour than the rain does.
+        return SUN_LOW, SUN_COLOUR
     #  Small where something is falling, full-size where the sky is mostly sky.
     return (SUN_SMALL if weather.falling else SUN), SUN_COLOUR
 

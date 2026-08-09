@@ -174,7 +174,9 @@ bars side by side, and drawn whole they are evenly spaced.
 For the rest:
 
 ```
-sky      showers or nothing falling -> sun      (moon if _night)
+sky      showers or nothing falling -> sun; a moon at _night, and
+                                       a sun on the horizon at
+                                       _polartwilight
          otherwise                  -> cloud top
 cloud    fair -> a small one;  anything else -> a cloud
 fall     rain and snow are the same drawing: blue, and white
@@ -220,6 +222,17 @@ Three consequences worth writing down, since each was a choice:
   half of one.
 - **Rain and snow are the same drawing**, and only the colour tells them apart.
   Which is what makes sleet drawable as both at once.
+- **There are three suns, and the time of day chooses first.** A moon at night;
+  at polar twilight a sun that has not got up, whatever the weather, since where
+  the sun does not rise how high it is says more about the hour than the rain
+  does; and by day the disc where the sky is mostly sky, a smaller one where
+  something is falling.
+
+  `polartwilight` is not a typo and not theoretical, though it is seasonal:
+  probed on 9 August 2026, Longyearbyen returned nothing but `_day` (midnight
+  sun) and Syowa, Tromsø and Trondheim returned only `_day` and `_night`. It
+  arrives in the shoulder weeks, when the sun is below the horizon all day and
+  the sky is lit anyway.
 
 ### `*95#`, the whole set
 
@@ -233,7 +246,7 @@ picture and the top band of the next read as a single icon: they are three rows
 apart, in the same colours, and nothing between them says where one ends. The
 strip on a forecast page has no such trouble, its pictures being side by side.
 
-The day variants only, with a line saying the sun becomes a moon at night —
+The day variants only, with two lines saying the sun becomes a moon at night —
 which costs less than another forty drawings, and is **not time-sensitive on
 purpose.** A legend is a legend and not a forecast, and there is no clock it
 could sensibly follow: not the reader's, since somebody in Britain at midnight
