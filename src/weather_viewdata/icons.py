@@ -3,13 +3,16 @@
 **Nine cells, and the shape of them is decided by what an attribute costs.** A
 mosaic run needs a graphics colour attribute, and an attribute takes a cell of
 its own -- so an hour column four cells wide is one attribute and three cells of
-picture, on each of three rows. Which means **one colour per row of the icon,
-and the colours can only change between the rows.**
+picture, on each of three rows. **A row is one colour, unless it buys a second
+one out of its own picture**: two attributes and two cells of mosaic still come
+to four, and what is left is two blocks, a blank, two blocks.
 
 That single fact decides every drawing here. A sun cannot sit *behind* a cloud
-in a different colour, because they would share a row; so it sits *above* one.
-The sky goes in the top band, the cloud in the middle, and whatever is falling
-in the bottom, and each band is one colour throughout.
+in a different colour, because a full-width band has one colour to spend; so it
+sits *above* one. The sky goes in the top band, the cloud in the middle, and
+whatever is falling in the bottom. Only the thunder icons split a band, and only
+because six of the 41 symbols carry thunder and would otherwise be drawn exactly
+like the six without it.
 
 **The pieces are composed, not tabulated.** met.no publishes 83 codes and they
 are built by concatenation, so the icons are built the same way from about a
@@ -47,11 +50,56 @@ COLUMN_CELLS: Final = CELLS_ACROSS + ATTRIBUTE_CELL
 
 
 @dataclass(frozen=True)
-class Band:
-    """One row of an icon: three mosaic cells, in one colour."""
+class Patch:
+    """A run of mosaic cells in one colour, and the attribute that enters it."""
 
-    cells: tuple[int, ...]
     colour: Colour
+    cells: tuple[int, ...]
+
+    @property
+    def width(self) -> int:
+        """Cells it costs, its attribute included."""
+        return ATTRIBUTE_CELL + len(self.cells)
+
+
+@dataclass(frozen=True)
+class Band:
+    """One row of an icon, as the four cells it has to spend.
+
+    Usually one patch: an attribute and three cells of picture, all one colour.
+    A row that wants **two** colours buys the second attribute out of the
+    picture, and is left with two cells of mosaic a blank cell apart -- two
+    blocks, a gap, two blocks. That is the whole of the freedom there is, and
+    the thunder icons are what it was spent on.
+
+    The four cells are the invariant. A band that spent three or five would put
+    the hour beneath it out of line with the picture above it, which in a strip
+    of ten is the only mistake that shows from across the room.
+    """
+
+    patches: tuple[Patch, ...]
+
+    def __post_init__(self) -> None:
+        if sum(patch.width for patch in self.patches) != COLUMN_CELLS:
+            raise ValueError(
+                f"a band is {COLUMN_CELLS} cells, attributes included, "
+                f"and this one is {sum(patch.width for patch in self.patches)}"
+            )
+
+    @property
+    def cells(self) -> tuple[int, ...]:
+        """Every mosaic pattern in it, in order and without the attributes."""
+        return tuple(cell for patch in self.patches for cell in patch.cells)
+
+    @property
+    def colour(self) -> Colour:
+        """The colour it begins in, which for most bands is the only one."""
+        return self.patches[0].colour
+
+
+def band(cells: tuple[int, ...], colour: Colour) -> Band:
+    """The ordinary sort: one colour across the whole row."""
+    return Band(patches=(Patch(colour, cells),))
 
 
 @dataclass(frozen=True)
@@ -61,13 +109,18 @@ class WeatherIcon:
     bands: tuple[Band, ...]
 
 
-def _piece(art: str) -> tuple[int, ...]:
-    """One band's worth of blocks, as the three mosaic patterns for it."""
+def _piece(art: str, *, cells: int = CELLS_ACROSS) -> tuple[int, ...]:
+    """A band's worth of blocks, as the mosaic patterns for it."""
     drawn: Icon = icon(art)
-    if drawn.rows != 1 or drawn.cells_across > CELLS_ACROSS:
-        raise ValueError("a piece is three cells across and one row down")
+    if drawn.rows != 1 or drawn.cells_across > cells:
+        raise ValueError(f"a piece is at most {cells} cells across and one row down")
     patterns = drawn.cells()[0]
-    return tuple(patterns) + (0,) * (CELLS_ACROSS - len(patterns))
+    return tuple(patterns) + (0,) * (cells - len(patterns))
+
+
+def _half(art: str) -> tuple[int, ...]:
+    """Half a band: one cell, for a row that is spending the other on colour."""
+    return _piece(art, cells=1)
 
 
 #  -- the pieces -------------------------------------------------------------
@@ -193,13 +246,40 @@ SLEET_HEAVY: Final = _piece("""
 #...#.
 """)
 
-#: A bolt. It takes the whole band and the band turns yellow, which is the only
-#: way thunder can be told at a glance: there is no room for a bolt *beside* the
-#: rain, and no second colour to draw it in if there were.
-BOLT: Final = _piece("""
-..###.
-.###..
-..#...
+#  Thunder is the one weather that needs two colours on one row, and it is
+#  worth what it costs: six of the 41 symbols carry thunder, and drawn in the
+#  fall's own colour they would differ from the plain ones by nothing at all.
+#
+#  So the bottom band buys a second attribute out of its picture and is left
+#  with two cells a blank cell apart. What falls goes on the left in its own
+#  colour, the bolt on the right in yellow.
+
+#: A bolt, in the two blocks a split band leaves for it. A zigzag is the only
+#: lightning there is at this size, and yellow does the rest of the telling.
+BOLT: Final = _half("""
+.#
+##
+#.
+""")
+
+#: What falls, beside a bolt. One stroke, as long as the weather is hard: the
+#: same rule as the full-width falls, in the one column there is room for.
+FALL_LIGHT: Final = _half("""
+..
+..
+#.
+""")
+
+FALL: Final = _half("""
+..
+#.
+#.
+""")
+
+FALL_HEAVY: Final = _half("""
+#.
+#.
+#.
 """)
 
 #  -- what goes where --------------------------------------------------------
@@ -232,9 +312,9 @@ def icon_for(symbol: str | None) -> WeatherIcon | None:
         return None
     return WeatherIcon(
         bands=(
-            Band(*_sky(weather)),
-            Band(*_middle(weather)),
-            Band(*_fall(weather)),
+            band(*_sky(weather)),
+            band(*_middle(weather)),
+            _fall(weather),
         )
     )
 
@@ -263,18 +343,26 @@ def _middle(weather: Weather) -> tuple[tuple[int, ...], Colour]:
     return CLOUD, CLOUD_COLOUR
 
 
-def _fall(weather: Weather) -> tuple[tuple[int, ...], Colour]:
-    """The bottom band: what is coming down, or the thunder instead of it."""
-    if weather.thunder:
-        return BOLT, THUNDER_COLOUR
+def _fall(weather: Weather) -> Band:
+    """The bottom band: what is coming down, and the thunder beside it."""
     if weather.core == "fog":
         #  Fog is the one weather that is not above the reader, so it is drawn
         #  through all three bands rather than hanging from a cloud.
-        return FOG, CLOUD_COLOUR
+        return band(FOG, CLOUD_COLOUR)
+    if weather.thunder:
+        #  The one row in the icon that spends a cell on a second colour. What
+        #  falls keeps its own colour on the left; the bolt is yellow, on the
+        #  right, and the blank cell between them is the attribute that pays
+        #  for it.
+        beside = (FALL_LIGHT, FALL, FALL_HEAVY)[_BY_INTENSITY[weather.intensity]]
+        colour = _FALLING[weather.core][1] if weather.falling else CLOUD_COLOUR
+        return Band(
+            patches=(Patch(colour, beside), Patch(THUNDER_COLOUR, BOLT))
+        )
     if not weather.falling:
-        return EMPTY, CLOUD_COLOUR
+        return band(EMPTY, CLOUD_COLOUR)
     pieces, colour = _FALLING[weather.core]
-    return pieces[_BY_INTENSITY[weather.intensity]], colour
+    return band(pieces[_BY_INTENSITY[weather.intensity]], colour)
 
 
 def draw(canvas: Canvas, row: int, column: int, drawn: WeatherIcon) -> None:
@@ -287,12 +375,14 @@ def draw(canvas: Canvas, row: int, column: int, drawn: WeatherIcon) -> None:
     the hours beneath them.
     """
     frame = canvas.frame
-    for offset, band in enumerate(drawn.bands):
-        frame.set_attribute(row + offset, column, graphics_colour(band.colour))
-        for index, pattern in enumerate(band.cells):
-            frame.set_cell(
-                row + offset, column + ATTRIBUTE_CELL + index, mosaic_code(pattern)
-            )
+    for offset, drawn_band in enumerate(drawn.bands):
+        at = column
+        for patch in drawn_band.patches:
+            frame.set_attribute(row + offset, at, graphics_colour(patch.colour))
+            at += ATTRIBUTE_CELL
+            for pattern in patch.cells:
+                frame.set_cell(row + offset, at, mosaic_code(pattern))
+                at += 1
 
 
 #: The states with sky above them: nothing is falling, or it is falling in

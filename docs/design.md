@@ -145,11 +145,13 @@ place name once did.
 **Nine cells, and their shape is decided by what an attribute costs.** A mosaic
 run needs a graphics colour attribute and an attribute takes a cell, so an hour
 column four cells wide is one attribute and three cells of picture, on each of
-three rows — which means **one colour per row, changing only between rows.**
+three rows — **one colour to a row, unless the row buys a second one out of its
+own picture.** Two attributes and two mosaics also come to four, and leave two
+blocks, a blank, two blocks.
 
-That single fact decides every drawing. A sun cannot sit *behind* a cloud in a
-different colour, because they would share a row; so it sits *above* one, and
-the icon becomes three bands:
+That decides every drawing. A sun cannot sit *behind* a cloud in a different
+colour, because a full-width band has one colour to spend; so it sits *above*
+one, and the icon becomes three bands:
 
 | band | holds | colour |
 |---|---|---|
@@ -166,7 +168,8 @@ cloud    fair -> a small one;  anything else -> a cloud
 fall     rain -> strokes, blue      light: two, clear of the cloud
          sleet -> strokes and dots, cyan    middling: three, clear of it
          snow -> flakes, white              heavy: three, touching it
-         thunder -> a bolt, yellow, instead of any of them
+         thunder -> the band splits: the fall on the left in its own
+                    colour, a yellow bolt on the right
 fog      the same bars through all three bands
 ```
 
@@ -182,8 +185,12 @@ Three consequences worth writing down, since each was a choice:
   empty rather than sitting lower, because in a strip of hours side by side a
   cloud line that moved up and down would read as weather changing when it is
   not.
-- **Thunder replaces the fall and turns the band yellow.** There is no room for
-  a bolt *beside* the rain and no second colour to draw it in if there were.
+- **Thunder is the one band that splits.** It is worth the cell: six of the 41
+  symbols carry thunder, and drawn in the fall's own colour they would differ
+  from the six plain ones by nothing at all. What falls keeps its colour on the
+  left, the bolt is yellow on the right, and the blank between them is the
+  attribute that paid for it. The pitch of the strip is untouched, because the
+  cell came out of the picture rather than out of the column.
 - **Heavier weather is more blocks**, and it fills the row nearest the cloud —
   so heavy rain touches what it falls from. It is the one rule a reader can
   learn without being told.

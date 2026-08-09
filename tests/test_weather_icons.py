@@ -21,10 +21,10 @@ from weather_viewdata.geonames import Place
 from weather_viewdata.icons import (
     BANDS,
     BOLT,
-    CELLS_ACROSS,
     CLOUD,
     CLOUD_SMALL,
     CLOUD_TOP,
+    COLUMN_CELLS,
     EMPTY,
     FOG,
     MOON,
@@ -63,14 +63,16 @@ class TestEveryPublishedCodeHasAPicture:
             for when in ("_day", "_night", "_polartwilight"):
                 assert icon_for(code + when) is not None, code + when
 
-    def test_each_is_three_bands_of_three_cells(self) -> None:
-        #  Which is what the four-cell hour column affords: an attribute and
-        #  three cells of picture, on each of three rows.
+    def test_each_is_three_bands_of_four_cells(self) -> None:
+        #  Four cells to a band, attributes included, whether it spends them on
+        #  three cells of picture in one colour or on two in two colours. A
+        #  band that spent three or five would put the hour beneath it out of
+        #  line with the picture above it.
         for code in codes():
             icon = drawn(code)
             assert len(icon.bands) == BANDS
             for band in icon.bands:
-                assert len(band.cells) == CELLS_ACROSS
+                assert sum(patch.width for patch in band.patches) == COLUMN_CELLS
 
     def test_a_code_we_cannot_read_has_no_picture_rather_than_a_guess(self) -> None:
         #  The words beside it still say what it is. Drawing the nearest
@@ -170,14 +172,29 @@ class TestThunder:
     @pytest.mark.parametrize(
         "code", ["rainandthunder", "heavysnowshowersandthunder_day", "sleetandthunder"]
     )
-    def test_it_takes_the_bottom_band_and_turns_it_yellow(self, code: str) -> None:
-        #  There is no room for a bolt beside the rain and no second colour to
-        #  draw it in if there were: one colour to a row is what an attribute
-        #  costing a cell leaves us with. So thunder replaces the fall, and the
-        #  band changing colour is what says so at a glance.
-        icon = drawn(code)
-        assert icon.bands[2].cells == BOLT
-        assert icon.bands[2].colour == Colour.YELLOW
+    def test_the_bolt_sits_beside_the_fall_in_its_own_colour(self, code: str) -> None:
+        #  The one row in an icon that spends a cell on a second colour, and
+        #  the reason the cost is worth paying: six of the 41 symbols carry
+        #  thunder, and drawn in the fall's colour they would differ from the
+        #  plain ones by nothing at all.
+        fall, bolt = drawn(code).bands[2].patches
+        assert bolt.cells == BOLT
+        assert bolt.colour == Colour.YELLOW
+        assert fall.colour != Colour.YELLOW
+
+    def test_and_it_still_costs_the_band_no_more_than_four_cells(self) -> None:
+        #  Bought out of the picture rather than out of the column. The strip
+        #  underneath keeps its pitch whatever the weather does.
+        band = drawn("rainandthunder").bands[2]
+        assert sum(patch.width for patch in band.patches) == COLUMN_CELLS
+        assert len(band.cells) == 2
+
+    @pytest.mark.parametrize("kind", ["rain", "sleet", "snow"])
+    def test_harder_thunder_weather_is_still_more_of_it(self, kind: str) -> None:
+        light = lit(drawn(f"light{kind}andthunder"))
+        middling = lit(drawn(f"{kind}andthunder"))
+        heavy = lit(drawn(f"heavy{kind}andthunder"))
+        assert light < middling < heavy
 
     def test_the_cloud_above_it_is_unchanged(self) -> None:
         assert drawn("rainandthunder").bands[:2] == drawn("rain").bands[:2]
