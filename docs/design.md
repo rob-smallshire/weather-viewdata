@@ -399,7 +399,7 @@ weather service must not give.
 NO  63.4N 10.4E  18m
 Issued 12:30 UTC
                                      ▨
-NOW  13:00 UTC  15:00 CEST (UTC+2)   ▨
+NOW  13-14 UTC  15-16 CEST (UTC+2)   ▨
 15.3C SW 2.3m/s 0.4mm/h  heavy rain  ▨
   ····································
   CEST 16  17  18  19  20  21  22  23
@@ -444,13 +444,25 @@ is tall. It is why the words may be trimmed here and nowhere else: on a bad day
 `heavy sleet shwrs+thunder` is twenty-five cells and will not fit, and a reader
 who loses the tail of the words has not lost the weather.
 
-**The times are the moment's own, not the reader's.** A forecast is held for as
-long as met.no asks it to be, so the hour a reader is standing in may have begun
-forty minutes ago. Saying `13:00` at 13:47 lets them see that; saying `13:47`
-would claim a reading we have not got. `Forecast.current` takes the last moment
-that has *started* rather than the nearest — at 13:59 the weather is still the
-one o'clock hour's — and falls forward to the first moment where the whole
-forecast is still ahead, since an answer fetched at 09:58 can begin at 10:00.
+**An hour, said as an hour.** `NOW 13:00` under `Issued 13:29` reads as a
+contradiction and is not one: **met.no's series begins at the hour containing
+the model run** — measured against a real response, `updated_at` 15:29:25 with a
+first moment of 15:00:00 — so a forecast issued at half past can perfectly well
+tell you about the hour that began at the top of it. What was wrong was the word
+`NOW` beside a single time, which promises an instant when the readings are an
+hour's. `13-14` promises the hour, which is what a reader at 13:47 is standing
+in.
+
+Hours alone where the range falls on them, which is everywhere a zone is a whole
+number of hours from UTC; Kolkata is half an hour off and Kathmandu three
+quarters, and there the minutes are shown and the offset in brackets gives way
+to make room. The range is the moment's `covers`, so the six-hourly far end of a
+forecast says six.
+
+`Forecast.current` takes the last moment that has *started* rather than the
+nearest — at 13:59 the weather is still the one o'clock hour's — and falls
+forward to the first moment where the whole forecast is still ahead, since an
+answer fetched at 09:58 can begin at 10:00.
 
 **The weather goes last on its row**, and `RowWriter.runs` trims what will not
 fit, so `heavy sleet shwrs+thunder` costs the end of itself rather than the

@@ -245,3 +245,38 @@ class TestTheHourByHourStrip:
     async def test_the_strip_is_on_the_first_frame_only(self, tmp_path: Path) -> None:
         page = await page_for(hourly(80), tmp_path)
         assert "m/s" not in text_of(page, 1)
+
+
+class TestSayingTheHourAsAnHour:
+    """`NOW 16:00` under `Issued 16:29` read as a contradiction.
+
+    It was not one. met.no's series begins at the hour containing the model
+    run -- measured against a real response, `updated_at` 15:29 with a first
+    moment of 15:00 -- so a forecast issued at half past can perfectly well
+    tell you about the hour that began at the top of it.
+
+    What was wrong was the word `NOW` beside a single time, which promises an
+    instant when the readings are an hour's.
+    """
+
+    async def test_the_hour_is_shown_as_a_range(self, tmp_path: Path) -> None:
+        page = await page_for(hourly(6), tmp_path)
+        start = this_hour()
+        ends = start + timedelta(hours=1)
+        assert f"{start:%H}-{ends:%H} UTC" in text_of(page)
+
+    async def test_and_so_is_the_local_one(self, tmp_path: Path) -> None:
+        page = await page_for(hourly(6), tmp_path)
+        start = this_hour().astimezone(OSLO)
+        ends = start + timedelta(hours=1)
+        assert f"{start:%H}-{ends:%H} CEST" in text_of(page)
+
+    async def test_a_moment_covering_six_hours_says_six(self, tmp_path: Path) -> None:
+        #  The far end of a forecast is six-hourly, and a range that said one
+        #  hour there would be inventing five.
+        page = await page_for(
+            hourly(6, covers=timedelta(hours=6)), tmp_path
+        )
+        start = this_hour()
+        ends = start + timedelta(hours=6)
+        assert f"{start:%H}-{ends:%H} UTC" in text_of(page)

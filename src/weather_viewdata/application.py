@@ -116,8 +116,11 @@ NOW_ROWS: Final = BANDS
 #: rather than charged during it.
 _ATTRIBUTE_CELL: Final = 1
 
-#: Seconds an hour, for saying what period a rainfall figure covers.
+#: Seconds an hour, for saying what period a rainfall figure covers, and an
+#: hour itself for the moment at the end of a forecast, which carries no period
+#: of its own because there is no next moment inside it.
 _SECONDS_AN_HOUR: Final = 3600
+_AN_HOUR: Final = timedelta(hours=1)
 
 #: A cell for the colour the weather is written in. What is left after the
 #: clocks, the temperature and the wind is the weather's -- counted from the
@@ -908,11 +911,13 @@ def _draw_now(
     times explain the labels, so the offset in brackets is the only part that
     has to be said at all.
 
-    **The times shown are the moment's own, not the reader's.** A forecast is
-    held for as long as met.no asks it to be, so the hour a reader is standing
-    in may have begun forty minutes ago; saying 16:00 at 16:47 lets them see
-    that for themselves, where saying 16:47 would claim a reading we have not
-    got.
+    **An hour, said as an hour.** `NOW 16:00` under `Issued 16:29` reads as a
+    contradiction and is not one: met.no's series begins at the hour containing
+    the model run -- measured, `updated_at` 15:29 with a first moment of 15:00
+    -- so a forecast issued at half past can perfectly well tell you about the
+    hour that began at the top of it. What was wrong was the word `NOW` beside
+    a single time, which promises an instant. `16-17` promises the hour, which
+    is what the readings are for and what a reader at 16:45 is standing in.
     """
     room = COLUMNS
     picture = icon_for(moment.symbol)
@@ -926,7 +931,7 @@ def _draw_now(
 
 
 def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
-    """`NOW 16:00 UTC 18:00 CEST (UTC+2)`, in yellow and cyan.
+    """`NOW 16-17 UTC 18-19 CEST (UTC+2)`, in yellow and cyan.
 
     One space between the runs rather than two, because each of them already
     begins with an attribute cell that draws as a space. Two would be a gap of
@@ -937,16 +942,32 @@ def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
     dropped whole where there is no room, the two clocks side by side saying
     the same thing to anyone who cares to subtract.
     """
-    runs = [Run("NOW", Colour.WHITE), Run(f" {moment.at:%H:%M} UTC", Colour.YELLOW)]
+    runs = [Run("NOW", Colour.WHITE), Run(f" {_span(moment, None)} UTC", Colour.YELLOW)]
     if zone is None:
         return runs
     named, offset = _zone_named(zone)
-    local = f" {_local(moment.at, zone)} {named}".rstrip()
+    local = f" {_span(moment, zone)} {named}".rstrip()
     with_offset = f"{local} (UTC{offset})" if offset else local
     spent = sum(_ATTRIBUTE_CELL + cell_count(run.text) for run in runs)
     fits = spent + _ATTRIBUTE_CELL + cell_count(with_offset) <= room
     runs.append(Run(with_offset if fits else local, Colour.CYAN))
     return runs
+
+
+def _span(moment: Moment, zone: ZoneInfo | None) -> str:
+    """The hours a moment covers, in one clock, as a range.
+
+    Hours alone where the range falls on them, which is everywhere a zone is a
+    whole number of hours from UTC. Where it is not -- Kolkata is half an hour
+    off and Kathmandu three quarters -- the minutes are shown, and it is the
+    offset in brackets that gives way to make room for them.
+    """
+    ends = moment.at + (moment.covers or _AN_HOUR)
+    start = moment.at.astimezone(zone) if zone is not None else moment.at
+    finish = ends.astimezone(zone) if zone is not None else ends
+    if start.minute or finish.minute:
+        return f"{start:%H:%M}-{finish:%H:%M}"
+    return f"{start:%H}-{finish:%H}"
 
 
 def _figure_runs(moment: Moment) -> list[Run]:
