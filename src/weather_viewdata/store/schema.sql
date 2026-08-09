@@ -34,9 +34,16 @@ CREATE TABLE IF NOT EXISTS place_keys (
     PRIMARY KEY (key, geoname_id)
 ) WITHOUT ROWID;
 
---  The index the whole feature stands on. A prefix search is a range scan over
---  this, which is why the key is the leading column of the primary key of a
---  WITHOUT ROWID table: the table *is* the index.
-CREATE INDEX IF NOT EXISTS place_keys_by_key ON place_keys (key, geoname_id);
+--  A prefix search is a range scan over the key, and needs no index of its own:
+--  the key leads the primary key of a WITHOUT ROWID table, so the table *is*
+--  the index. An explicit one over the same columns was written here first, and
+--  did nothing but cost every insert twice.
+--
+--  This one is not optional. Re-importing a place deletes the keys it used to
+--  answer to, and every ordering above leads with the key, so that delete was a
+--  full scan of a table heading towards two million rows -- once per place, on
+--  an import of two hundred thousand. Measured as an import that had not
+--  finished after ten minutes; it is seconds with this here.
+CREATE INDEX IF NOT EXISTS place_keys_by_place ON place_keys (geoname_id);
 
 CREATE INDEX IF NOT EXISTS places_by_country ON places (country, rank DESC);

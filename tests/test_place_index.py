@@ -166,3 +166,98 @@ class TestKeepingThePlacesThemselves:
             index.add_places([place(1, "1770", country="AU")])
             assert list(index.matching("A")) == []
             assert index.place(1) is not None
+
+
+class TestWhichOfAPlacesNamesAreIndexed:
+    """The dump's alternate-names column holds three different things.
+
+    Measured against the real `cities500`, not documented anywhere: the column
+    mixes genuine alternate names with IATA airport codes and with romanised
+    transliterations from other writing systems, and it carries no tag saying
+    which is which. `alternateNamesV2` does carry one, at a further 193M.
+
+    Capitalisation turns out to tell them apart. Oslo's column holds `OSL`,
+    `awslw` and `Christiania`, and only the last is a name a reader would key.
+    """
+
+    def test_a_genuine_alternate_name_is_indexed(self) -> None:
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Oslo", alternates=("Christiania",))])
+            assert [found.name for found in index.matching("CHRISTIANIA")] == ["Oslo"]
+
+    def test_an_airport_code_is_not(self) -> None:
+        #  TRO is Taree's, and it outranked both Tromsø and Trondheim on an
+        #  exact match before this rule existed. A reader keying TRO on a
+        #  viewdata terminal is starting a place name, not naming an airport.
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Taree", country="AU", alternates=("TRO", "Tari"))])
+            assert list(index.matching("TRO")) == []
+            assert [found.name for found in index.matching("TARI")] == ["Taree"]
+
+    def test_a_romanisation_from_another_script_is_not(self) -> None:
+        #  Oslo carries `aslw` and `awslw`, from Arabic and Persian. They are
+        #  not wrong, but nobody keys them, and every one of them is a row in
+        #  an index that a keystroke scans.
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Oslo", alternates=("aslw", "awslw", "oseullo"))])
+            assert list(index.matching("ASLW")) == []
+
+    def test_the_place_is_still_found_by_its_own_name(self) -> None:
+        #  Whatever is thrown out of the alternates, the name and the ascii
+        #  name are always indexed, so nothing becomes unreachable.
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Tromsø", alternates=("TOS", "tromsee"))])
+            assert [found.name for found in index.matching("TROMSO")] == ["Tromsø"]
+
+    def test_a_name_in_a_script_without_case_is_no_trouble(self) -> None:
+        #  Neither upper nor lower, so the rule keeps it -- and it then folds
+        #  to nothing keyable and is dropped for that reason instead.
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Oslo", alternates=("オスロ", "奧斯陸"))])
+            assert index.place(1) is not None
+
+    def test_a_name_the_fold_destroys_is_not_indexed(self) -> None:
+        #  Madrid's column carries `Мaдрид` -- Cyrillic with a Latin `a` typed
+        #  into the middle of it. Folding keeps that one letter and throws the
+        #  rest away, which put Madrid under the key `A`, and `A` is the first
+        #  thing anybody types.
+        #
+        #  A fold that loses most of a name has not folded it; it has destroyed
+        #  it, and what is left is not a name the place goes by.
+        with Index.in_memory() as index:
+            index.add_places([place(1, "Madrid", country="ES", alternates=("Мaдрид",))])
+            assert list(index.matching("A")) == []
+            assert [found.name for found in index.matching("MADRID")] == ["Madrid"]
+
+
+class TestExactnessIsWorthSomethingRatherThanEverything:
+    """A hamlet with a three-letter alias should not outrank a capital.
+
+    Exactness began as an absolute tiebreak, which is right for BERGEN against
+    Bergenfield and wrong for everything else: Lognes carries the alternate
+    `Lon'` and beat London, and Beure carries `Ber` and beat Bergen. So it is a
+    bonus added to the ranking rather than a sort before it.
+    """
+
+    def test_an_exact_match_still_wins_between_comparable_places(self) -> None:
+        with Index.in_memory() as index:
+            index.add_places(
+                [BERGEN, place(1, "Bergenfield", country="US", population=9000000)]
+            )
+            assert [found.name for found in index.matching("BERGEN")][0] == "Bergen"
+
+    def test_but_not_between_a_hamlet_and_a_city(self) -> None:
+        with Index.in_memory() as index:
+            index.add_places([
+                place(1, "London", country="GB", population=8961989, feature_code="PPLC"),
+                place(2, "Lognes", country="FR", population=15519, alternates=("Lon'",)),
+            ])
+            assert [found.name for found in index.matching("LON")][0] == "London"
+
+    def test_nor_between_a_village_and_a_city(self) -> None:
+        with Index.in_memory() as index:
+            index.add_places([
+                BERGEN,
+                place(2, "Beure", country="FR", population=1430, alternates=("Ber",)),
+            ])
+            assert [found.name for found in index.matching("BER")][0] == "Bergen"
