@@ -40,7 +40,6 @@ from sextile import (
     Sextile,
     Suggest,
     draw_form,
-    keys,
 )
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS
@@ -180,15 +179,11 @@ async def by_name(request: PageRequest) -> Page:
         page_number=request.address.frame_number(0),
         prompt=render_footer(
             [
+                #  What `#` does is marked against the suggestion it would
+                #  take, which is where a reader is looking anyway -- so the
+                #  row has the room to say the rest in words.
                 FooterItem("A-Z", "type a name", Priority.PRIMARY),
                 FooterItem("1-3", "choose one", Priority.PRIMARY),
-                #  Redundant in the strict sense -- it does what 1 does -- so
-                #  it is the first thing off a crowded row. Named all the same,
-                #  because a reader who has typed something will press it
-                #  whether or not anybody told them to.
-                FooterItem(
-                    keys.CONVENTIONAL_NEXT_FRAME, "the first", Priority.REDUNDANT
-                ),
                 FooterItem(HOME_KEY, "menu", Priority.ESSENTIAL),
             ],
             ROOM,
