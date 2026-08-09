@@ -36,7 +36,6 @@ from sextile.addressing import keyed
 from sextile.middleware import log_pages
 from sextile.templates import Menu, MenuItem, Prose, Template
 from sextile.viewdata.canvas import Canvas, RowWriter
-from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred, fitted
 from sextile.viewdata.frame import COLUMNS
@@ -387,6 +386,9 @@ def _forecast_page(
         entries=list(forecast.moments),
         home=app.index,
         preamble=_preamble(place, forecast, near),
+        #  On every frame: a reader on frame c looking at four columns of
+        #  figures has no way back to the words that say what they are.
+        headings=_HEADINGS,
         zone=_zone_of(place),
     ).build(address)
 
@@ -407,22 +409,6 @@ class ForecastTable(Template[Moment]):
     def __init__(self, *, zone: ZoneInfo | None = None, **wanted: object) -> None:
         super().__init__(**wanted)  # type: ignore[arg-type]
         self.zone = zone
-
-    def _draw_preamble(self, canvas: Canvas) -> int:
-        """The lead-in, with the column headings against the rows they label.
-
-        The base class puts a blank row between the preamble and the entries,
-        which is right when the preamble is prose and wrong when the last thing
-        above the table is its headings. The same number of rows either way, so
-        the pagination is untouched.
-        """
-        row = CONTENT_FIRST_ROW
-        for line in self.preamble:
-            if line:
-                canvas.row(row).text(fitted(line, COLUMNS - 1), Colour.WHITE)
-            row += 1
-        canvas.row(row).text(_HEADINGS, Colour.CYAN)
-        return row + 1
 
     def draw(self, row: RowWriter, entry: Moment, digit: str | None) -> None:
         del digit  # a forecast numbers nothing
