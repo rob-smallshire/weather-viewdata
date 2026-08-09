@@ -31,13 +31,25 @@ from pathlib import Path
 from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sextile import Page, PageAddress, PageFrame, PageRequest, PageRoute, Sextile
+from sextile import (
+    Page,
+    PageAddress,
+    PageFrame,
+    PageRequest,
+    PageRoute,
+    Sextile,
+    Suggest,
+    draw_form,
+)
 from sextile.addressing import keyed
+from sextile.forms import SUGGESTIONS
 from sextile.middleware import log_pages
-from sextile.templates import Menu, MenuItem, Prose, Template
+from sextile.templates import HOME_KEY, Entry, Menu, MenuItem, Prose, Template
 from sextile.viewdata.canvas import Canvas, RowWriter
+from sextile.viewdata.chrome import CONTENT_FIRST_ROW, draw_chrome
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred, fitted
+from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.model import Forecast, Moment
@@ -55,6 +67,15 @@ DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
 #: row rather than worked out here, an attribute costing a cell and
 #: hand-arithmetic about that having been wrong the first time.
 _COLOUR_CELL: Final = 1
+
+#: What this caller's search field is held under, in what the caller has
+#: accumulated. The session's, not the service's: it is one reader's typing and
+#: lasts exactly as long as their line.
+SEARCH: Final = "search"
+
+#: Where the field and its suggestions sit on the search page.
+FIELD_ROW: Final = CONTENT_FIRST_ROW + 2
+FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
 
 #: What the place index and the forecast source are held under, in what the
 #: service holds. Named constants rather than literals at each use, since a
@@ -137,19 +158,74 @@ async def main(request: PageRequest) -> Page:
 
 
 async def by_name(request: PageRequest) -> Page:
+    """A field, with the best three places beneath it as the reader types.
+
+    The form lives in the session rather than in this function, because it is
+    one caller's typing and lasts as long as their line. It survives leaving
+    the page and coming back, which is what a reader who has just looked at one
+    of three candidates wants: the word is still there to be refined rather
+    than typed again.
+    """
     app = _service(request)
-    return Prose.of(
-        "Key the name of a town and this service will find it.",
-        "Letters only. There is no space bar and no accent on a viewdata "
-        "keypad, so run the words together and leave the accents off: NEWYORK "
-        "finds New York, TROMSO finds Tromso, MUNICH finds Munchen.",
-        f"{_places(request.service).held():,} places are held: everywhere with "
-        "500 inhabitants or more, and every seat of local government whatever "
-        "its size.",
-        "Where several places share a name, the largest is offered.",
+    form = request.session.get(SEARCH)
+    if not isinstance(form, Suggest):
+        form = _field(app, _places(request.service))
+        request.session[SEARCH] = form
+
+    canvas = Canvas()
+    draw_chrome(
+        canvas,
         title=app.describe(request.address).upper(),
-        home=app.index,
-    ).build(request.address)
+        page_number=request.address.frame_number(0),
+        prompt=render_footer(
+            [
+                FooterItem("A-Z", "type a name", Priority.PRIMARY),
+                FooterItem("1-3", "choose one", Priority.PRIMARY),
+                FooterItem(HOME_KEY, "menu", Priority.ESSENTIAL),
+            ],
+            ROOM,
+        ),
+    )
+    canvas.row(CONTENT_FIRST_ROW).text("Key a place name.", Colour.WHITE)
+    draw_form(canvas.frame, form)
+    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 1).text(
+        "Letters only: no space bar, no accents.", Colour.GREEN
+    )
+    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 2).text(
+        "NEWYORK, TROMSO, MUNICH.", Colour.GREEN
+    )
+    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 4).text(
+        f"{_places(request.service).held():,} places held.", Colour.WHITE
+    )
+    return Page(
+        frames=(
+            PageFrame(frame=canvas.frame, form=form, choices={HOME_KEY: app.index}),
+        )
+    )
+
+
+def _field(app: Sextile, places: Index) -> Suggest:
+    """The search field, told where to look and where its digits lead."""
+
+    async def look_up(typed: str) -> Sequence[Entry]:
+        found = await asyncio.to_thread(places.matching, typed, SUGGESTIONS)
+        return [
+            MenuItem(
+                text=place.name,
+                detail=place.country,
+                destination=app.address_for("place", geoname_id=place.geoname_id),
+            )
+            for place in found
+        ]
+
+    return Suggest(
+        look_up=look_up,
+        field_row=FIELD_ROW,
+        first_row=FIRST_SUGGESTION_ROW,
+        label="PLACE:",
+        limit=SUGGESTIONS,
+        empty="No place of that name is held.",
+    )
 
 
 async def by_position(request: PageRequest) -> Page:
