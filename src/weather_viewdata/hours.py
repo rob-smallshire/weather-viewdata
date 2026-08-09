@@ -22,6 +22,7 @@ below it. Eight.
        ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████   colder, in cyan
     12 ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████
     mm ▄▄▄▄        ▂▂▂▂████████
+
    m/s  2   2   2   2   1   1   1   1
      5 ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████   the wind, in magenta
        ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████
@@ -102,7 +103,10 @@ _DEGREES_ROW: Final = _PICTURE_ROW + BANDS
 _WARMTH_ROW: Final = _DEGREES_ROW + 1
 _WARMTH_ROWS: Final = 3
 _RAIN_ROW: Final = _WARMTH_ROW + _WARMTH_ROWS
-_SPEED_ROW: Final = _RAIN_ROW + 1
+#  A blank row between what falls and what blows. They are two subjects, and
+#  set solid the eight rows read as one block of marks; the row for it is the
+#  one the second rule gave back.
+_SPEED_ROW: Final = _RAIN_ROW + 2
 _GUST_ROW: Final = _SPEED_ROW + 1
 _GUST_ROWS: Final = 2
 _QUARTER_ROW: Final = _GUST_ROW + _GUST_ROWS

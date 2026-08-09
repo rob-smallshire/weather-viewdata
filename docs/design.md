@@ -534,6 +534,7 @@ anything.
        ░░░░░░░▝▀▚▄▄▄▄▄▄▄▄▄▄▞▀▀▘░░░░░░    cold, in cyan
     -6 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
     mm ▄▄▄▄▆▆▆▆████▆▆▆▆▄▄▄▄
+
    m/s  3   6   9  12   8   4   2   1
     12        ▗▄▞▀▀▀▀▚▄▄▖                the wind, in magenta
       ▀▀▀▀▀▀▀▘        ░░░▀▀▀▀▀▚▄▄▄▄▄▄
@@ -599,8 +600,12 @@ The rule that is there is light because the chrome's is a bar, and a bar belongs
 where a page ends — between two pieces of content it reads as a second frame
 beginning, so `thin_rule` is the same construction with a sixth of the ink.
 
-**The strip fills the frame, so the table begins on the next one.** Fourteen rows
-of strip and five of lead-in leaves one blank above the chrome, which is why the issue time moved
+**A blank row between what falls and what blows.** They are two subjects, and
+set solid the eight rows read as one block of marks. It is the row the second
+rule gave back.
+
+**The strip fills the frame, so the table begins on the next one.** Fifteen rows
+of strip and five of lead-in is exactly twenty, which is why the issue time moved
 into the weather-now block: the picture there is three rows tall and the first of
 them was blank.
 
