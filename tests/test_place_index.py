@@ -242,7 +242,18 @@ class TestTheNearestPlaceToAPoint:
     def test_a_point_in_a_town_finds_that_town(self, index: Index) -> None:
         found = index.nearest(63.43, 10.40)
         assert found is not None
-        assert found.name == "Trondheim"
+        assert found.place.name == "Trondheim"
+
+    def test_and_says_how_far_off_it_is(self, index: Index) -> None:
+        #  A bound of one degree is 111km, so "near" is not a thing this can
+        #  say without a number beside it.
+        here = index.nearest(63.43, 10.40)
+        assert here is not None and here.kilometres < 1
+
+    def test_a_place_a_long_way_off_says_so(self, index: Index) -> None:
+        far = index.nearest(64.2, 10.40)
+        assert far is not None
+        assert 80 < far.kilometres < 90, far.kilometres
 
     def test_a_point_between_two_finds_the_closer(self) -> None:
         with Index.in_memory() as index:
@@ -252,7 +263,7 @@ class TestTheNearestPlaceToAPoint:
             ])
             found = index.nearest(60.1, 5.0)
             assert found is not None
-            assert found.name == "Near"
+            assert found.place.name == "Near"
 
     def test_size_does_not_decide_it(self) -> None:
         #  Unlike a search. The nearest place is a question about distance, and
@@ -264,7 +275,7 @@ class TestTheNearestPlaceToAPoint:
             ])
             found = index.nearest(60.02, 5.0)
             assert found is not None
-            assert found.name == "Hamlet"
+            assert found.place.name == "Hamlet"
 
     def test_longitude_is_scaled_by_the_latitude(self) -> None:
         #  A degree of longitude is half a degree of latitude at sixty north.
@@ -277,7 +288,7 @@ class TestTheNearestPlaceToAPoint:
             ])
             found = index.nearest(60.0, 5.0)
             assert found is not None
-            assert found.name == "East"
+            assert found.place.name == "East"
 
     def test_the_middle_of_an_ocean_finds_nothing(self, index: Index) -> None:
         #  Rather than the nearest place on earth, which could be a thousand

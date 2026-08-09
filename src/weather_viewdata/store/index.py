@@ -24,6 +24,7 @@ import sqlite3
 import threading
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import Final, Self
@@ -251,12 +252,17 @@ class Index:
             ).fetchone()
         return _place_from(row) if row is not None else None
 
-    def nearest(self, latitude: float, longitude: float) -> Place | None:
+    def nearest(self, latitude: float, longitude: float) -> Nearby | None:
         """The closest place to a point, or None if nothing is close.
 
         For a coordinate page, which has no name and no timezone of its own and
         must borrow both. Unlike a search this is purely about distance: a big
         city an hour away is the wrong answer to "what is near here".
+
+        **With how far away it is**, because a bound of one degree is 111km and
+        a place that far off is not "near" anything. The reader is told the
+        distance and can judge it; a service that said `near Trowbridge` when
+        Trowbridge was ninety kilometres away would be lying politely.
 
         Bounded to a degree in each direction, so the middle of the Pacific
         finds nothing rather than somewhere a thousand miles off with the wrong
@@ -288,7 +294,10 @@ class Index:
                     "scale": scale,
                 },
             ).fetchone()
-        return _place_from(row) if row is not None else None
+        if row is None:
+            return None
+        found = _place_from(row)
+        return Nearby(place=found, kilometres=_kilometres(latitude, longitude, found))
 
     @property
     def stale(self) -> bool:
@@ -315,6 +324,37 @@ class Index:
         with self._lock:
             (count,) = self._connection.execute("SELECT COUNT(*) FROM places").fetchone()
         return int(count)
+
+
+#: Mean radius, which is what a great-circle distance is measured on.
+_EARTH_KM: Final = 6371.0
+
+
+@dataclass(frozen=True)
+class Nearby:
+    """A place, and how far it is from where the reader asked about."""
+
+    place: Place
+    kilometres: float
+
+
+def _kilometres(latitude: float, longitude: float, place: Place) -> float:
+    """Great-circle distance, which at these ranges is barely worth the sine.
+
+    Worth it anyway: the flat approximation the query orders by is fine for
+    ordering and wrong by a few percent for telling somebody a number, and a
+    number on the screen is a number somebody may act on.
+    """
+    first, second = math.radians(latitude), math.radians(place.latitude)
+    apart = math.radians(place.longitude - longitude)
+    angle = math.acos(
+        min(
+            1.0,
+            math.sin(first) * math.sin(second)
+            + math.cos(first) * math.cos(second) * math.cos(apart),
+        )
+    )
+    return _EARTH_KM * angle
 
 
 def _keys_for(place: Place) -> set[str]:

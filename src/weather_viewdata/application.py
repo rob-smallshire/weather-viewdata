@@ -24,7 +24,7 @@ makes the order things were registered in unobservable.
 """
 
 import asyncio
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,9 +40,10 @@ from sextile import (
     Sextile,
     Suggest,
     draw_form,
+    keys,
 )
 from sextile.addressing import keyed
-from sextile.forms import SUGGESTIONS
+from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.middleware import log_pages
 from sextile.templates import HOME_KEY, Entry, Menu, MenuItem, Prose, Template
 from sextile.viewdata.canvas import Canvas, RowWriter
@@ -55,7 +56,7 @@ from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
-from weather_viewdata.store import Index
+from weather_viewdata.store import Index, Nearby
 from weather_viewdata.symbols import in_words
 
 SERVICE_NAME: Final = "WEATHER"
@@ -76,6 +77,16 @@ SEARCH: Final = "search"
 #: Where the field and its suggestions sit on the search page.
 FIELD_ROW: Final = CONTENT_FIRST_ROW + 2
 FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
+
+#: What this caller's position form is held under.
+POSITION: Final = "position"
+
+#: Where the position form says what is nearest to what has been keyed.
+NOTE_ROW: Final = FIELD_ROW + 3
+
+#: Cells a coordinate may take. `-179.9` is six and a hemisphere letter makes
+#: seven; the rest is room to be wrong in and see it.
+_POSITION_CELLS: Final = 8
 
 #: What the place index and the forecast source are held under, in what the
 #: service holds. Named constants rather than literals at each use, since a
@@ -245,20 +256,122 @@ def _field(app: Sextile, places: Index) -> Suggest:
 
 
 async def by_position(request: PageRequest) -> Page:
+    """Two fields, for anywhere on earth whether anybody lives there or not.
+
+    `0` is not the way out here and the footer does not pretend otherwise: on
+    a page where digits are data, a `0` that went to the menu would be a key
+    that ate a coordinate.
+    """
     app = _service(request)
-    return Prose.of(
-        "Any point on earth has a page number, whether anybody lives there or "
-        "not.",
-        "Key 42, then four digits of latitude and four of longitude. Add 90 to "
-        "the latitude and 180 to the longitude first, so that neither is "
-        "negative, and give each to a tenth of a degree.",
-        "York is 54.0 north and 1.1 west. That makes 1440 and 1789, so York is "
-        "*42 1440 1789#, without the spaces.",
-        "A tenth of a degree is about 11km north to south, and less than that "
-        "east to west away from the equator.",
+    form = request.session.get(POSITION)
+    if not isinstance(form, Fields):
+        form = _position_fields(app, _places(request.service))
+        request.session[POSITION] = form
+
+    canvas = Canvas()
+    draw_chrome(
+        canvas,
         title=app.describe(request.address).upper(),
-        home=app.index,
-    ).build(request.address)
+        page_number=request.address.frame_number(0),
+        prompt=render_footer(
+            [
+                FooterItem("TAB", "next field", Priority.PRIMARY),
+                FooterItem(keys.CONVENTIONAL_NEXT_FRAME, "go there", Priority.PRIMARY),
+                FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),
+            ],
+            ROOM,
+        ),
+    )
+    canvas.row(CONTENT_FIRST_ROW).text("Key a position in degrees,", Colour.WHITE)
+    canvas.row(CONTENT_FIRST_ROW + 1).text("to one decimal place.", Colour.WHITE)
+    draw_form(canvas.frame, form)
+    canvas.row(NOTE_ROW + 2).text("Either way round:", Colour.GREEN)
+    canvas.row(NOTE_ROW + 3).text("  54.0N or 54.0,  1.1W or -1.1", Colour.GREEN)
+    return Page(frames=(PageFrame(frame=canvas.frame, form=form),))
+
+
+def _position_fields(app: Sextile, places: Index) -> Fields:
+    """The two coordinate fields, and what they add up to."""
+
+    async def nearest(values: Mapping[str, str]) -> str:
+        where = _position(values)
+        if where is None:
+            return ""
+        found = await asyncio.to_thread(places.nearest, *where)
+        if found is None:
+            #  Somewhere with nothing within a degree, which is most of the
+            #  earth's surface. Said rather than left blank: a reader who has
+            #  keyed a valid position should not wonder whether it took.
+            return "Nowhere within 111km."
+        return fitted(
+            f"{found.kilometres:.0f}km from {found.place.name}", COLUMNS - 1
+        )
+
+    def complete(values: Mapping[str, str]) -> PageAddress | None:
+        where = _position(values)
+        if where is None:
+            return None
+        return app.address_for("point", lat=where[0], lon=where[1])
+
+    return Fields(
+        fields=[
+            Field(
+                name="latitude",
+                label="LATITUDE",
+                row=FIELD_ROW,
+                takes=_takes("NS"),
+                width=_POSITION_CELLS,
+            ),
+            Field(
+                name="longitude",
+                label="LONGITUDE",
+                row=FIELD_ROW + 1,
+                takes=_takes("EW"),
+                width=_POSITION_CELLS,
+            ),
+        ],
+        complete=complete,
+        note=nearest,
+        note_row=NOTE_ROW,
+    )
+
+
+def _takes(hemispheres: str) -> Callable[[str], bool]:
+    """What belongs in a coordinate field.
+
+    Both spellings, because both are in use and a reader should not have to
+    learn which this service prefers: a leading sign, or a trailing hemisphere.
+    """
+
+    def takes(key: str) -> bool:
+        return key.isdigit() or key in {".", "+", "-", *hemispheres}
+
+    return takes
+
+
+def _degrees_from(written: str, hemispheres: str) -> float | None:
+    """One coordinate, written either way round, or None if it is not one."""
+    said = written.strip().upper()
+    if not said:
+        return None
+    negative = said.startswith("-") or said.endswith(hemispheres[1])
+    figures = said.lstrip("+-").rstrip(hemispheres)
+    try:
+        degrees = float(figures)
+    except ValueError:
+        return None
+    return -degrees if negative else degrees
+
+
+def _position(values: Mapping[str, str]) -> tuple[float, float] | None:
+    """Both fields as degrees, or None while either is not a coordinate."""
+    latitude = _degrees_from(values.get("latitude", ""), "NS")
+    longitude = _degrees_from(values.get("longitude", ""), "EW")
+    if latitude is None or longitude is None:
+        return None
+    if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+        return None
+    return latitude, longitude
 
 
 async def place(request: PageRequest, geoname_id: int) -> Page | None:
@@ -468,7 +581,7 @@ def _forecast_page(
     place: Place,
     forecast: Forecast | None,
     *,
-    near: Place | None = None,
+    near: "Nearby | None" = None,
 ) -> Page:
     """One place's weather, dealt into frames.
 
@@ -535,7 +648,9 @@ def _heading(place: Place) -> str:
     return fitted(place.name.upper(), COLUMNS - 12)
 
 
-def _preamble(place: Place, forecast: Forecast, near: Place | None) -> Sequence[str]:
+def _preamble(
+    place: Place, forecast: Forecast, near: "Nearby | None"
+) -> Sequence[str]:
     """What is being forecast, where it is, and how old it is.
 
     The issue time is worth a row of twenty. met.no runs its models a few times
@@ -549,7 +664,7 @@ def _preamble(place: Place, forecast: Forecast, near: Place | None) -> Sequence[
     ]
 
 
-def _where(place: Place, near: Place | None) -> str:
+def _where(place: Place, near: "Nearby | None") -> str:
     """The position, and for a point the nearest place we know of.
 
     A coordinate page cannot claim to be a town, so it says what it is -- a
@@ -559,7 +674,12 @@ def _where(place: Place, near: Place | None) -> str:
     if place.elevation is not None:
         position += f"  {place.elevation}m"
     if near is not None:
-        return fitted(f"{position}  near {near.name}", COLUMNS - 1)
+        #  With the distance, because the nearest place may be ninety
+        #  kilometres away and "near" would then be a polite lie.
+        return fitted(
+            f"{position}  {near.kilometres:.0f}km from {near.place.name}",
+            COLUMNS - 1,
+        )
     return fitted(f"{place.country}  {position}", COLUMNS - 1)
 
 
@@ -605,7 +725,7 @@ def _zone_of(place: Place) -> ZoneInfo | None:
         return None
 
 
-def _point_place(lat: float, lon: float, near: Place | None) -> Place:
+def _point_place(lat: float, lon: float, near: "Nearby | None") -> Place:
     """A position, dressed as somewhere a forecast can be asked for.
 
     It borrows a clock from the nearest known place, because timezone borders
@@ -626,7 +746,7 @@ def _point_place(lat: float, lon: float, near: Place | None) -> Place:
         admin1="",
         population=0,
         elevation=None,
-        timezone=near.timezone if near is not None else "UTC",
+        timezone=near.place.timezone if near is not None else "UTC",
     )
 
 
