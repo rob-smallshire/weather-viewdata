@@ -91,13 +91,18 @@ page number rather than two.
 
 SQLite, two tables. Places, and every folded string that finds one.
 
-**The fold is to A–Z and nothing else.** The terminal decides the alphabet
-twice over: Sextile's parser admits only alphanumerics, and on a search frame
-the digits are spoken for by the suggestions. So `TROMSO` finds Tromsø,
-`NEWYORK` finds New York, `MUNICH` finds München — and a digit is dropped from
-the *key* rather than the place being dropped from the index, so `Quận 1` is
-still findable by keying `QUAN`. What is folded is never the data: the screen
-still says Tromsø.
+**The fold is to A–Z, and it is taken from what the screen shows.** Sextile
+already reduces text to what the G0 set can draw — it must, or a frame would
+carry bytes the hardware cannot display — and a reader keys what they see. So
+the search key is that same fold with everything but the letters dropped, and
+the two cannot drift apart. They did once, when this module had a table of its
+own: it knew four letters the framework's did not, so `Đakovo` was findable
+while the screen said `?akovo`.
+
+`TROMSO` therefore finds Tromsø and `MUNCHEN` finds München, because that is
+how the screen spells them. Digits go too — on a search frame they are spoken
+for by the suggestions — so `Quận 1` is found by keying `QUAN`. What is folded
+is never the data: the place is still held, forecast and *called* Tromsø.
 
 **The ranking is computed on the way in, never at query time.** A search frame
 repaints while the reader is still typing, so a keystroke may cost an indexed
@@ -119,22 +124,47 @@ happen to be in one country, so home should break a tie between comparable
 places and should not put Boston in Lincolnshire above Boston in Massachusetts.
 A bonus of a thousandfold did exactly that.
 
-### What the dump does not tell you
+### Only a place's own name is indexed
 
-The alternate-names column holds three different things and says which is which
-nowhere: genuine names, IATA airport codes, and romanisations from other
-scripts. Oslo's holds `Christiania`, `OSL` and `awslw`.
+The dump's alternate-names column was indexed once, and it was a mistake that
+took three rounds of filtering to stop being obviously wrong and never stopped
+being wrong at all. It holds genuine names, IATA airport codes and romanisations
+from other writing systems, with nothing to say which is which — Oslo's holds
+`Christiania`, `OSL` and `awslw` — so `TRO` offered Taree, whose airport code it
+is, and `A` offered Oslo by way of `Asloa`. Madrid arrived under the key `A`,
+from an alternate reading `Мaдрид`: Cyrillic with a Latin `a` typed into the
+middle of it.
 
-**Capitalisation separates them**, measured against the real `cities500` and
-documented nowhere — so it is a rule of thumb, and `alternateNamesV2` carries a
-proper language tag at a further 193M if it ever misleads. Before the rule,
-`TRO` returned Taree in Australia, whose airport code it is, ahead of both
-Tromsø and Trondheim.
+**What a reader types is now a prefix of the place's own name and nothing
+else**, so every suggestion visibly begins with what they keyed. All three
+filtering rules went with the column, and the index is 57% smaller: 238,498
+keys against 560,552.
 
-And a fold that keeps a sixth of a name has destroyed it rather than folded it.
-Madrid's column carries `Мaдрид` — Cyrillic with a Latin `a` typed into the
-middle — which put Madrid under the key `A`, and `A` is the first thing anybody
-types.
+What that cost is smaller than it sounds. GeoNames' own `name` is already the
+name an English reader knows — Munich, Vienna, Prague, Rome, Moscow, Tokyo and
+Beijing are all filed under exactly those. Köln is the exception, so `COLOGNE`
+finds nothing, and `MUNCHEN` now finds Münchenstein rather than Munich, which
+is not spelled that way in the dump.
+
+Both want `alternateNamesV2`, whose entries carry a language tag: index the
+English and local-language ones and neither problem arises. Noted in
+[open-questions.md](../../../docs/open-questions.md) as the obvious next step if
+anybody misses Cologne.
+
+### An index built by older rules is refused
+
+The index is derived data and the rules that derive it live in code, so changing
+them does nothing until somebody re-imports — and until they do, the service
+answers by the old rules with nothing whatever to say so. That is exactly what
+happened when alternate names stopped being indexed: keying `A` went on offering
+Cairo long after the code had stopped meaning it to.
+
+So the index records which rules built it, in SQLite's own `user_version`, and
+the service refuses to start on a stale one and says what to run. A refusal
+rather than a warning, because the failure mode is not a crash but a wrong
+answer given confidently on a line slow enough that nobody would question it.
+Raise `store.RULES` whenever the folding or the ranking changes; nothing checks
+that you remembered.
 
 ## Politeness
 
@@ -205,14 +235,92 @@ The answer was to follow Starlette: a lifespan yielding what the service holds,
 `request.application`, pages declared as data, and a middleware stack. See
 [sextile/docs/design.md](../../sextile/docs/design.md).
 
-## Still to come
+## The two search pages
 
-The **search page** is what all of this was clearing the way for: a field the
-reader types into, with the best three places beneath it on the digits. Three
-rather than nine because the wire says so — nine rows repainted per keystroke is
-2.9 seconds at 1200 baud even trimmed and diffed, and three is 0.8. It needs a
-form seam in the framework, and a Beebium spike
-(`docs/spikes/spike_suggestion_block.py`) is written and not yet run.
+Both are forms: pages a reader types into, which is the one thing a viewdata
+page could not previously do. The seam is the framework's — see
+[sextile/docs/design.md](../../sextile/docs/design.md) — and what is here is
+what a weather service does with it.
 
-Until then `*YORK#` works: a word the numbering does not know is offered to the
-index, which is what `on_unresolved` is for.
+### 3, finding a place by name
+
+A field, and the best three matching places beneath it, each on a digit. Typing
+narrows them; `1`–`3` choose one; `#` takes the first, marked against it.
+
+**Three and not nine, and the wire decided it.** Measured on real Commstar in
+[spike_suggestion_block.py](../../../docs/spikes/spike_suggestion_block.py):
+nine rows of name, country and population is 346 bytes even trimmed and
+diffed — nearly three seconds at 1200 baud, where a reader types two characters
+a second — and three rows of name and country is 121. Then measured again
+through the real page and a real session in
+[spike_search_page.py](../../../docs/spikes/spike_search_page.py): keying
+TRONDHEIM cost 107 bytes for the first letter and **one byte** for seven of the
+nine, because a keystroke that changes nothing but the cell under the cursor
+sends that character and nothing else.
+
+The form lives in the session rather than in the handler: it is one caller's
+typing and lasts exactly as long as their line. It survives leaving the page
+and coming back, which is what a reader who has just looked at one of three
+candidates wants.
+
+`*YORK#` still works too — a word the numbering does not know is offered to the
+index, which is what `on_unresolved` is for — and reaches the same page as
+keying it into the field.
+
+### 4, finding a point by position
+
+Two fields, latitude and longitude, in degrees to one decimal place. The
+interaction is what a viewdata keypad leaves room for and that is less than it
+looks:
+
+| | |
+|---|---|
+| digits, `.`, `+`, `-`, `N S E W` | type into the live field |
+| TAB, and the forward arrows | the next field, coming round to the first |
+| the back arrows | the field before |
+| RETURN | finishes a field; finishes the form from the last |
+| DELETE | rubs out |
+| `*1#` | the menu — see below |
+
+**Nothing advances by itself.** A field that jumped when it thought it had
+enough would put the caret where the reader did not, and with two ways of
+writing a coordinate — one ending in a letter and one not — it could not be
+consistent about when.
+
+**Both spellings are taken and one is advertised.** `54.0S` and `-54.0` both
+work; the advice under each field shows only the hemispheric form. A field's
+advice sits under it on every frame, so it is read far more often than it is
+needed: showing one way teaches the reader who does not know, and taking both
+serves the reader who does. The signs are therefore *undocumented rather than
+unsupported*, which is said where somebody might later tidy the parser to match
+the hint.
+
+**`0` is not the way out here**, which no other page in this workspace can say.
+Digits are data, so a `0` that went to the menu would be a key that ate a
+coordinate. The footer says `*1#`, which is what a frame naming only the keys
+that work amounts to when the convention cannot be kept.
+
+Beneath the fields it says how far the nearest known place is — `2km from
+Skelton` — rather than calling it near. `Index.nearest` bounds its search at a
+degree, which is 111km, and a service that said "near Trowbridge" about
+somewhere ninety kilometres off would be lying politely. Nowhere within a degree
+says that too, rather than leaving a reader wondering whether the keying took.
+
+### What the reader is shown, and what it cost
+
+The live field is a bar of white on blue — the command line's own colours, so a
+reader learns "this is where typing goes" once. It is exactly as wide as what
+fits in it, six cells being the longest a coordinate gets either way it is
+written.
+
+It also begins two cells before anything can be keyed into it, and no
+arrangement avoids that: `NEW_BACKGROUND` takes the current foreground as the
+background, so the order is forced and two of the three cells are already inside
+the new colour. Written up in
+[viewdata-encoding.md](../../sextile/docs/viewdata-encoding.md).
+
+What RETURN does is marked beside the field where it does it — `# forecast`
+against the longitude — and only while there is somewhere to send the reader.
+The same rule as the suggestion list: a page that offered to go somewhere and
+then did nothing would be worse than one that offered nothing, because on a slow
+line a reader cannot tell a dead key from a slow one.
