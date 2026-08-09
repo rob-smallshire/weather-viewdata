@@ -538,7 +538,6 @@ anything.
     12        ▗▄▞▀▀▀▀▚▄▄▖                the wind, in magenta
       ▀▀▀▀▀▀▀▘        ░░░▀▀▀▀▀▚▄▄▄▄▄▄
    dir NE   E  SE   S  SW   W  NW   N
-  ····································
 ```
 
 **Eight hours, and the arithmetic is forced rather than chosen.** An hour column
@@ -594,12 +593,14 @@ in the left margin, where a blank cell was going to be anyway, which is exactly
 enough for the abbreviations: `CEST`, `AEDT`, `NZDT`. A zone that calls itself
 `+12` has no abbreviation to show and gets `loc`.
 
-**A light rule top and bottom.** The chrome's rule is a bar and belongs where the
-page ends; between two things that are both content a bar reads as a second
-frame beginning, so `thin_rule` is the same construction with a sixth of the ink.
+**A light rule above, and none below.** The chrome's own rule closes the frame a
+row later, and two lines together read as a border rather than as a division.
+The rule that is there is light because the chrome's is a bar, and a bar belongs
+where a page ends — between two pieces of content it reads as a second frame
+beginning, so `thin_rule` is the same construction with a sixth of the ink.
 
-**The strip fills the frame, so the table begins on the next one.** Fifteen rows
-of strip and five of lead-in is exactly twenty, which is why the issue time moved
+**The strip fills the frame, so the table begins on the next one.** Fourteen rows
+of strip and five of lead-in leaves one blank above the chrome, which is why the issue time moved
 into the weather-now block: the picture there is three rows tall and the first of
 them was blank.
 

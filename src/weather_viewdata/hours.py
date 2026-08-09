@@ -26,7 +26,6 @@ below it. Eight.
      5 ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████   the wind, in magenta
        ▁▁▂▂▃▃▄▄▅▅▆▆▇▇██████████████████
    dir  S   S  SW  SW   W   W  NW  NW
-  ····································
 ```
 
 **A chart takes all four cells of an hour, where a picture takes three.** The
@@ -54,9 +53,11 @@ one: a strip is for glancing at, and two clocks in three cells is neither. The
 label says *which* clock -- `CEST`, the zone's own abbreviation -- and the
 hours are drawn in the cyan that has meant local since the first forecast page.
 
-A light rule top and bottom. The chrome's rule is a bar and belongs where the
-page ends; between two things that are both content a bar reads as a second
-frame beginning, so this is the same construction with a sixth of the ink.
+A light rule above, and none below: the chrome's own rule closes the frame a
+row later, and two lines together read as a border rather than as a division.
+The rule that is there is light because the chrome's is a bar, and a bar
+belongs where a page ends -- between two things that are both content it reads
+as a second frame beginning.
 """
 
 from datetime import datetime
@@ -107,8 +108,10 @@ _GUST_ROWS: Final = 2
 _QUARTER_ROW: Final = _GUST_ROW + _GUST_ROWS
 BAND_ROWS: Final = _QUARTER_ROW + 1
 
-#: Rows the strip takes, its two rules included, and hours it shows.
-_RULES: Final = 2
+#: Rows the strip takes, its rule included, and hours it shows. One rule and
+#: not two: the strip fills the frame, so a rule under the last row of it would
+#: sit against the chrome's own and read as a double line.
+_RULES: Final = 1
 STRIP_ROWS: Final = BAND_ROWS + _RULES
 HOURS_SHOWN: Final = HOURS_ACROSS
 
@@ -147,9 +150,8 @@ def draw_strip(
     zone: ZoneInfo | None,
     clock: str,
 ) -> None:
-    """The next hours: eight across, with a light rule above and below."""
+    """The next hours: eight across, under a light rule."""
     thin_rule(canvas, row)
-    thin_rule(canvas, row + BAND_ROWS + 1)
     _draw_band(canvas, row + 1, moments[:HOURS_ACROSS], zone, clock)
 
 
