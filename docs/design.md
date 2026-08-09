@@ -522,28 +522,64 @@ leads anywhere is `0`.
 
 `hours.py`. The forecast read across instead of down: a table of hours is exact
 and has to be read a row at a time, where a strip of them is a shape and a
-reader takes in "clear this afternoon, rain by six" without reading anything.
+reader takes in "cold and wet till six, clearing after" without reading
+anything.
 
 ```
-   loc 19  20  21  22  23  00  01  02
-        ▨   ▨   ▨   ▨   ▨   ▨   ▨   ▨     the pictures, three rows
-     C 13  14  15  16  17  18  19  20
-   m/s  2   2   2   2   2   2   2   2
+  ····································
+  CEST 23  00  01  02  03  04  05  06
+        ▨   ▨   ▨   ▨   ▨   ▨   ▨   ▨    the pictures
+     C  2   0  -1  -2  -3  -2   1   3
+     3 ▀▀▀▀▚▄▖                 ▗▄▞▀▀▀    warm, in red
+       ░░░░░░░▝▀▚▄▄▄▄▄▄▄▄▄▄▞▀▀▘░░░░░░    cold, in cyan
+    -6 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    mm ▄▄▄▄▆▆▆▆████▆▆▆▆▄▄▄▄
+   m/s  3   6   9  12   8   4   2   1
+    12        ▗▄▞▀▀▀▀▚▄▄▖                the wind, in magenta
+      ▀▀▀▀▀▀▀▘        ░░░▀▀▀▀▀▚▄▄▄▄▄▄
+   dir NE   E  SE   S  SW   W  NW   N
+  ····································
 ```
 
 **Eight hours, and the arithmetic is forced rather than chosen.** An hour column
 is four cells — an attribute and three cells of picture — so a row of forty
-holds ten. Ten leaves nothing for saying which row is the temperature and which
-the wind, and two unlabelled rows of figures on a page a reader sees once is a
-page that has to be explained; so four cells go to a label column, which leaves
-nine. Nine fills the row to the last cell, where eight leaves two at each end and
-lines the strip up with the rules above and below it. Eight.
+holds ten. Ten leaves nothing for saying which row is which, and unlabelled
+rows of figures on a page a reader sees once has to be explained; four cells of
+label leave nine, and nine fills the row to the last cell where eight leaves two
+at each end and lines up with the rules. The label column costs two hours and is
+worth them.
 
-A band is six rows and the frame has thirteen left once the position, the
-clocks, the issue time and the weather now have had their seven. A second band
-would fill all thirteen, take the table off the first frame entirely, and buy
-eight more hours — and eight is enough to see the afternoon out, which is what
-the table is for after that.
+**A chart takes all four cells of an hour, where a picture takes three.** The
+figures and the pictures each need an attribute at the head of their column; a
+chart needs one for the whole row, a row of a chart being one colour throughout.
+So a chart is eight blocks to the hour, and the attribute it saves comes out of
+the label column — which is why a chart's label is three characters where `CEST`
+is four.
+
+**The temperature scale puts freezing on a row boundary.** One colour to a row is
+the rule the whole page is built on, so a chart wanting warm in red and cold in
+cyan can only put nought degrees where one row ends and the next begins: a third
+of the way up, or two thirds. That choice then fixes the rest of the axis rather
+than the data fixing it — at a third the top of the chart is twice what the
+bottom is, at two thirds it is half — and the one that wastes less height wins,
+ties going to the lower boundary so the warm colour has the spare row. A series
+that stays one side of freezing needs no boundary and is drawn in one colour over
+all three rows, in whichever colour it belongs to.
+
+Freezing lands *exactly* on a row, not near one. A block either side of the line
+drawn in the wrong colour says the wrong thing about ice, which is the one thing
+this chart exists to say.
+
+**Rain is not scaled at all.** Its four levels are millimetres in the hour —
+0.1, 1 and 4 — and mean the same on every page, which a scaled bar could not: on
+a dry afternoon a scaled chart draws a drizzle full height, and the reader who
+wanted to know whether to take a coat has been told the wrong thing loudly.
+
+**The wind chart has a floor of 5 m/s.** Without one, a still day is drawn as a
+gale: the tallest thing in the series fills the chart whatever it happens to be.
+The temperature chart has the same guard in degrees — a day that never moves
+would otherwise be a line along the bottom, which reads as cold rather than as
+steady.
 
 **Local time only, and the label says which clock** — `CEST`, the zone's own
 abbreviation, in the cyan that has meant local since the first forecast page.
@@ -554,19 +590,15 @@ enough for the abbreviations: `CEST`, `AEDT`, `NZDT`. A zone that calls itself
 
 **A light rule top and bottom.** The chrome's rule is a bar and belongs where the
 page ends; between two things that are both content a bar reads as a second
-frame beginning, so `thin_rule` is the same construction with a sixth of the ink. met.no's own pages show one clock here and it is the right one: a strip is
-for glancing at, and two clocks in three cells is neither. Readings are rounded
-to whole degrees and whole metres a second — three cells will not hold a decimal
-and a shape does not want one — with a dash for a reading there is none of, as
-everywhere else.
+frame beginning, so `thin_rule` is the same construction with a sixth of the ink.
+
+**The strip fills the frame, so the table begins on the next one.** Fifteen rows
+of strip and five of lead-in is exactly twenty, which is why the issue time moved
+into the weather-now block: the picture there is three rows tall and the first of
+them was blank.
 
 **Each part says its piece once.** The strip shows what comes after now, and the
-table what comes after the strip. A reader who has just seen eight hours drawn
-across the frame does not want them again as rows.
-
-The strip is a `Block` in the template's lead-in — rows and a function to fill
-them — so the pagination counts it like any other lead-in and the table falls in
-underneath without arithmetic anywhere.
+table what comes after the strip.
 
 ### What it does not yet do
 

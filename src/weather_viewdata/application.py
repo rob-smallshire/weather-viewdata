@@ -868,24 +868,23 @@ def _preamble(
 ) -> Sequence[PreambleLine]:
     """Where this is, which clocks it keeps, how old it is, and the weather now.
 
-    The issue time is worth a row of twenty. met.no runs its models a few times
-    a day, so a forecast fetched at nine may have been made at five -- and a
-    reader on a slow line deciding whether to ask again wants to know which.
-
-    Then a blank row, and the weather the reader is standing in. It was the
-    first row of a table of eighty-six before this, which is to say it was
-    indistinguishable from the hour after it.
+    A blank row after the position, and then the weather the reader is standing
+    in -- three rows of it, since that is what a picture is tall, with the issue
+    time filling the first of them beside the picture's top band.
     """
-    lines: list[PreambleLine] = [
-        _where(place, near),
-        f"Issued {forecast.updated_at:%H:%M} UTC",
-    ]
+    lines: list[PreambleLine] = [_where(place, near), ""]
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
+    issued = f"Issued {forecast.updated_at:%H:%M} UTC"
     if now is not None:
         lines.append(
-            Block(NOW_ROWS, lambda canvas, row: _draw_now(canvas, row, now, zone))
+            Block(
+                NOW_ROWS,
+                lambda canvas, row: _draw_now(canvas, row, now, zone, issued),
+            )
         )
+    else:
+        lines.append(issued)
     if coming:
         #  Drawn rather than written, and the template counts its rows like any
         #  others -- so the strip filling what is left of the frame simply
@@ -903,13 +902,15 @@ def _preamble(
 
 
 def _draw_now(
-    canvas: Canvas, row: int, moment: Moment, zone: ZoneInfo | None
+    canvas: Canvas, row: int, moment: Moment, zone: ZoneInfo | None, issued: str
 ) -> None:
-    """The weather now: a picture, and two rows of words beside it.
+    """The weather now: a picture, and three rows of words beside it.
 
-    Three rows, because the picture is three cells tall and the words are two.
-    The blank row the block begins with is the picture's top band, which is why
-    the two are drawn together rather than as a lead-in line and a spare row.
+    Three rows, because the picture is three cells tall. The issue time takes
+    the first of them, which was blank when the picture arrived and is a row
+    the charts below now want: met.no runs its models a few times a day, so a
+    forecast fetched at nine may have been made at five, and a reader on a slow
+    line deciding whether to ask again wants to know which.
 
     **Both clocks on one row, each saying which it is.** They were on separate
     rows -- `Times UTC and CEST (UTC+2)` above `NOW 16:00 18:00` -- and the
@@ -932,6 +933,7 @@ def _draw_now(
         #  No gap is added: the picture's own attribute cell is a blank one,
         #  and a second would be a cell spent twice on the same air.
         room = COLUMNS - COLUMN_CELLS
+    canvas.row(row).text(fitted(issued, room), Colour.WHITE)
     canvas.row(row + 1).runs(_within(_clock_runs(moment, zone, room), room))
     canvas.row(row + 2).runs(_within(_figure_runs(moment), room))
 

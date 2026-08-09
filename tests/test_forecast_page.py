@@ -162,7 +162,7 @@ class TestTheBlockAtTheTop:
     ) -> None:
         page = await page_for(hourly(6, precipitation=None, wind_from=None), tmp_path)
         shown = text_of(page)
-        assert "mm" not in shown
+        assert "mm/h" not in shown
         assert "2.3m/s" in shown
 
     async def test_both_clocks_are_on_one_row_and_say_which_they_are(
@@ -231,10 +231,11 @@ class TestTheHourByHourStrip:
         #  Each says its piece once. A reader who has just seen eight hours
         #  drawn across the frame does not want them again as rows.
         page = await page_for(hourly(30), tmp_path)
+        #  The strip fills the first frame, so the table begins on the second.
         first = this_hour() + timedelta(hours=HOURS_SHOWN + 1)
-        assert f"{first:%H:%M}" in text_of(page)
+        assert f"{first:%H:%M}" in text_of(page, 1)
         skipped = this_hour() + timedelta(hours=HOURS_SHOWN)
-        assert f" {skipped:%H:%M}" not in text_of(page)
+        assert f" {skipped:%H:%M}" not in text_of(page, 1)
 
     async def test_a_forecast_of_one_hour_still_draws(self, tmp_path: Path) -> None:
         #  Nothing after now, so nothing in the strip and nothing in the table.
