@@ -13,11 +13,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from sextile import PageAddress, PageRequest
 from sextile.page import Page
 from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
+from weather_viewdata.application import FIND_KEY
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
@@ -85,14 +87,24 @@ class Fixed(ForecastSource):
         return self.forecast
 
 
-async def page_for(forecast: Forecast, tmp_path: Path) -> Page:
+async def page_for(
+    forecast: Forecast, tmp_path: Path, history: tuple[PageAddress, ...] = ()
+) -> Page:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([TRONDHEIM])
     app = build_application(source=Fixed(forecast), index_filepath=filepath)
     await app.startup()
     try:
-        page = await app.ask("3213133880")
+        page = await app.respond(
+            PageRequest(
+                address=PageAddress("3213133880"),
+                params={"geoname_id": TRONDHEIM.geoname_id},
+                history=history,
+                application=app,
+                service=app.service,
+            )
+        )
     finally:
         await app.shutdown()
     assert page is not None
@@ -294,3 +306,53 @@ class TestSayingTheHourAsAnHour:
         assert 0x60 in found.frame.to_bytes()
         assert encode_g0("―") == 0x60
         assert encode_g0("#") == 0x5F
+
+
+class TestGettingBackToTheSearch:
+    """`F`, because `S` pages down and `0` is the index.
+
+    A reader who has just found a place usually wants the next place, and the
+    way back was otherwise `*0#` -- or a page number they would have to
+    remember.
+    """
+
+    async def test_the_forecast_offers_a_way_back(self, tmp_path: Path) -> None:
+        page = await page_for(hourly(6), tmp_path)
+        found = page.frame(0)
+        assert found is not None
+        assert found.destination(FIND_KEY) == PageAddress("3")
+
+    async def test_on_every_frame_of_it(self, tmp_path: Path) -> None:
+        #  The reader may be four frames into the table when they decide.
+        page = await page_for(hourly(80), tmp_path)
+        for index in range(len(page.frames)):
+            found = page.frame(index)
+            assert found is not None
+            assert found.destination(FIND_KEY) is not None, index
+
+    async def test_and_the_footer_says_so(self, tmp_path: Path) -> None:
+        #  A page that offered a key without naming it would be a page whose
+        #  keys can only be found by trying them.
+        assert "F find" in text_of(await page_for(hourly(6), tmp_path))
+
+    async def test_it_goes_back_to_the_search_actually_used(
+        self, tmp_path: Path
+    ) -> None:
+        #  Both searches lead here. A reader who came through the position form
+        #  is offered the position form, not the one they did not use.
+        page = await page_for(
+            hourly(6), tmp_path, history=(PageAddress("1"), PageAddress("4"))
+        )
+        found = page.frame(0)
+        assert found is not None
+        assert found.destination(FIND_KEY) == PageAddress("4")
+
+    async def test_and_to_the_likelier_one_where_neither_was(
+        self, tmp_path: Path
+    ) -> None:
+        #  Keyed by number, or reached by a keyword: no search was used, and a
+        #  name is how nearly everybody looks for weather.
+        page = await page_for(hourly(6), tmp_path, history=(PageAddress("1"),))
+        found = page.frame(0)
+        assert found is not None
+        assert found.destination(FIND_KEY) == PageAddress("3")

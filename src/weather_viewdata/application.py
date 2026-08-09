@@ -58,6 +58,7 @@ from sextile.templates import (
     MenuItem,
     PreambleLine,
     Prose,
+    Shortcut,
     Template,
 )
 from sextile.viewdata.canvas import Canvas, RowWriter, Run
@@ -85,6 +86,11 @@ from weather_viewdata.symbols import PUBLISHED, in_full, in_words
 from weather_viewdata.wind import from_the
 
 SERVICE_NAME: Final = "WEATHER"
+
+#: The key that goes back to the search a reader came through. `F` for find,
+#: which is what the page it leads to is called; `S` for search would have been
+#: the obvious letter and is the framework's key for paging down.
+FIND_KEY: Final = "F"
 
 DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
 
@@ -478,7 +484,11 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
         return None
     source = _forecasts(request.service)
     return _forecast_page(
-        _service(request), request.address, found, await source.forecast_for(found)
+        _service(request),
+        request.address,
+        found,
+        await source.forecast_for(found),
+        back_to=_searched_from(request),
     )
 
 
@@ -495,6 +505,7 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
         where,
         await source.forecast_for(where),
         near=nearby,
+        back_to=_searched_from(request),
     )
 
 
@@ -782,6 +793,26 @@ def _forecasts(service: Mapping[str, object]) -> ForecastSource:
 # -- drawing a forecast ------------------------------------------------------
 
 
+def _searched_from(request: PageRequest) -> PageAddress:
+    """The search page this reader came through, or the likelier of the two.
+
+    Looked for in the history rather than remembered in the session, because
+    the history is what the reader would use to get back by hand and this is
+    only a shorter way of doing the same thing. Newest first, since a reader
+    who has used both wants the one they used last.
+
+    A reader who keyed the page number, or arrived by a keyword, went through
+    no search at all -- and is offered the one they would most likely have used,
+    a name being how nearly everybody looks for weather.
+    """
+    app = _service(request)
+    searches = {app.address_for("by_name"), app.address_for("by_position")}
+    for been in reversed(request.history):
+        if been in searches:
+            return been
+    return app.address_for("by_name")
+
+
 def _forecast_page(
     app: Sextile,
     address: PageAddress,
@@ -789,6 +820,7 @@ def _forecast_page(
     forecast: Forecast | None,
     *,
     near: "Nearby | None" = None,
+    back_to: PageAddress | None = None,
 ) -> Page:
     """One place's weather, dealt into frames.
 
@@ -813,6 +845,11 @@ def _forecast_page(
         title=_heading(place),
         entries=coming[HOURS_SHOWN:],
         home=app.index,
+        #  Not `S`, which pages down, and not `0`, which is the index. A reader
+        #  who has just found a place usually wants the next place, and the way
+        #  back to the search is otherwise three keys and a page they have to
+        #  remember the number of.
+        shortcuts=() if back_to is None else (Shortcut(FIND_KEY, back_to, "find"),),
         preamble=_preamble(place, forecast, near, coming),
         #  On every frame: a reader on frame c looking at four columns of
         #  figures has no way back to the words that say what they are.

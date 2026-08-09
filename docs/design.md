@@ -513,10 +513,23 @@ about that was wrong the first time. met.no's longest symbol,
 shortened rather than allowed to overrun. `symbols.py` takes the codes apart
 rather than tabulating ninety of them.
 
-**Nothing on it is selectable.** A forecast is something to read, not a menu, so
+**`F` goes back to the search.** A reader who has just found a place usually
+wants the next place, and the way back was otherwise `*0#` — or a page number
+they would have to remember. Not `S`, which pages down, and not `0`, which is
+the index.
+
+It goes to the search the reader *actually came through*, found by looking back
+through the history rather than by remembering anything in the session: the
+history is what they would use to get back by hand, and this is only a shorter
+way of doing the same thing. Newest first, so a reader who has used both gets
+the one they used last. Somebody who keyed the page number or arrived by a
+keyword went through no search at all, and is offered the one they would most
+likely have used — a name being how nearly everybody looks for weather.
+
+**Nothing else on it is selectable.** A forecast is something to read, not a menu, so
 no digit is spent on the rows and `1`–`9` do nothing — which is the rule about
-naming only the keys that work rather than an exception to it. The only key that
-leads anywhere is `0`.
+naming only the keys that work rather than an exception to it. The keys that
+lead anywhere are `0` and `F`.
 
 ### The next eight hours, across
 
