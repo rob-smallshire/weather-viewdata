@@ -177,9 +177,8 @@ For the rest:
 sky      showers or nothing falling -> sun      (moon if _night)
          otherwise                  -> cloud top
 cloud    fair -> a small one;  anything else -> a cloud
-fall     rain  -> strokes, blue     light: two, clear of the cloud
-         snow  -> flakes, white     middling: three, clear of it
-                                    heavy: three, touching it
+fall     rain and snow are the same drawing: blue, and white
+         three intensities, which is met.no's whole scale
          sleet -> both of them, half a band each: white, then blue
          thunder -> half a band of what falls, and a yellow bolt
 fog      the same bars through all three bands
@@ -213,9 +212,14 @@ Three consequences worth writing down, since each was a choice:
   sleet against rain is a detail the words carry. So sleet with thunder in it is
   drawn as rain with thunder in it — six of the 41 symbols — which errs towards
   wet, the safer way to be wrong for a reader deciding whether to go out.
-- **Heavier weather is more blocks**, and it fills the row nearest the cloud —
-  so heavy rain touches what it falls from. It is the one rule a reader can
-  learn without being told.
+- **Heavier weather is more blocks.** Falling weather is scattered rather than
+  ranked — what says "harder" is how much of it there is, not where it sits — so
+  the marks spread over the band instead of hanging in columns from the cloud.
+  It is the one rule a reader can learn without being told, and it holds at both
+  widths: two marks, three, six across a whole band, and one, two, three down
+  half of one.
+- **Rain and snow are the same drawing**, and only the colour tells them apart.
+  Which is what makes sleet drawable as both at once.
 
 ### `*95#`, the whole set
 

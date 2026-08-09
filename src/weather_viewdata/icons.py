@@ -256,49 +256,32 @@ FOG_FIGURE: Final = _figure("""
 .####.
 """)
 
-#  Two things say how hard it is coming down, and they are the same two for
-#  rain, sleet and snow: **how many fall, and how far up they reach.** Light and
-#  middling leave the top row of the band clear, so that there is daylight
-#  between the cloud and what is under it; heavy fills that row too, and reads
-#  as heavier for touching the cloud it comes from.
+#  **Rain and snow are the same drawing in different colours.** Three
+#  intensities, which is met.no's whole scale -- `light`, unmarked, `heavy` --
+#  and each is drawn twice, once across a whole band and once in the half a
+#  band that is left when something else wants the other half.
+#
+#  Falling weather is scattered rather than ranked: what says "harder" is how
+#  much of it there is, not where it sits, so the marks are spread over the
+#  band instead of hanging in columns from the cloud.
 
-#: Rain, as strokes, because rain falls in lines.
-RAIN_LIGHT: Final = _piece("""
-......
+#: The middle of the three, and the one seventeen of the 41 symbols use.
+FALL: Final = _piece("""
 .#..#.
-.#..#.
-""")
-
-RAIN: Final = _piece("""
 ......
-#.#.#.
-#.#.#.
+...#..
 """)
 
-RAIN_HEAVY: Final = _piece("""
-#.#.#.
-#.#.#.
-#.#.#.
-""")
-
-#: Snow, as flakes: single blocks, scattered rather than ranked, because snow
-#: does not fall in lines.
-SNOW_LIGHT: Final = _piece("""
-......
+FALL_LIGHT: Final = _piece("""
 .#....
-....#.
-""")
-
-SNOW: Final = _piece("""
 ......
-#..#..
-..#..#
+...#..
 """)
 
-SNOW_HEAVY: Final = _piece("""
-#..#..
-..#..#
-#..#..
+FALL_HEAVY: Final = _piece("""
+#.#.#.
+......
+.#.#.#
 """)
 
 #  -- half a band ------------------------------------------------------------
@@ -335,59 +318,33 @@ BOLT: Final = _half("""
 #.
 """)
 
-#: Rain in half a band: one stroke, as long as the weather is hard. The same
-#: rule as the full-width falls, in the one column there is room for.
-RAIN_HALF_LIGHT: Final = _half("""
+#: Half a band of falling weather: one mark, as far up as the weather is hard.
+#: The same three steps as the whole band, in the one column there is room for.
+HALF: Final = _half("""
 ..
-..
-#.
-""")
-
-RAIN_HALF: Final = _half("""
-..
-#.
-#.
-""")
-
-RAIN_HALF_HEAVY: Final = _half("""
-#.
-#.
-#.
-""")
-
-#: Snow in half a band: flakes rather than a stroke, so that the two halves of
-#: sleet are told apart by shape as well as by colour.
-SNOW_HALF_LIGHT: Final = _half("""
-..
-#.
-..
-""")
-
-SNOW_HALF: Final = _half("""
 .#
-..
-#.
+.#
 """)
 
-SNOW_HALF_HEAVY: Final = _half("""
-#.
+HALF_LIGHT: Final = _half("""
+..
+..
 .#
-#.
+""")
+
+HALF_HEAVY: Final = _half("""
+.#
+.#
+.#
 """)
 
 #  -- what goes where --------------------------------------------------------
 
-#: The falls that take a whole band, by how hard they are coming down.
-_WHOLE: Final = {
-    "rain": (RAIN_LIGHT, RAIN, RAIN_HEAVY),
-    "snow": (SNOW_LIGHT, SNOW, SNOW_HEAVY),
-}
-
-#: And the same in half a band, for a row with something else to fit in.
-_HALF: Final = {
-    "rain": (RAIN_HALF_LIGHT, RAIN_HALF, RAIN_HALF_HEAVY),
-    "snow": (SNOW_HALF_LIGHT, SNOW_HALF, SNOW_HALF_HEAVY),
-}
+#: What falls, by how hard it is coming down, across a whole band and across
+#: half of one. Rain and snow share the drawings; only the colour tells them
+#: apart, which is what makes sleet drawable as both at once.
+_WHOLE: Final = (FALL_LIGHT, FALL, FALL_HEAVY)
+_HALF: Final = (HALF_LIGHT, HALF, HALF_HEAVY)
 
 #: Rain blue and snow white, and sleet both of them side by side. The cloud is
 #: cyan in every case, so nothing that falls shares a colour with what it falls
@@ -477,12 +434,12 @@ def _fall(weather: Weather) -> Band:
     if weather.core == "sleet":
         return Band(
             patches=tuple(
-                Patch(_FALL_COLOURS[kind], _HALF[kind][hard]) for kind in _SLEET
+                Patch(_FALL_COLOURS[kind], _HALF[hard]) for kind in _SLEET
             )
         )
     if not weather.falling:
         return band(EMPTY, CLOUD_COLOUR)
-    return band(_WHOLE[weather.core][hard], _FALL_COLOURS[weather.core])
+    return band(_WHOLE[hard], _FALL_COLOURS[weather.core])
 
 
 def _beside_the_bolt(weather: Weather, hard: int) -> Patch:
@@ -498,7 +455,7 @@ def _beside_the_bolt(weather: Weather, hard: int) -> Patch:
         #  lookup that fails at the far end of a telephone line.
         return Patch(CLOUD_COLOUR, EMPTY_HALF)
     kind = "rain" if weather.core == "sleet" else weather.core
-    return Patch(_FALL_COLOURS[kind], _HALF[kind][hard])
+    return Patch(_FALL_COLOURS[kind], _HALF[hard])
 
 
 def draw(canvas: Canvas, row: int, column: int, drawn: WeatherIcon) -> None:
