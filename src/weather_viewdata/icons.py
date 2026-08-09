@@ -312,10 +312,12 @@ EMPTY_HALF: Final = _half("""
 
 #: A bolt, in the two blocks half a band leaves for it. A zigzag is the only
 #: lightning there is at this size, and yellow does the rest of the telling.
+#: It strikes down and to the right, so that it starts under the middle of the
+#: cloud rather than off the edge of it.
 BOLT: Final = _half("""
-.#
-##
 #.
+##
+.#
 """)
 
 #: Half a band of falling weather: one mark, as far up as the weather is hard.
