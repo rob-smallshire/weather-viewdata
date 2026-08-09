@@ -13,6 +13,7 @@ Tromsø.
 
 import pytest
 
+from sextile.viewdata.frame import COLUMNS, Frame
 from weather_viewdata.places import search_key
 
 
@@ -85,3 +86,52 @@ class TestFoldingToWhatCanBeKeyed:
         #  saying so here is better than an index quietly holding an empty key
         #  that every query matches the front of.
         assert search_key("1770") == ""
+
+
+class TestWhatIsShownIsWhatIsKeyed:
+    """The property the whole search rests on.
+
+    A reader keys what they see. The screen folds a name to what the character
+    set can draw, and the index folds it to what the keypad can send -- and if
+    those two were worked out separately they would drift, leaving a reader
+    shown a name they cannot type.
+
+    They cannot drift now, because the second is taken from the first. This
+    holds them to it.
+    """
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "Tromsø",
+            "Ålesund",
+            "Værøy",
+            "München",
+            "Gdańsk",
+            "Þórshöfn",
+            "Đakovo",
+            "Ħamrun",
+            "Łódź",
+            "Košice",
+            "Cañas",
+            "Straße",
+            "'s-Hertogenbosch",
+            "New York",
+            "Stratford-upon-Avon",
+        ],
+    )
+    def test_a_name_folds_to_what_the_screen_shows_it_as(self, name: str) -> None:
+        frame = Frame()
+        frame.write(0, 0, name)
+        shown = frame.text_at(0, 0, COLUMNS).rstrip()
+        keyable = "".join(letter for letter in shown if letter.isalpha()).upper()
+        assert search_key(name) == keyable
+
+    @pytest.mark.parametrize("name", ["Đakovo", "Ħamrun", "Tromsø", "Straße"])
+    def test_and_the_screen_shows_no_question_marks(self, name: str) -> None:
+        #  Where it does, a reader sees `?akovo` and has no way to guess what
+        #  to key. That is what happened while the two folds were separate
+        #  tables and this one knew four letters the framework's did not.
+        frame = Frame()
+        frame.write(0, 0, name)
+        assert "?" not in frame.text_at(0, 0, COLUMNS)

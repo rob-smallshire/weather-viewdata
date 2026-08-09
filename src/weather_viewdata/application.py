@@ -191,17 +191,20 @@ async def by_name(request: PageRequest) -> Page:
     )
     canvas.row(CONTENT_FIRST_ROW).text("Key a place name.", Colour.WHITE)
     draw_form(canvas.frame, form)
-    #  What a reader actually needs to know, rather than what the keypad
-    #  cannot do. It said "no space bar, no accents", and both were wrong: the
-    #  space bar transmits 0x20 like any other key, and no accented letter can
-    #  be typed on this hardware in the first place -- the character set has
-    #  none -- so telling somebody not to use one is telling them not to do
-    #  something they could not do.
+    #  There is nothing to say about letters this keypad has not got, because
+    #  the screen has not got them either: a reader never sees the o-slash in
+    #  Tromso, so they never wonder how to key it. Both folds are the same
+    #  fold, which is what makes "as it is shown here" the whole rule.
+    #
+    #  It said "no space bar, no accents". There is a space bar -- it sends
+    #  0x20 like any other key -- and the letters in question are not accented
+    #  Latin ones but letters of other alphabets, which this hardware cannot
+    #  draw and so never shows.
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 1).text(
-        "Spaces do not matter: NEW YORK or", Colour.GREEN
+        "Key a name as it is shown here.", Colour.GREEN
     )
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 2).text(
-        "NEWYORK. Nor do accents: TROMSO.", Colour.GREEN
+        "Spaces do not matter.", Colour.GREEN
     )
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 4).text(
         f"{_places(request.service).held():,} places held.", Colour.WHITE
