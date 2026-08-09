@@ -14,11 +14,14 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from sextile.page import Page
+from sextile.viewdata.chrome import CONTENT_FIRST_ROW
+from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
 from weather_viewdata.hours import HOURS_SHOWN
+from weather_viewdata.icons import COLUMN_CELLS
 from weather_viewdata.store import Index
 
 OSLO = ZoneInfo("Europe/Oslo")
@@ -161,6 +164,28 @@ class TestTheBlockAtTheTop:
         assert "mm" not in shown
         assert "2.3m/s" in shown
 
+    async def test_both_clocks_are_on_one_row_and_say_which_they_are(
+        self, tmp_path: Path
+    ) -> None:
+        #  They were on two rows -- `Times UTC and CEST (UTC+2)` above
+        #  `NOW 16:00 18:00` -- and putting the labels beside the times saves
+        #  the row and the repetition both.
+        shown = text_of(await page_for(hourly(6), tmp_path))
+        assert "UTC" in shown
+        assert "CEST" in shown
+        assert "Times UTC and" not in shown
+
+    async def test_the_weather_now_is_drawn_as_well_as_said(
+        self, tmp_path: Path
+    ) -> None:
+        #  The picture sits at the end of the two rows and of the blank above
+        #  them, which is three rows and exactly what a picture is tall.
+        page = await page_for(hourly(6), tmp_path)
+        found = page.frame(0)
+        assert found is not None
+        for row in (CONTENT_FIRST_ROW + 2, CONTENT_FIRST_ROW + 3, CONTENT_FIRST_ROW + 4):
+            assert found.frame.is_attribute(row, COLUMNS - COLUMN_CELLS), row
+
     async def test_it_is_on_the_first_frame_only(self, tmp_path: Path) -> None:
         #  A lead-in, like the position above it. A reader on frame c is
         #  reading later hours and has already been told about now.
@@ -196,7 +221,7 @@ class TestTheHourByHourStrip:
         #  strip from ten hours to eight. Two unlabelled rows of figures on a
         #  page a reader sees once is a page that has to be explained.
         shown = text_of(await page_for(hourly(30), tmp_path))
-        assert "loc" in shown
+        assert "CEST" in shown
         assert "m/s" in shown
 
     async def test_the_table_starts_where_the_strip_left_off(

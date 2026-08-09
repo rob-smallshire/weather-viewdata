@@ -397,11 +397,16 @@ weather service must not give.
  TRONDHEIM                   3213133880a
   ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮
 NO  63.4N 10.4E  18m
-Times UTC and CEST (UTC+2)
 Issued 12:30 UTC
-
-NOW   13:00   15:00   heavy rain
-15.3C   SW 2.3m/s   0.4mm/h
+                                     ▨
+NOW  13:00 UTC  15:00 CEST (UTC+2)   ▨
+15.3C SW 2.3m/s 0.4mm/h  heavy rain  ▨
+  ····································
+  CEST 16  17  18  19  20  21  22  23
+        ▨   ▨   ▨   ▨   ▨   ▨   ▨   ▨
+     C 15  15  14  14  13  13  12  12
+   m/s  2   2   2   2   1   1   1   1
+  ····································
 
    UTC LOCAL  DEG C  M/S  WEATHER
  13:00  15:00   15.3  2.3 heavy rain
@@ -420,10 +425,24 @@ Two rows at the top, above the table, because a forecast page is mostly about
 later and the first thing a reader wants is now. Before this it was the first
 row of a table of eighty-six, indistinguishable from the hour after it.
 
-**The clocks carry no labels.** `Times UTC and CEST` has just been said a row
-above, and the colours say it again — **yellow for UTC, cyan for the place's own
-clock**, the same convention as the table's two columns — so the four cells go
-on the weather instead.
+**Both clocks on one row, each saying which it is.** They were on two rows —
+`Times UTC and CEST (UTC+2)` above `NOW 13:00 15:00` — and putting the labels
+beside the times saves the row and the repetition both: the times explain the
+labels, so only the offset in brackets has to be said at all. The colours still
+carry it too — **yellow for UTC, cyan for the place's own clock**, the same
+convention as the table's two columns and the strip's hours.
+
+One space between the runs rather than two, because each already begins with an
+attribute cell that draws as a space. And the offset goes only if the whole of
+it fits: trimmed, `(UTC+5.75)` becomes `(UTC+5.`, an answer that looks like a
+fact and is not one, so it is dropped whole and the two clocks side by side say
+the same thing to anyone who cares to subtract.
+
+**The weather is drawn as well as said.** The picture sits at the end of the two
+rows and of the blank above them, which is three rows and exactly what a picture
+is tall. It is why the words may be trimmed here and nowhere else: on a bad day
+`heavy sleet shwrs+thunder` is twenty-five cells and will not fit, and a reader
+who loses the tail of the words has not lost the weather.
 
 **The times are the moment's own, not the reader's.** A forecast is held for as
 long as met.no asks it to be, so the hour a reader is standing in may have begun
@@ -509,8 +528,16 @@ would fill all thirteen, take the table off the first frame entirely, and buy
 eight more hours — and eight is enough to see the afternoon out, which is what
 the table is for after that.
 
-**Local time only**, in the cyan that has meant local since the first forecast
-page. met.no's own pages show one clock here and it is the right one: a strip is
+**Local time only, and the label says which clock** — `CEST`, the zone's own
+abbreviation, in the cyan that has meant local since the first forecast page.
+The label column gets four characters rather than three by putting its attribute
+in the left margin, where a blank cell was going to be anyway, which is exactly
+enough for the abbreviations: `CEST`, `AEDT`, `NZDT`. A zone that calls itself
+`+12` has no abbreviation to show and gets `loc`.
+
+**A light rule top and bottom.** The chrome's rule is a bar and belongs where the
+page ends; between two things that are both content a bar reads as a second
+frame beginning, so `thin_rule` is the same construction with a sixth of the ink. met.no's own pages show one clock here and it is the right one: a strip is
 for glancing at, and two clocks in three cells is neither. Readings are rounded
 to whole degrees and whole metres a second — three cells will not hold a decimal
 and a shape does not want one — with a dash for a reading there is none of, as

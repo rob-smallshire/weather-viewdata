@@ -64,7 +64,7 @@ from sextile.viewdata.canvas import Canvas, RowWriter, Run
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW, draw_chrome
 from sextile.viewdata.controls import Colour, Control
 from sextile.viewdata.drawing import centred
-from sextile.viewdata.encoding import fitted
+from sextile.viewdata.encoding import cell_count, fitted
 from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
@@ -72,7 +72,12 @@ from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
-from weather_viewdata.hours import HOURS_SHOWN, STRIP_ROWS, draw_strip
+from weather_viewdata.hours import (
+    HOURS_SHOWN,
+    LABEL_CELLS,
+    STRIP_ROWS,
+    draw_strip,
+)
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
 from weather_viewdata.icons import draw as draw_icon
 from weather_viewdata.store import Index, Nearby
@@ -101,6 +106,15 @@ _FORECAST: Final = "2"
 #: is no reading `323133880` under both schemes and no aliasing the old one.
 TABLE: Final = "1"
 GRAPH: Final = "2"
+
+#: Rows the weather-now block takes: the picture is three cells tall and the
+#: words beside it are two, so the first of the three is the picture's top band
+#: and nothing else.
+NOW_ROWS: Final = BANDS
+
+#: What an attribute costs, where the cost has to be counted before the writing
+#: rather than charged during it.
+_ATTRIBUTE_CELL: Final = 1
 
 #: Seconds an hour, for saying what period a rainfall figure covers.
 _SECONDS_AN_HOUR: Final = 3600
@@ -855,50 +869,117 @@ def _preamble(
     """
     lines: list[PreambleLine] = [
         _where(place, near),
-        _clocks(place),
         f"Issued {forecast.updated_at:%H:%M} UTC",
     ]
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     if now is not None:
-        lines.append("")
-        lines += _now_lines(now, zone)
+        lines.append(
+            Block(NOW_ROWS, lambda canvas, row: _draw_now(canvas, row, now, zone))
+        )
     if coming:
-        #  A blank before it, so the strip reads as a thing of its own rather
-        #  than as more of the lead-in.
-        lines.append("")
         #  Drawn rather than written, and the template counts its rows like any
         #  others -- so the strip filling what is left of the frame simply
-        #  leaves the table to start on the next one.
+        #  leaves the table to start on the next one. Its own rules separate it
+        #  from what is above and below.
         hours = list(coming[:HOURS_SHOWN])
+        clock = _clock_name(zone)
         lines.append(
-            Block(STRIP_ROWS, lambda canvas, row: draw_strip(canvas, row, hours, zone))
+            Block(
+                STRIP_ROWS,
+                lambda canvas, row: draw_strip(canvas, row, hours, zone, clock),
+            )
         )
     return lines
 
 
-def _now_lines(moment: Moment, zone: ZoneInfo | None) -> list[PreambleLine]:
-    """The weather now, in two rows.
+def _draw_now(
+    canvas: Canvas, row: int, moment: Moment, zone: ZoneInfo | None
+) -> None:
+    """The weather now: a picture, and two rows of words beside it.
 
-    The clocks carry no `UTC` and no `CEST`: the row above has just said which
-    clocks the page keeps, and the colours say it again -- yellow for UTC, cyan
-    for the place's own -- so the four cells go on the weather instead.
+    Three rows, because the picture is three cells tall and the words are two.
+    The blank row the block begins with is the picture's top band, which is why
+    the two are drawn together rather than as a lead-in line and a spare row.
+
+    **Both clocks on one row, each saying which it is.** They were on separate
+    rows -- `Times UTC and CEST (UTC+2)` above `NOW 16:00 18:00` -- and the
+    saving is a row and a repetition: put the labels beside the times and the
+    times explain the labels, so the offset in brackets is the only part that
+    has to be said at all.
 
     **The times shown are the moment's own, not the reader's.** A forecast is
     held for as long as met.no asks it to be, so the hour a reader is standing
-    in may have begun forty minutes ago; saying 10:00 at 10:47 lets them see
-    that for themselves, where saying 10:47 would claim a reading we have not
+    in may have begun forty minutes ago; saying 16:00 at 16:47 lets them see
+    that for themselves, where saying 16:47 would claim a reading we have not
     got.
-
-    The weather goes last on its row deliberately. Runs are trimmed to what is
-    left, so the longest symbol met.no has -- `heavy sleet shwrs+thunder`, at
-    twenty-five cells -- costs the end of itself rather than the frame.
     """
-    clocks = [Run("NOW", Colour.WHITE), Run(f"  {moment.at:%H:%M}", Colour.YELLOW)]
-    if zone is not None:
-        clocks.append(Run(f"  {_local(moment.at, zone)}", Colour.CYAN))
-    clocks.append(Run(f"  {in_words(moment.symbol)}", Colour.GREEN))
-    return [clocks, [Run("   ".join(_figures(moment)), Colour.WHITE)]]
+    room = COLUMNS
+    picture = icon_for(moment.symbol)
+    if picture is not None:
+        draw_icon(canvas, row, COLUMNS - COLUMN_CELLS, picture)
+        #  No gap is added: the picture's own attribute cell is a blank one,
+        #  and a second would be a cell spent twice on the same air.
+        room = COLUMNS - COLUMN_CELLS
+    canvas.row(row + 1).runs(_within(_clock_runs(moment, zone, room), room))
+    canvas.row(row + 2).runs(_within(_figure_runs(moment), room))
+
+
+def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
+    """`NOW 16:00 UTC 18:00 CEST (UTC+2)`, in yellow and cyan.
+
+    One space between the runs rather than two, because each of them already
+    begins with an attribute cell that draws as a space. Two would be a gap of
+    three, and the offset in brackets is what would pay for it.
+
+    The offset goes only if the whole of it fits. Trimmed, `(UTC+5.75)` becomes
+    `(UTC+5.` -- an answer that looks like a fact and is not one -- so it is
+    dropped whole where there is no room, the two clocks side by side saying
+    the same thing to anyone who cares to subtract.
+    """
+    runs = [Run("NOW", Colour.WHITE), Run(f" {moment.at:%H:%M} UTC", Colour.YELLOW)]
+    if zone is None:
+        return runs
+    named, offset = _zone_named(zone)
+    local = f" {_local(moment.at, zone)} {named}".rstrip()
+    with_offset = f"{local} (UTC{offset})" if offset else local
+    spent = sum(_ATTRIBUTE_CELL + cell_count(run.text) for run in runs)
+    fits = spent + _ATTRIBUTE_CELL + cell_count(with_offset) <= room
+    runs.append(Run(with_offset if fits else local, Colour.CYAN))
+    return runs
+
+
+def _figure_runs(moment: Moment) -> list[Run]:
+    """The readings, and what the weather is called, in that order.
+
+    The words go last and take what is left, which on a bad day is not all of
+    them -- `heavy sleet shwrs+thunder` is twenty-five cells. That is a cost
+    worth paying here and nowhere else: the picture at the end of the row is
+    saying the same thing, and a reader who loses the tail of the words has not
+    lost the weather.
+    """
+    return [
+        Run(" ".join(_figures(moment)), Colour.WHITE),
+        Run(f" {in_words(moment.symbol)}", Colour.GREEN),
+    ]
+
+
+def _within(runs: list[Run], room: int) -> list[Run]:
+    """Runs trimmed to a budget, the last of them giving way first.
+
+    `RowWriter.runs` trims to the end of the row, which is the wrong edge where
+    something else is drawn further along it.
+    """
+    kept: list[Run] = []
+    used = 0
+    for run in runs:
+        left = room - used - _ATTRIBUTE_CELL
+        if left <= 0:
+            break
+        text = fitted(run.text, left)
+        kept.append(Run(text, run.colour))
+        used += _ATTRIBUTE_CELL + cell_count(text)
+    return kept
 
 
 def _figures(moment: Moment) -> list[str]:
@@ -949,20 +1030,30 @@ def _where(place: Place, near: "Nearby | None") -> str:
     return fitted(f"{place.country}  {position}", COLUMNS - 1)
 
 
-def _clocks(place: Place) -> str:
-    """Which clocks the rows keep, said once rather than in every row."""
-    zone = _zone_of(place)
-    if zone is None:
-        return "Times UTC"
+def _zone_named(zone: ZoneInfo) -> tuple[str, str]:
+    """What a place's clock calls itself, and how far it is from UTC.
+
+    Not every zone has letters -- Fiji reports `+12` -- so a name that is only
+    an offset is dropped and the offset in brackets does the saying.
+    """
     sample = datetime.now(UTC).astimezone(zone)
     named = sample.tzname() or ""
     offset = sample.utcoffset()
     hours = "" if offset is None else f"{offset.total_seconds() / 3600:+g}"
-    #  Not every zone has letters -- Fiji reports "+12" -- so the abbreviation
-    #  is only shown where it is one.
-    if named and not named.startswith(("+", "-")):
-        return fitted(f"Times UTC and {named} (UTC{hours})", COLUMNS - 1)
-    return fitted(f"Times UTC and local (UTC{hours})", COLUMNS - 1)
+    return ("" if named.startswith(("+", "-")) else named), hours
+
+
+def _clock_name(zone: ZoneInfo | None) -> str:
+    """The four cells the hour strip has for saying which clock it keeps.
+
+    `CEST`, `AEDT`, `NZDT` -- the abbreviations are four characters or fewer
+    wherever a zone has one. Where it has not, or has one too long to draw,
+    `loc` says the only thing left that is true.
+    """
+    if zone is None:
+        return "UTC"
+    named, _ = _zone_named(zone)
+    return named if named and len(named) <= LABEL_CELLS else "loc"
 
 
 def _degrees(value: float, poles: str) -> str:

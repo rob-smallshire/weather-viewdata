@@ -23,9 +23,17 @@ is enough to see the afternoon out, and the table is what the rest of the day
 is for.
 
 Local time only. met.no's own pages show one clock here and it is the right
-one: a strip is for glancing at, and two clocks in three cells is neither.
-The row above says which clock it is, and the hours are drawn in the cyan that
-has meant "local" since the first forecast page.
+one: a strip is for glancing at, and two clocks in three cells is neither. The
+label says *which* clock -- `CEST`, the zone's own abbreviation -- and the hours
+are drawn in the cyan that has meant local since the first forecast page.
+
+The label column gets four characters rather than three by putting its
+attribute in the left margin, where a blank cell was going to be anyway. Which
+is exactly enough for the abbreviations: `CEST`, `AEDT`, `NZDT`.
+
+A light rule top and bottom. The chrome's rule is a bar and belongs where the
+page ends; between two things that are both content a bar reads as a second
+frame beginning, so this is the same construction with a sixth of the ink.
 """
 
 from datetime import datetime
@@ -34,45 +42,66 @@ from zoneinfo import ZoneInfo
 
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour, alpha_colour
-from sextile.viewdata.frame import COLUMNS
+from sextile.viewdata.drawing import thin_rule
+from sextile.viewdata.encoding import fitted
 from weather_viewdata.forecast.model import Moment
 from weather_viewdata.icons import BANDS, CELLS_ACROSS, COLUMN_CELLS, draw, icon_for
 
-#: Hours across a band, and what the rest of the row is spent on. See above:
-#: eight is what is left after a label column and a margin that agrees with the
-#: rules.
+#: Hours across a band. See above: eight is what is left after a label column
+#: and a margin that agrees with the rules.
 HOURS_ACROSS: Final = 8
-LABEL_CELLS: Final = COLUMN_CELLS
 
-_USED: Final = LABEL_CELLS + HOURS_ACROSS * COLUMN_CELLS
-_MARGIN: Final = (COLUMNS - _USED) // 2
+#: Characters the label column holds, and where its attribute goes -- in the
+#: left margin, which was going to be a blank cell whatever happened. That is
+#: what buys the fourth character, and the fourth character is what lets the
+#: label be `CEST` rather than something abbreviated twice.
+LABEL_CELLS: Final = 4
+_ATTRIBUTE_AT: Final = 1
+_FIRST_COLUMN: Final = _ATTRIBUTE_AT + 1 + LABEL_CELLS
 
 #: The hour, the picture, the temperature, the wind.
 BAND_ROWS: Final = 1 + BANDS + 2
 
-#: Rows the strip takes, and hours it shows. One band: see above for what a
-#: second would cost.
-STRIP_ROWS: Final = BAND_ROWS
+#: Rows the strip takes, its two rules included, and hours it shows. One band:
+#: see above for what a second would cost.
+_RULES: Final = 2
+STRIP_ROWS: Final = BAND_ROWS + _RULES
 HOURS_SHOWN: Final = HOURS_ACROSS
 
-#: What the rows are, said in the three cells the label column has for it.
-#: Short because that is all there is, and worth the four cells because two
-#: unlabelled rows of figures are two rows nobody can read.
-_LABELS: Final = ("loc", "C", "m/s")
+#: What the two rows of figures are. The hour row is labelled with the zone's
+#: own name instead, which says both what the row is and which clock it keeps.
+_DEGREES: Final = "C"
+_SPEED: Final = "m/s"
 
 _HOUR_COLOUR: Final = Colour.CYAN
 _FIGURE_COLOUR: Final = Colour.WHITE
 
 
 def draw_strip(
-    canvas: Canvas, row: int, moments: list[Moment], zone: ZoneInfo | None
+    canvas: Canvas,
+    row: int,
+    moments: list[Moment],
+    zone: ZoneInfo | None,
+    clock: str,
 ) -> None:
-    """The next hours: eight across, six rows down."""
-    _label(canvas, row, _LABELS[0], _HOUR_COLOUR)
-    _label(canvas, row + BANDS + 1, _LABELS[1], _FIGURE_COLOUR)
-    _label(canvas, row + BANDS + 2, _LABELS[2], _FIGURE_COLOUR)
+    """The next hours: eight across, and a light rule above and below."""
+    thin_rule(canvas, row)
+    thin_rule(canvas, row + BAND_ROWS + 1)
+    _draw_band(canvas, row + 1, moments, zone, clock)
+
+
+def _draw_band(
+    canvas: Canvas,
+    row: int,
+    moments: list[Moment],
+    zone: ZoneInfo | None,
+    clock: str,
+) -> None:
+    _label(canvas, row, clock, _HOUR_COLOUR)
+    _label(canvas, row + BANDS + 1, _DEGREES, _FIGURE_COLOUR)
+    _label(canvas, row + BANDS + 2, _SPEED, _FIGURE_COLOUR)
     for slot, moment in enumerate(moments[:HOURS_ACROSS]):
-        column = _MARGIN + LABEL_CELLS + slot * COLUMN_CELLS
+        column = _FIRST_COLUMN + slot * COLUMN_CELLS
         _figure(canvas, row, column, _hour(moment.at, zone))
         picture = icon_for(moment.symbol)
         if picture is not None:
@@ -89,8 +118,8 @@ def _label(canvas: Canvas, row: int, text: str, colour: Colour) -> None:
     their own attributes, one to a column, and are not labelled at all: a
     column of pictures says what it is.
     """
-    canvas.frame.set_attribute(row, _MARGIN, alpha_colour(colour))
-    canvas.frame.write(row, _MARGIN + 1, f"{text:>{LABEL_CELLS - 1}}")
+    canvas.frame.set_attribute(row, _ATTRIBUTE_AT, alpha_colour(colour))
+    canvas.frame.write(row, _ATTRIBUTE_AT + 1, f"{fitted(text, LABEL_CELLS):>{LABEL_CELLS}}")
 
 
 def _figure(canvas: Canvas, row: int, column: int, text: str) -> None:
