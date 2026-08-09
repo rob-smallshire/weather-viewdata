@@ -320,11 +320,12 @@ BOLT: Final = _half("""
 .#
 """)
 
-#: Half a band of falling weather: one mark, as far up as the weather is hard.
-#: The same three steps as the whole band, in the one column there is room for.
+#: Half a band of falling weather: one mark, two, or three, scattered rather
+#: than ranked. The same rule as the whole band, in the one cell there is room
+#: for -- what says "harder" is how much of it there is.
 HALF: Final = _half("""
+#.
 ..
-.#
 .#
 """)
 
@@ -335,9 +336,9 @@ HALF_LIGHT: Final = _half("""
 """)
 
 HALF_HEAVY: Final = _half("""
+#.
 .#
-.#
-.#
+#.
 """)
 
 #  -- what goes where --------------------------------------------------------
