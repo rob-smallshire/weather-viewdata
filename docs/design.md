@@ -482,6 +482,48 @@ no digit is spent on the rows and `1`–`9` do nothing — which is the rule abo
 naming only the keys that work rather than an exception to it. The only key that
 leads anywhere is `0`.
 
+### The next eight hours, across
+
+`hours.py`. The forecast read across instead of down: a table of hours is exact
+and has to be read a row at a time, where a strip of them is a shape and a
+reader takes in "clear this afternoon, rain by six" without reading anything.
+
+```
+   loc 19  20  21  22  23  00  01  02
+        ▨   ▨   ▨   ▨   ▨   ▨   ▨   ▨     the pictures, three rows
+     C 13  14  15  16  17  18  19  20
+   m/s  2   2   2   2   2   2   2   2
+```
+
+**Eight hours, and the arithmetic is forced rather than chosen.** An hour column
+is four cells — an attribute and three cells of picture — so a row of forty
+holds ten. Ten leaves nothing for saying which row is the temperature and which
+the wind, and two unlabelled rows of figures on a page a reader sees once is a
+page that has to be explained; so four cells go to a label column, which leaves
+nine. Nine fills the row to the last cell, where eight leaves two at each end and
+lines the strip up with the rules above and below it. Eight.
+
+A band is six rows and the frame has thirteen left once the position, the
+clocks, the issue time and the weather now have had their seven. A second band
+would fill all thirteen, take the table off the first frame entirely, and buy
+eight more hours — and eight is enough to see the afternoon out, which is what
+the table is for after that.
+
+**Local time only**, in the cyan that has meant local since the first forecast
+page. met.no's own pages show one clock here and it is the right one: a strip is
+for glancing at, and two clocks in three cells is neither. Readings are rounded
+to whole degrees and whole metres a second — three cells will not hold a decimal
+and a shape does not want one — with a dash for a reading there is none of, as
+everywhere else.
+
+**Each part says its piece once.** The strip shows what comes after now, and the
+table what comes after the strip. A reader who has just seen eight hours drawn
+across the frame does not want them again as rows.
+
+The strip is a `Block` in the template's lead-in — rows and a function to fill
+them — so the pagination counts it like any other lead-in and the table falls in
+underneath without arithmetic anywhere.
+
 ### What it does not yet do
 
 Written down because none of it is obvious from the code, and the page has had

@@ -9,6 +9,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -17,7 +18,10 @@ from weather_viewdata import build_application
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
+from weather_viewdata.hours import HOURS_SHOWN
 from weather_viewdata.store import Index
+
+OSLO = ZoneInfo("Europe/Oslo")
 
 TRONDHEIM = Place(
     geoname_id=3133880,
@@ -169,3 +173,50 @@ class TestTheBlockAtTheTop:
     ) -> None:
         page = await page_for(hourly(count), tmp_path)
         assert "NOW" in text_of(page)
+
+
+class TestTheHourByHourStrip:
+    """The forecast read across instead of down.
+
+    A table of hours is exact and has to be read a row at a time; a strip of
+    them is a shape, and a reader takes in "clear this afternoon, rain by six"
+    without reading anything at all.
+    """
+
+    async def test_it_shows_the_next_eight_hours(self, tmp_path: Path) -> None:
+        page = await page_for(hourly(30), tmp_path)
+        shown = text_of(page)
+        start = this_hour()
+        for ahead in range(1, HOURS_SHOWN + 1):
+            hour = f"{(start + timedelta(hours=ahead)).astimezone(OSLO):%H}"
+            assert hour in shown, hour
+
+    async def test_and_says_which_row_is_which(self, tmp_path: Path) -> None:
+        #  Four cells of the forty go on saying so, which is what takes the
+        #  strip from ten hours to eight. Two unlabelled rows of figures on a
+        #  page a reader sees once is a page that has to be explained.
+        shown = text_of(await page_for(hourly(30), tmp_path))
+        assert "loc" in shown
+        assert "m/s" in shown
+
+    async def test_the_table_starts_where_the_strip_left_off(
+        self, tmp_path: Path
+    ) -> None:
+        #  Each says its piece once. A reader who has just seen eight hours
+        #  drawn across the frame does not want them again as rows.
+        page = await page_for(hourly(30), tmp_path)
+        first = this_hour() + timedelta(hours=HOURS_SHOWN + 1)
+        assert f"{first:%H:%M}" in text_of(page)
+        skipped = this_hour() + timedelta(hours=HOURS_SHOWN)
+        assert f" {skipped:%H:%M}" not in text_of(page)
+
+    async def test_a_forecast_of_one_hour_still_draws(self, tmp_path: Path) -> None:
+        #  Nothing after now, so nothing in the strip and nothing in the table.
+        #  The page is the preamble and the weather now, which is all there is
+        #  to say and is better than a frame of empty columns.
+        page = await page_for(hourly(1), tmp_path)
+        assert "NOW" in text_of(page)
+
+    async def test_the_strip_is_on_the_first_frame_only(self, tmp_path: Path) -> None:
+        page = await page_for(hourly(80), tmp_path)
+        assert "m/s" not in text_of(page, 1)

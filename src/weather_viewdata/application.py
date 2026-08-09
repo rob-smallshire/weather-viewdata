@@ -52,6 +52,7 @@ from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.middleware import log_pages
 from sextile.templates import (
     HOME_KEY,
+    Block,
     Entry,
     Menu,
     MenuItem,
@@ -71,6 +72,7 @@ from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
+from weather_viewdata.hours import HOURS_SHOWN, STRIP_ROWS, draw_strip
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
 from weather_viewdata.icons import draw as draw_icon
 from weather_viewdata.store import Index, Nearby
@@ -779,11 +781,16 @@ def _forecast_page(
             title=_heading(place),
             home=app.index,
         ).build(address)
+    now = forecast.current(datetime.now(UTC))
+    #  The strip shows what comes after now, and the table what comes after the
+    #  strip. Each says its piece once: a reader who has just seen sixteen
+    #  hours drawn across the frame does not want them again as rows.
+    coming = [moment for moment in forecast.moments if now is None or moment.at > now.at]
     return ForecastTable(
         title=_heading(place),
-        entries=list(forecast.moments),
+        entries=coming[HOURS_SHOWN:],
         home=app.index,
-        preamble=_preamble(place, forecast, near),
+        preamble=_preamble(place, forecast, near, coming),
         #  On every frame: a reader on frame c looking at four columns of
         #  figures has no way back to the words that say what they are.
         headings=_HEADINGS,
@@ -831,7 +838,10 @@ def _heading(place: Place) -> str:
 
 
 def _preamble(
-    place: Place, forecast: Forecast, near: "Nearby | None"
+    place: Place,
+    forecast: Forecast,
+    near: "Nearby | None",
+    coming: Sequence[Moment],
 ) -> Sequence[PreambleLine]:
     """Where this is, which clocks it keeps, how old it is, and the weather now.
 
@@ -848,10 +858,22 @@ def _preamble(
         _clocks(place),
         f"Issued {forecast.updated_at:%H:%M} UTC",
     ]
+    zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     if now is not None:
         lines.append("")
-        lines += _now_lines(now, _zone_of(place))
+        lines += _now_lines(now, zone)
+    if coming:
+        #  A blank before it, so the strip reads as a thing of its own rather
+        #  than as more of the lead-in.
+        lines.append("")
+        #  Drawn rather than written, and the template counts its rows like any
+        #  others -- so the strip filling what is left of the frame simply
+        #  leaves the table to start on the next one.
+        hours = list(coming[:HOURS_SHOWN])
+        lines.append(
+            Block(STRIP_ROWS, lambda canvas, row: draw_strip(canvas, row, hours, zone))
+        )
     return lines
 
 
