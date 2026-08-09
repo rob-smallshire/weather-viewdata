@@ -134,11 +134,6 @@ _FREEZING_AT: Final = (1 / 3, 2 / 3)
 #: same bar means the same rain on every page.
 _RAIN_LEVELS: Final = (0.1, 1.0, 4.0)
 
-#: The least the wind chart's top may be, in metres a second. Without a floor a
-#: still day is drawn as a gale, the tallest thing in the series filling the
-#: chart whatever it happens to be.
-_LEAST_WIND: Final = 5.0
-
 #: The narrowest a temperature chart may be, in degrees. A day that never moves
 #: would otherwise be drawn as a line on the floor, which reads as cold rather
 #: than as steady.
@@ -293,20 +288,31 @@ def rain_level(millimetres: float | None) -> int | None:
 
 
 def _draw_wind(canvas: Canvas, row: int, moments: list[Moment]) -> None:
-    """The wind, as a line over two rows, from a standstill to the strongest."""
+    """The wind, as a line over two rows, from a standstill to the strongest.
+
+    **The bottom is nought and the top is whatever the strongest hour is**, and
+    the top is written beside it. The temperature chart needs a floor under how
+    narrow it may be, because a flat line halfway up a chart of unsaid limits
+    means nothing; wind needs none, because the bottom of the chart is a real
+    place -- no wind -- and the one number that has to be said is the top. A
+    breeze drawn full height under a label reading 2 is a breeze, and a reader
+    who looks at the label knows it.
+    """
     readings = [moment.wind_speed for moment in moments]
     known = [reading for reading in readings if reading is not None]
     if not known:
         return
-    high = max(max(known), _LEAST_WIND)
+    high = max(known)
+    #  A dead calm all through has no top to scale to, and every reading is on
+    #  the floor of the chart, which is where a dead calm belongs.
+    fractions = [
+        None if reading is None else (reading / high if high > 0 else 0.0)
+        for reading in readings
+    ]
     _draw_chart(
         canvas,
         row,
-        curve(
-            [_between(0.0, high, reading) for reading in readings],
-            across=_CHART_ACROSS,
-            down=_GUST_ROWS * BLOCKS_DOWN,
-        ),
+        curve(fractions, across=_CHART_ACROSS, down=_GUST_ROWS * BLOCKS_DOWN),
         [_GUST_COLOUR],
     )
     _label(canvas, row, _whole(high), _FIGURE_COLOUR, cells=_CHART_LABEL_CELLS)

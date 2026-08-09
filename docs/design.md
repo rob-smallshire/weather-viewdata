@@ -575,11 +575,17 @@ this chart exists to say.
 a dry afternoon a scaled chart draws a drizzle full height, and the reader who
 wanted to know whether to take a coat has been told the wrong thing loudly.
 
-**The wind chart has a floor of 5 m/s.** Without one, a still day is drawn as a
-gale: the tallest thing in the series fills the chart whatever it happens to be.
-The temperature chart has the same guard in degrees — a day that never moves
-would otherwise be a line along the bottom, which reads as cold rather than as
-steady.
+**The wind chart runs from nought to the strongest hour, and says which.** It
+needs no floor under how narrow it may be, because the bottom of the chart is a
+real place — no wind — and the one number that has to be said is the top. A
+breeze drawn full height under a label reading `2` is a breeze, and a reader who
+looks at the label knows it.
+
+The temperature chart is the case that *does* need a floor, and the difference
+is worth stating: neither of its ends is a fixed point, so a flat line halfway
+up a chart of unsaid limits means nothing at all. Two degrees is the least
+spread it will draw — a day that never moves would otherwise be a line along the
+bottom, which reads as cold rather than as steady.
 
 **Local time only, and the label says which clock** — `CEST`, the zone's own
 abbreviation, in the cyan that has meant local since the first forecast page.
