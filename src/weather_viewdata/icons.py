@@ -193,8 +193,8 @@ CLOUD_TOP: Final = _piece("""
 #: The cloud itself, flat along the bottom so that what falls out of it starts
 #: from a line.
 CLOUD: Final = _piece("""
-..##..
-.####.
+..#...
+.###..
 ######
 """)
 
