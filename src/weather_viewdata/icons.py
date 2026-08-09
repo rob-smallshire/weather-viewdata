@@ -125,6 +125,24 @@ def _half(art: str) -> tuple[int, ...]:
     return _piece(art, cells=1)
 
 
+def _figure(art: str) -> tuple[tuple[int, ...], ...]:
+    """A picture drawn across all nine cells, in one colour.
+
+    The exception to the three bands, and there are exactly two of them:
+    `clearsky` and `fog` are the states with **nothing to stack** -- no cloud
+    and nothing falling -- so there is no reason to spend the picture on layers
+    that are not there. Six blocks by nine, all one colour, which costs no more
+    attributes than three bands do.
+    """
+    drawn: Icon = icon(art)
+    if drawn.rows != BANDS or drawn.cells_across > CELLS_ACROSS:
+        raise ValueError(f"a figure is {CELLS_ACROSS} cells across and {BANDS} down")
+    return tuple(
+        tuple(patterns) + (0,) * (CELLS_ACROSS - len(patterns))
+        for patterns in drawn.cells()
+    )
+
+
 #  -- the pieces -------------------------------------------------------------
 #
 #  Six blocks across, three down. Drawn as themselves so that changing one is a
@@ -176,9 +194,52 @@ CLOUD_SMALL: Final = _piece("""
 ..####
 """)
 
-#: Fog, as the flat bars it looks like from inside. The same in every band, so
-#: the whole icon is one texture.
-FOG: Final = _piece("""
+#  -- the figures ------------------------------------------------------------
+#
+#  Two states have nothing to stack -- no cloud, and nothing falling -- so they
+#  are not assembled from bands at all. They are one picture across all nine
+#  cells, which costs no more attributes than three bands do and is not a
+#  special case so much as the other half of the grammar: **either the weather
+#  has layers, or it is one thing.**
+
+#: A clear sky, which is worth the whole picture. Small it is a mark among
+#: marks; large it is the one frame in a strip of ten that a reader picks out
+#: without reading anything.
+SUN_FIGURE: Final = _figure("""
+..##..
+#.##.#
+.####.
+######
+######
+######
+.####.
+#.##.#
+..##..
+""")
+
+#: And the same by night. A crescent rather than a disc, because a full moon
+#: and a sun at this size are the same drawing.
+MOON_FIGURE: Final = _figure("""
+..###.
+.##...
+##....
+##....
+##....
+##....
+##....
+.##...
+..###.
+""")
+
+#: Fog, as the flat bars it looks like from inside. Drawn whole so the bars are
+#: evenly spaced: three bands of the same piece put two of them side by side.
+FOG_FIGURE: Final = _figure("""
+.####.
+......
+.####.
+......
+.####.
+......
 .####.
 ......
 .####.
@@ -336,6 +397,18 @@ MOON_COLOUR: Final = Colour.WHITE
 THUNDER_COLOUR: Final = Colour.YELLOW
 
 
+def _figure_for(weather: Weather) -> tuple[tuple[tuple[int, ...], ...], Colour] | None:
+    """The whole-picture drawing for this weather, if it has one."""
+    if weather.core == "clearsky":
+        if weather.when == NIGHT:
+            return MOON_FIGURE, MOON_COLOUR
+        return SUN_FIGURE, SUN_COLOUR
+    if weather.core == "fog":
+        #  The one weather that is not above the reader but around them.
+        return FOG_FIGURE, CLOUD_COLOUR
+    return None
+
+
 def icon_for(symbol: str | None) -> WeatherIcon | None:
     """The picture for a symbol code, or None where there is none to draw.
 
@@ -346,6 +419,10 @@ def icon_for(symbol: str | None) -> WeatherIcon | None:
     weather = taken_apart(symbol)
     if weather is None:
         return None
+    figure = _figure_for(weather)
+    if figure is not None:
+        rows, colour = figure
+        return WeatherIcon(bands=tuple(band(cells, colour) for cells in rows))
     return WeatherIcon(
         bands=(
             band(*_sky(weather)),
@@ -357,23 +434,13 @@ def icon_for(symbol: str | None) -> WeatherIcon | None:
 
 def _sky(weather: Weather) -> tuple[tuple[int, ...], Colour]:
     """The top band: what is above the weather, or the top of the cloud."""
-    if weather.core == "fog":
-        return FOG, CLOUD_COLOUR
-    if weather.core == "clearsky":
-        #  Nothing but sky, so the sun goes in the middle band where it sits
-        #  square in the column rather than perched at the top of it.
-        return EMPTY, SUN_COLOUR
     if _sunny(weather):
         return (MOON, MOON_COLOUR) if weather.when == NIGHT else (SUN, SUN_COLOUR)
     return CLOUD_TOP, CLOUD_COLOUR
 
 
 def _middle(weather: Weather) -> tuple[tuple[int, ...], Colour]:
-    """The middle band: the cloud, or the sun where there is no cloud."""
-    if weather.core == "fog":
-        return FOG, CLOUD_COLOUR
-    if weather.core == "clearsky":
-        return (MOON, MOON_COLOUR) if weather.when == NIGHT else (SUN, SUN_COLOUR)
+    """The middle band: the cloud, less of one for fair weather."""
     if weather.core == "fair":
         return CLOUD_SMALL, CLOUD_COLOUR
     return CLOUD, CLOUD_COLOUR
@@ -390,10 +457,6 @@ def _fall(weather: Weather) -> Band:
         anything + thunder    that thing, in half a band, and a yellow bolt
         sleet + thunder       rain and a bolt -- see the note above
     """
-    if weather.core == "fog":
-        #  Fog is the one weather that is not above the reader, so it is drawn
-        #  through all three bands rather than hanging from a cloud.
-        return band(FOG, CLOUD_COLOUR)
     hard = _BY_INTENSITY[weather.intensity]
     if weather.thunder:
         return Band(patches=(_beside_the_bolt(weather, hard), Patch(THUNDER_COLOUR, BOLT)))

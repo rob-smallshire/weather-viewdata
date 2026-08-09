@@ -159,7 +159,19 @@ one, and the icon becomes three bands:
 | middle | the cloud, or the sun where there is none | cyan, or yellow |
 | bottom | what is falling, or a bolt | blue, cyan, white, or yellow |
 
-and the code chooses the pieces:
+and the code chooses the pieces — **unless there is nothing to stack**, in which
+case it does not become three bands at all. `clearsky` and `fog` have no cloud
+and nothing falling, so each is one figure across all nine cells, in one colour,
+costing no more attributes than three bands would. It is the other half of the
+grammar rather than an exception to it: *either the weather has layers, or it is
+one thing.*
+
+A clear sky is worth the whole picture. Small, it is a mark among marks; large,
+it is the one hour in a strip of ten that a reader picks out without reading
+anything. Fog gains by it too — three bands of the same piece put two of its
+bars side by side, and drawn whole they are evenly spaced.
+
+For the rest:
 
 ```
 sky      showers or nothing falling -> sun      (moon if _night)

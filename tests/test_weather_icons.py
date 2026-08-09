@@ -26,9 +26,11 @@ from weather_viewdata.icons import (
     CLOUD_TOP,
     COLUMN_CELLS,
     EMPTY,
-    FOG,
+    FOG_FIGURE,
     MOON,
+    MOON_FIGURE,
     SUN,
+    SUN_FIGURE,
     WeatherIcon,
     icon_for,
 )
@@ -92,18 +94,16 @@ class TestTheSkyOnTop:
     """
 
     @pytest.mark.parametrize(
-        "code", ["clearsky_day", "fair_day", "partlycloudy_day", "rainshowers_day"]
+        "code", ["fair_day", "partlycloudy_day", "rainshowers_day"]
     )
     def test_the_sun_shows_where_there_are_breaks_in_the_weather(
         self, code: str
     ) -> None:
-        icon = drawn(code)
-        assert SUN in (icon.bands[0].cells, icon.bands[1].cells)
+        assert drawn(code).bands[0].cells == SUN
 
-    @pytest.mark.parametrize("code", ["clearsky_night", "snowshowers_night"])
+    @pytest.mark.parametrize("code", ["snowshowers_night", "partlycloudy_night"])
     def test_and_the_moon_at_night(self, code: str) -> None:
-        icon = drawn(code)
-        assert MOON in (icon.bands[0].cells, icon.bands[1].cells)
+        assert drawn(code).bands[0].cells == MOON
 
     def test_polar_twilight_keeps_the_sun(self) -> None:
         #  The sun is up in some sense or met.no would have said night. Drawing
@@ -114,12 +114,17 @@ class TestTheSkyOnTop:
     def test_continuous_weather_has_cloud_all_the_way_up(self, code: str) -> None:
         assert drawn(code).bands[0].cells == CLOUD_TOP
 
-    def test_a_clear_sky_puts_the_sun_in_the_middle(self) -> None:
-        #  There is nothing else in the picture, so it sits square in the
-        #  column rather than perched at the top of it.
-        icon = drawn("clearsky_day")
-        assert icon.bands[0].cells == EMPTY
-        assert icon.bands[1].cells == SUN
+    def test_a_clear_sky_is_a_sun_and_nothing_else(self) -> None:
+        #  Nothing to stack, so nothing is stacked: one picture across all nine
+        #  cells. Small, a clear sky is a mark among marks; large, it is the one
+        #  hour in a strip of ten that a reader picks out without reading.
+        assert [band.cells for band in drawn("clearsky_day").bands] == list(SUN_FIGURE)
+        assert drawn("clearsky_day").bands[0].colour == Colour.YELLOW
+
+    def test_and_by_night_a_moon(self) -> None:
+        assert [band.cells for band in drawn("clearsky_night").bands] == list(
+            MOON_FIGURE
+        )
 
 
 class TestTheCloudInTheMiddle:
@@ -168,13 +173,14 @@ class TestWhatIsFalling:
         assert light < middling < heavy
 
     def test_a_dry_hour_leaves_the_bottom_band_empty(self) -> None:
-        for code in ("clearsky_day", "fair_day", "partlycloudy_day", "cloudy"):
+        for code in ("fair_day", "partlycloudy_day", "cloudy"):
             assert drawn(code).bands[2].cells == EMPTY
 
     def test_fog_is_drawn_through_all_three(self) -> None:
         #  The one weather that is not above the reader but around them, so it
-        #  does not hang from a cloud.
-        assert [band.cells for band in drawn("fog").bands] == [FOG] * BANDS
+        #  does not hang from a cloud. Drawn whole, so its bars are evenly
+        #  spaced: three bands of one piece would put two of them side by side.
+        assert [band.cells for band in drawn("fog").bands] == list(FOG_FIGURE)
 
 
 class TestThunder:
