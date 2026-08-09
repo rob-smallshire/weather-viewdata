@@ -165,11 +165,11 @@ and the code chooses the pieces:
 sky      showers or nothing falling -> sun      (moon if _night)
          otherwise                  -> cloud top
 cloud    fair -> a small one;  anything else -> a cloud
-fall     rain -> strokes, blue      light: two, clear of the cloud
-         sleet -> strokes and dots, cyan    middling: three, clear of it
-         snow -> flakes, white              heavy: three, touching it
-         thunder -> the band splits: the fall on the left in its own
-                    colour, a yellow bolt on the right
+fall     rain  -> strokes, blue     light: two, clear of the cloud
+         snow  -> flakes, white     middling: three, clear of it
+                                    heavy: three, touching it
+         sleet -> both of them, half a band each: white, then blue
+         thunder -> half a band of what falls, and a yellow bolt
 fog      the same bars through all three bands
 ```
 
@@ -185,28 +185,42 @@ Three consequences worth writing down, since each was a choice:
   empty rather than sitting lower, because in a strip of hours side by side a
   cloud line that moved up and down would read as weather changing when it is
   not.
-- **Thunder is the one band that splits.** It is worth the cell: six of the 41
-  symbols carry thunder, and drawn in the fall's own colour they would differ
-  from the six plain ones by nothing at all. What falls keeps its colour on the
-  left, the bolt is yellow on the right, and the blank between them is the
-  attribute that paid for it. The pitch of the strip is untouched, because the
-  cell came out of the picture rather than out of the column.
+- **The bottom band holds at most two things, and that is the whole grammar of
+  falling weather.** A second colour costs a cell of picture, leaving two
+  blocks, a blank, two blocks — one cell each for two of snow, rain and a bolt.
+  The pitch of the strip is untouched, the cell coming out of the picture
+  rather than out of the column.
+
+  **Sleet is what makes it worth the cell.** Sleet *is* snow and rain at once,
+  and in one colour it could only be a compromise between them: it was cyan,
+  which is the cloud's colour, so it said "cloud" more than it said "sleet".
+  White beside blue says what it is.
+
+  **Three into two does not go, and the bolt always gets its place.** Thunder is
+  the exceptional condition and the one worth seeing from across a room, where
+  sleet against rain is a detail the words carry. So sleet with thunder in it is
+  drawn as rain with thunder in it — six of the 41 symbols — which errs towards
+  wet, the safer way to be wrong for a reader deciding whether to go out.
 - **Heavier weather is more blocks**, and it fills the row nearest the cloud —
   so heavy rain touches what it falls from. It is the one rule a reader can
   learn without being told.
 
 ### `*95#`, the whole set
 
-Every published symbol with its words, two to a row, three rows each, over four
-frames. One at a time small pictures all look plausible; side by side, the two
-that cannot be told apart show up at once. It is also what a reader needs, since
-the table says `sleet shwrs` and gives no other clue what the picture over it
-means.
+One at a time small pictures all look plausible; side by side, the two that
+cannot be told apart show up at once. It is also what a reader needs, since the
+table says `sleet shwrs` and gives no other clue what the picture over it means.
+
+Every published symbol with its words, two to a row, four rows each — three of
+picture and **a blank one between**, without which the bottom band of one
+picture and the top band of the next read as a single icon: they are three rows
+apart, in the same colours, and nothing between them says where one ends. The
+strip on a forecast page has no such trouble, its pictures being side by side.
 
 The day variants only, with a line saying the sun becomes a moon at night —
-which costs less than another forty drawings. Names wrap over two of the three
-rows, because `heavy sleet shwrs+thunder` is twenty-five cells and half a row is
-fourteen.
+which costs less than another forty drawings. Names wrap over two of the rows,
+because `heavy sleet shwrs+thunder` is twenty-five cells and half a row is
+fourteen. Five frames.
 
 ## The place index
 

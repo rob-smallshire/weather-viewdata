@@ -140,14 +140,23 @@ class TestTheCloudInTheMiddle:
 class TestWhatIsFalling:
     @pytest.mark.parametrize(
         ("code", "colour"),
-        [
-            ("rain", Colour.BLUE),
-            ("sleet", Colour.CYAN),
-            ("snow", Colour.WHITE),
-        ],
+        [("rain", Colour.BLUE), ("snow", Colour.WHITE)],
     )
     def test_each_kind_has_its_own_colour(self, code: str, colour: Colour) -> None:
         assert drawn(code).bands[2].colour == colour
+
+    def test_sleet_is_drawn_as_the_two_things_it_is(self) -> None:
+        #  Sleet *is* snow and rain at once, and in one colour it could only be
+        #  a compromise between them. It was cyan, which is the cloud's colour,
+        #  so it said "cloud" more than it said "sleet". Now it is white beside
+        #  blue, which is what it is.
+        snow, rain = drawn("sleet").bands[2].patches
+        assert (snow.colour, rain.colour) == (Colour.WHITE, Colour.BLUE)
+
+    def test_and_nothing_that_falls_shares_a_colour_with_the_cloud(self) -> None:
+        for code in ("rain", "snow", "sleet", "heavysleet"):
+            for patch in drawn(code).bands[2].patches:
+                assert patch.colour != drawn(code).bands[1].colour, code
 
     @pytest.mark.parametrize("kind", ["rain", "sleet", "snow"])
     def test_harder_weather_is_more_of_it(self, kind: str) -> None:

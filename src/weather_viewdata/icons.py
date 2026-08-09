@@ -10,9 +10,11 @@ to four, and what is left is two blocks, a blank, two blocks.
 That single fact decides every drawing here. A sun cannot sit *behind* a cloud
 in a different colour, because a full-width band has one colour to spend; so it
 sits *above* one. The sky goes in the top band, the cloud in the middle, and
-whatever is falling in the bottom. Only the thunder icons split a band, and only
-because six of the 41 symbols carry thunder and would otherwise be drawn exactly
-like the six without it.
+whatever is falling in the bottom.
+
+Only the bottom band splits, and the two things it can hold are the whole
+grammar of falling weather: sleet is snow beside rain, thunder is a bolt beside
+what falls, and three into two does not go.
 
 **The pieces are composed, not tabulated.** met.no publishes 83 codes and they
 are built by concatenation, so the icons are built the same way from about a
@@ -227,34 +229,33 @@ SNOW_HEAVY: Final = _piece("""
 #..#..
 """)
 
-#: Sleet, which is both at once and drawn as both: a stroke beside a flake.
-SLEET_LIGHT: Final = _piece("""
-......
-.#....
-.#..#.
-""")
-
-SLEET: Final = _piece("""
-......
-#...#.
-#.#.#.
-""")
-
-SLEET_HEAVY: Final = _piece("""
-#...#.
-#.#.#.
-#...#.
-""")
-
-#  Thunder is the one weather that needs two colours on one row, and it is
-#  worth what it costs: six of the 41 symbols carry thunder, and drawn in the
-#  fall's own colour they would differ from the plain ones by nothing at all.
+#  -- half a band ------------------------------------------------------------
 #
-#  So the bottom band buys a second attribute out of its picture and is left
-#  with two cells a blank cell apart. What falls goes on the left in its own
-#  colour, the bolt on the right in yellow.
+#  **The bottom band holds at most two things, and the whole grammar of falling
+#  weather is which two.** A row that wants two colours buys the second
+#  attribute out of its picture, so what is left is two blocks, a blank, two
+#  blocks -- one cell each for two of `snow`, `rain` and a bolt.
+#
+#  Sleet is what makes it worth the cell. Sleet *is* snow and rain at once, and
+#  drawn as one colour it can only be a compromise between them: it was cyan,
+#  which is also the cloud's colour and so said "cloud" more than it said
+#  "sleet". Drawn as white beside blue it says what it is.
+#
+#  Three into two does not go, and **the bolt always gets its place.** Thunder
+#  is the exceptional condition and the one worth seeing from across a room,
+#  where sleet against rain is a detail the words beside the picture carry. So
+#  sleet with thunder in it is drawn as rain with thunder in it -- six of the
+#  41 symbols -- and errs towards wet, which is the safer way for a reader
+#  deciding whether to go out to be wrong.
 
-#: A bolt, in the two blocks a split band leaves for it. A zigzag is the only
+#: Half a band with nothing in it, for a fall that has only one thing to say.
+EMPTY_HALF: Final = _half("""
+..
+..
+..
+""")
+
+#: A bolt, in the two blocks half a band leaves for it. A zigzag is the only
 #: lightning there is at this size, and yellow does the rest of the telling.
 BOLT: Final = _half("""
 .#
@@ -262,35 +263,70 @@ BOLT: Final = _half("""
 #.
 """)
 
-#: What falls, beside a bolt. One stroke, as long as the weather is hard: the
-#: same rule as the full-width falls, in the one column there is room for.
-FALL_LIGHT: Final = _half("""
+#: Rain in half a band: one stroke, as long as the weather is hard. The same
+#: rule as the full-width falls, in the one column there is room for.
+RAIN_HALF_LIGHT: Final = _half("""
 ..
 ..
 #.
 """)
 
-FALL: Final = _half("""
+RAIN_HALF: Final = _half("""
 ..
 #.
 #.
 """)
 
-FALL_HEAVY: Final = _half("""
+RAIN_HALF_HEAVY: Final = _half("""
 #.
 #.
+#.
+""")
+
+#: Snow in half a band: flakes rather than a stroke, so that the two halves of
+#: sleet are told apart by shape as well as by colour.
+SNOW_HALF_LIGHT: Final = _half("""
+..
+#.
+..
+""")
+
+SNOW_HALF: Final = _half("""
+.#
+..
+#.
+""")
+
+SNOW_HALF_HEAVY: Final = _half("""
+#.
+.#
 #.
 """)
 
 #  -- what goes where --------------------------------------------------------
 
-#: Rain blue, snow white, sleet between them. The cloud is cyan in every case,
-#: so a fall is told from the cloud above it by colour as well as by shape.
-_FALLING: Final = {
-    "rain": ((RAIN_LIGHT, RAIN, RAIN_HEAVY), Colour.BLUE),
-    "sleet": ((SLEET_LIGHT, SLEET, SLEET_HEAVY), Colour.CYAN),
-    "snow": ((SNOW_LIGHT, SNOW, SNOW_HEAVY), Colour.WHITE),
+#: The falls that take a whole band, by how hard they are coming down.
+_WHOLE: Final = {
+    "rain": (RAIN_LIGHT, RAIN, RAIN_HEAVY),
+    "snow": (SNOW_LIGHT, SNOW, SNOW_HEAVY),
 }
+
+#: And the same in half a band, for a row with something else to fit in.
+_HALF: Final = {
+    "rain": (RAIN_HALF_LIGHT, RAIN_HALF, RAIN_HALF_HEAVY),
+    "snow": (SNOW_HALF_LIGHT, SNOW_HALF, SNOW_HALF_HEAVY),
+}
+
+#: Rain blue and snow white, and sleet both of them side by side. The cloud is
+#: cyan in every case, so nothing that falls shares a colour with what it falls
+#: from.
+RAIN_COLOUR: Final = Colour.BLUE
+SNOW_COLOUR: Final = Colour.WHITE
+
+_FALL_COLOURS: Final = {"rain": RAIN_COLOUR, "snow": SNOW_COLOUR}
+
+#: What sleet is made of, in the order it is drawn: the frozen half first.
+_SLEET: Final = ("snow", "rain")
 
 _BY_INTENSITY: Final = {"light": 0, "": 1, "heavy": 2}
 
@@ -344,33 +380,56 @@ def _middle(weather: Weather) -> tuple[tuple[int, ...], Colour]:
 
 
 def _fall(weather: Weather) -> Band:
-    """The bottom band: what is coming down, and the thunder beside it."""
+    """The bottom band: what is coming down, and what else will fit beside it.
+
+    At most two things, because a second colour costs a cell of picture and
+    there are only three. Which two is the whole grammar of falling weather:
+
+        rain, snow            the whole band, in their own colour
+        sleet                 both, side by side: snow white, rain blue
+        anything + thunder    that thing, in half a band, and a yellow bolt
+        sleet + thunder       rain and a bolt -- see the note above
+    """
     if weather.core == "fog":
         #  Fog is the one weather that is not above the reader, so it is drawn
         #  through all three bands rather than hanging from a cloud.
         return band(FOG, CLOUD_COLOUR)
+    hard = _BY_INTENSITY[weather.intensity]
     if weather.thunder:
-        #  The one row in the icon that spends a cell on a second colour. What
-        #  falls keeps its own colour on the left; the bolt is yellow, on the
-        #  right, and the blank cell between them is the attribute that pays
-        #  for it.
-        beside = (FALL_LIGHT, FALL, FALL_HEAVY)[_BY_INTENSITY[weather.intensity]]
-        colour = _FALLING[weather.core][1] if weather.falling else CLOUD_COLOUR
+        return Band(patches=(_beside_the_bolt(weather, hard), Patch(THUNDER_COLOUR, BOLT)))
+    if weather.core == "sleet":
         return Band(
-            patches=(Patch(colour, beside), Patch(THUNDER_COLOUR, BOLT))
+            patches=tuple(
+                Patch(_FALL_COLOURS[kind], _HALF[kind][hard]) for kind in _SLEET
+            )
         )
     if not weather.falling:
         return band(EMPTY, CLOUD_COLOUR)
-    pieces, colour = _FALLING[weather.core]
-    return band(pieces[_BY_INTENSITY[weather.intensity]], colour)
+    return band(_WHOLE[weather.core][hard], _FALL_COLOURS[weather.core])
+
+
+def _beside_the_bolt(weather: Weather, hard: int) -> Patch:
+    """What shares the band with a bolt.
+
+    Sleet is drawn as rain here, there being one cell and two things it is made
+    of. Wet rather than frozen, which is the safer way to be wrong for a reader
+    deciding whether to go out.
+    """
+    if not weather.falling:
+        #  No published code is thunder with nothing falling, but a code added
+        #  next year might be, and an empty half is a better answer than a
+        #  lookup that fails at the far end of a telephone line.
+        return Patch(CLOUD_COLOUR, EMPTY_HALF)
+    kind = "rain" if weather.core == "sleet" else weather.core
+    return Patch(_FALL_COLOURS[kind], _HALF[kind][hard])
 
 
 def draw(canvas: Canvas, row: int, column: int, drawn: WeatherIcon) -> None:
-    """Put an icon on a frame, its attribute cell at `column`.
+    """Put an icon on a frame, its first attribute cell at `column`.
 
-    Placed at an absolute column rather than written along the row, and the
+    Placed at an absolute column rather than written along the row, and every
     attribute is spent whether the colour changed or not. A row writer would
-    charge for it only when the colour changes, so two hours running under the
+    charge for one only when the colour changes, so two hours running under the
     same sky would close up by a cell and the pictures would stop lining up with
     the hours beneath them.
     """

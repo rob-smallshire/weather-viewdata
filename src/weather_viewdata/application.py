@@ -542,7 +542,11 @@ class SymbolTable(Template[tuple[str, ...]]):
     shape for everything else.
     """
 
-    rows_per_entry = BANDS
+    #  A blank row after each, or the bottom band of one picture and the top
+    #  band of the next read as one picture: they are three rows apart, in the
+    #  same colours, and nothing between them says where one ends. The strip on
+    #  a forecast page has no such trouble, its pictures being side by side.
+    rows_per_entry = BANDS + 1
     numbered = False
 
     def draw(self, row: RowWriter, entry: tuple[str, ...], digit: str | None) -> None:
