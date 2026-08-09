@@ -154,12 +154,23 @@ EMPTY: Final = _piece("""
 ......
 """)
 
-#: A disc with corner rays. The rays are single blocks because anything thicker
-#: at this size closes up into a square.
+#: A disc with corner rays, for fair and part cloudy weather -- a sky that is
+#: mostly sky, with a sun that can afford to look like one.
 SUN: Final = _piece("""
 #.##.#
 .####.
 #.##.#
+""")
+
+#: And a smaller one for a sun above weather that is falling. The disc above is
+#: too intense over rain: a shower has a sun *between* the clouds rather than
+#: blazing over them, and the picture should say which of the two the hour is
+#: mostly about. Low and to the left, so it reads as peeping past the cloud
+#: beneath rather than sitting on top of it.
+SUN_SMALL: Final = _piece("""
+......
+..#...
+.###..
 """)
 
 #: A crescent, which is the only moon that reads as one at six blocks across.
@@ -434,9 +445,12 @@ def icon_for(symbol: str | None) -> WeatherIcon | None:
 
 def _sky(weather: Weather) -> tuple[tuple[int, ...], Colour]:
     """The top band: what is above the weather, or the top of the cloud."""
-    if _sunny(weather):
-        return (MOON, MOON_COLOUR) if weather.when == NIGHT else (SUN, SUN_COLOUR)
-    return CLOUD_TOP, CLOUD_COLOUR
+    if not _sunny(weather):
+        return CLOUD_TOP, CLOUD_COLOUR
+    if weather.when == NIGHT:
+        return MOON, MOON_COLOUR
+    #  Small where something is falling, full-size where the sky is mostly sky.
+    return (SUN_SMALL if weather.falling else SUN), SUN_COLOUR
 
 
 def _middle(weather: Weather) -> tuple[tuple[int, ...], Colour]:

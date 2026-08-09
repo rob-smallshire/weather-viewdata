@@ -31,6 +31,7 @@ from weather_viewdata.icons import (
     MOON_FIGURE,
     SUN,
     SUN_FIGURE,
+    SUN_SMALL,
     WeatherIcon,
     icon_for,
 )
@@ -93,13 +94,20 @@ class TestTheSkyOnTop:
     the three states with nothing falling, and everything that falls in showers.
     """
 
-    @pytest.mark.parametrize(
-        "code", ["fair_day", "partlycloudy_day", "rainshowers_day"]
-    )
-    def test_the_sun_shows_where_there_are_breaks_in_the_weather(
+    @pytest.mark.parametrize("code", ["fair_day", "partlycloudy_day"])
+    def test_a_sky_that_is_mostly_sky_gets_a_sun_that_looks_like_one(
         self, code: str
     ) -> None:
         assert drawn(code).bands[0].cells == SUN
+
+    @pytest.mark.parametrize(
+        "code", ["rainshowers_day", "lightsnowshowers_day", "sleetshowers_day"]
+    )
+    def test_and_a_sun_over_falling_weather_is_a_smaller_one(self, code: str) -> None:
+        #  A shower has a sun *between* the clouds rather than blazing over
+        #  them, and the full-size disc over rain says the hour is mostly about
+        #  the sun when it is mostly about the rain.
+        assert drawn(code).bands[0].cells == SUN_SMALL
 
     @pytest.mark.parametrize("code", ["snowshowers_night", "partlycloudy_night"])
     def test_and_the_moon_at_night(self, code: str) -> None:
@@ -108,7 +116,8 @@ class TestTheSkyOnTop:
     def test_polar_twilight_keeps_the_sun(self) -> None:
         #  The sun is up in some sense or met.no would have said night. Drawing
         #  a moon in Tromsø in November would be the wrong half of the year.
-        assert drawn("rainshowers_polartwilight").bands[0].cells == SUN
+        assert drawn("rainshowers_polartwilight").bands[0].cells == SUN_SMALL
+        assert drawn("partlycloudy_polartwilight").bands[0].cells == SUN
 
     @pytest.mark.parametrize("code", ["rain", "heavysnow", "cloudy", "sleetandthunder"])
     def test_continuous_weather_has_cloud_all_the_way_up(self, code: str) -> None:
