@@ -206,15 +206,15 @@ CLOUD_SMALL: Final = _piece("""
 #: marks; large it is the one frame in a strip of ten that a reader picks out
 #: without reading anything.
 SUN_FIGURE: Final = _figure("""
-..##..
-#.##.#
-.####.
-######
-######
-######
-.####.
-#.##.#
-..##..
+......
+......
+.#.#.#
+..###.
+.#####
+..###.
+.#.#.#
+......
+......
 """)
 
 #: And the same by night. A crescent rather than a disc, because a full moon
