@@ -33,6 +33,20 @@ from weather_viewdata.places import search_key
 
 _SCHEMA_FILEPATH: Final = Path(__file__).with_name("schema.sql")
 
+#: Which version of the folding and ranking rules built an index.
+#:
+#: **Raise this whenever `_keys_for`, `search_key` or `_rank_of` changes.** The
+#: index is derived data and the rules that derive it live in code, so a change
+#: to them does nothing at all until somebody re-imports -- and until they do,
+#: the service goes on answering by the old rules with nothing whatever to say
+#: that it is. That is not hypothetical: alternate names stopped being indexed,
+#: the code was right, the database was not, and keying A went on offering
+#: Cairo for the alternate name Al Qahirah.
+#:
+#: 1  the original: name, ascii name and filtered alternate names
+#: 2  the place's own name only, folded through the framework's transliteration
+RULES: Final = 2
+
 #: As many as a frame can repaint while a reader is still typing. Measured, not
 #: chosen: nine rows is 2.9 seconds at 1200 baud and three is 0.8.
 SUGGESTIONS: Final = 3
@@ -86,6 +100,8 @@ class Index:
         self._home_bonus = HOME_BONUS
         with self._lock:
             self._connection.executescript(_SCHEMA_FILEPATH.read_text())
+            (built_by,) = self._connection.execute("PRAGMA user_version").fetchone()
+        self._built_by = int(built_by)
 
     @classmethod
     def open(cls, database_filepath: Path | str) -> Self:
@@ -166,6 +182,8 @@ class Index:
                     "INSERT OR IGNORE INTO place_keys (key, geoname_id) VALUES (?, ?)",
                     [(key, place.geoname_id) for key in _keys_for(place)],
                 )
+        #  Whatever is here was put here by the rules in force now.
+        self.stamp()
 
     def _rank_of(self, place: Place) -> float:
         """How likely this is to be the place somebody meant.
@@ -271,6 +289,26 @@ class Index:
                 },
             ).fetchone()
         return _place_from(row) if row is not None else None
+
+    @property
+    def stale(self) -> bool:
+        """Whether this index was built by rules the code no longer uses.
+
+        An empty index is never stale: nothing has been built by any rules, so
+        none of them are out of date.
+        """
+        return self._built_by != RULES and self.held() > 0
+
+    def stamp(self, rules: int = RULES) -> None:
+        """Record which rules built what is here.
+
+        SQLite's own `user_version`, which costs no table and no migration and
+        is exactly what it is for.
+        """
+        with self._writing() as connection:
+            #  Not a parameter: PRAGMA will not take one.
+            connection.execute(f"PRAGMA user_version = {int(rules)}")
+        self._built_by = int(rules)
 
     def held(self) -> int:
         """How many places the index holds, for a page that says so."""

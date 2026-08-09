@@ -6,12 +6,13 @@ the list. With three it either offers the right place or it does not.
 """
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
 from weather_viewdata.geonames import Place
 from weather_viewdata.places import search_key
-from weather_viewdata.store import Index
+from weather_viewdata.store import RULES, Index
 
 
 def place(
@@ -310,3 +311,39 @@ class TestEveryResultBeginsWithWhatWasTyped:
         assert "New York City" in [
             found.name for found in index.matching("NEWYORK")
         ]
+
+
+class TestAnIndexBuiltByOlderRules:
+    """The index is derived data, and the rules that derive it live in code.
+
+    So changing them does nothing until somebody re-imports, and until they do
+    the service goes on answering by the old rules with nothing to say it is.
+    That is exactly what happened when alternate names stopped being indexed:
+    the code was right, the database was not, and keying A went on offering
+    Cairo.
+    """
+
+    def test_a_fresh_index_is_not_stale(self, index: Index) -> None:
+        assert not index.stale
+
+    def test_nor_is_an_empty_one(self, tmp_path: Path) -> None:
+        #  Nothing has been built by any rules, so no rules are out of date.
+        with Index.open(tmp_path / "places.sqlite") as empty:
+            assert not empty.stale
+
+    def test_one_built_by_older_rules_says_so(self, tmp_path: Path) -> None:
+        filepath = tmp_path / "places.sqlite"
+        with Index.open(filepath) as index:
+            index.add_places([TRONDHEIM])
+            index.stamp(RULES - 1)
+        with Index.open(filepath) as reopened:
+            assert reopened.stale
+
+    def test_and_importing_again_brings_it_up_to_date(self, tmp_path: Path) -> None:
+        filepath = tmp_path / "places.sqlite"
+        with Index.open(filepath) as index:
+            index.add_places([TRONDHEIM])
+            index.stamp(RULES - 1)
+        with Index.open(filepath) as reopened:
+            reopened.add_places([TRONDHEIM])
+            assert not reopened.stale

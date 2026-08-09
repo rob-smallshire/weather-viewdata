@@ -88,6 +88,10 @@ FORECASTS: Final = "forecasts"
 #: a column of forecast nobody can read.
 _HEADINGS: Final = "  UTC LOCAL  DEG C  M/S  WEATHER"
 
+class StaleIndexError(RuntimeError):
+    """The place index was built by rules this code no longer uses."""
+
+
 def _places(service: Mapping[str, object]) -> Index:
     """The place index, out of what the service holds.
 
@@ -399,6 +403,17 @@ def build_application(
         to be hoisted anywhere for both to see.
         """
         index = await asyncio.to_thread(Index.open, index_filepath)
+        #  Refused rather than warned about. A stale index does not fail, it
+        #  answers -- by rules the code stopped using, with nothing on the
+        #  screen to say so. A service that will not start says exactly what to
+        #  run; one that starts and lies costs somebody an afternoon.
+        if index.stale:
+            await asyncio.to_thread(index.close)
+            raise StaleIndexError(
+                f"{index_filepath} was built by older rules and would answer by "
+                f"them. Run `weather-viewdata import-places --index "
+                f"{index_filepath}` to rebuild it."
+            )
         try:
             yield {PLACES: index, FORECASTS: source}
         finally:

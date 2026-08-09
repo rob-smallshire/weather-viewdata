@@ -1,5 +1,5 @@
 """The local place index, built from GeoNames' dump."""
 
-from weather_viewdata.store.index import SUGGESTIONS, Index
+from weather_viewdata.store.index import RULES, SUGGESTIONS, Index
 
-__all__ = ["SUGGESTIONS", "Index"]
+__all__ = ["RULES", "SUGGESTIONS", "Index"]
