@@ -254,6 +254,13 @@ class TestTheLegendPage:
             first = wrap_text(in_words(code), _WORD_CELLS)[0]
             assert first in shown, code
 
+    async def test_and_the_four_sky_variants_after_them(self, tmp_path: Path) -> None:
+        #  Shown rather than described. The words said what the time of day
+        #  changes and a reader could not judge a picture from them.
+        shown = await _legend(tmp_path)
+        for said in ("clear at night", "clear in polar", "rain shwrs at"):
+            assert said in shown, said
+
     async def test_and_no_name_is_cut_short(self, tmp_path: Path) -> None:
         #  A legend that truncated its own names would be unreadable exactly
         #  where it is most needed: `heavy sleet shwrs+thunder` is the longest

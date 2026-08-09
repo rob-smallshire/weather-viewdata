@@ -246,9 +246,15 @@ picture and the top band of the next read as a single icon: they are three rows
 apart, in the same colours, and nothing between them says where one ends. The
 strip on a forecast page has no such trouble, its pictures being side by side.
 
-The day variants only, with two lines saying the sun becomes a moon at night —
-which costs less than another forty drawings, and is **not time-sensitive on
-purpose.** A legend is a legend and not a forecast, and there is no clock it
+The set is drawn by day, and **the four sky variants follow it** — a moon at
+night and a sun on the horizon in the polar twilight, on a clear sky and on a
+shower, which is the whole of what the time of day changes. Forty more pictures
+would say the same thing four times over, and words alone said it in a way
+nobody could judge a picture from. Each carries its own label, since `in_words`
+drops the time of day and three entries all saying `clear` would explain
+nothing.
+
+The set is drawn by day and **not time-sensitive on purpose.** A legend is a legend and not a forecast, and there is no clock it
 could sensibly follow: not the reader's, since somebody in Britain at midnight
 may be looking up Auckland at noon, and not any place's either, the page being
 about none of them. Drawn by day and saying what changes at night, it is right

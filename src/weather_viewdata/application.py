@@ -31,6 +31,7 @@ makes the order things were registered in unobservable.
 import asyncio
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Final
@@ -505,6 +506,30 @@ async def guide(request: PageRequest) -> Page:
     ).build(request.address)
 
 
+@dataclass(frozen=True)
+class Pictured:
+    """One entry of the legend: a symbol code, and what to call it here.
+
+    The words are carried rather than worked out from the code, because the
+    sky variants are on the page too and `in_words` drops the time of day --
+    three entries all saying `clear` would be a legend that explained nothing.
+    """
+
+    code: str
+    words: str
+
+
+#: The sky variants, shown after the set rather than through it. They differ
+#: from the day drawings in one piece and only for the 21 codes that have a sky
+#: in them, so forty more pictures would say this four times over.
+_SKIES: Final = (
+    ("clearsky_night", "clear at night"),
+    ("clearsky_polartwilight", "clear in polar twilight"),
+    ("rainshowers_night", "rain shwrs at night"),
+    ("rainshowers_polartwilight", "rain shwrs in twilight"),
+)
+
+
 async def pictures(request: PageRequest) -> Page:
     """Every picture the service draws, beside the words for it.
 
@@ -512,39 +537,40 @@ async def pictures(request: PageRequest) -> Page:
     judge a set of pictures: one at a time they all look plausible, and side by
     side the two that cannot be told apart show up at once.
 
-    The day variants, because the night ones differ in exactly one way -- the
-    sun becomes a moon -- and saying that in a line costs less than another
-    forty pictures.
+    The set is drawn by day, and the four sky variants follow it: a moon at
+    night and a sun on the horizon in the polar twilight, on a clear sky and on
+    a shower, which is the whole of what the time of day changes. Forty more
+    pictures would say the same thing four times over.
 
-    **Always the day ones, whatever the hour.** A legend is a legend and not a
-    forecast: there is no clock it could sensibly follow. Not the reader's --
+    **The set is drawn by day whatever the hour.** A legend is a legend and not
+    a forecast: there is no clock it could sensibly follow. Not the reader's --
     somebody in Britain at midnight may be looking up Auckland at noon -- and
-    not any place's either, since the page is about none of them. Drawing the
-    pictures by day and saying what changes at night is the only reading that
-    is right for every reader at once.
+    not any place's either, since the page is about none of them. Drawing it by
+    day and showing what changes is the only reading that is right for every
+    reader at once.
     """
     app = _service(request)
     return SymbolTable(
         title=app.describe(request.address).upper(),
-        entries=_in_pairs(PUBLISHED),
+        entries=_in_pairs(
+            [Pictured(code, in_words(code)) for code in PUBLISHED]
+            + [Pictured(code, words) for code, words in _SKIES]
+        ),
         home=app.index,
-        preamble=[
-            "By day. At night the sun is a moon;",
-            "in polar twilight, low on the horizon.",
-        ],
+        preamble=["Drawn by day, except where it says."],
     ).build(request.address)
 
 
-def _in_pairs(codes: Sequence[str]) -> list[tuple[str, ...]]:
+def _in_pairs(shown: Sequence[Pictured]) -> list[tuple[Pictured, ...]]:
     """Two to a row, because a picture and its words are half a row wide."""
     return [
-        tuple(codes[at : at + _PICTURES_ACROSS])
-        for at in range(0, len(codes), _PICTURES_ACROSS)
+        tuple(shown[at : at + _PICTURES_ACROSS])
+        for at in range(0, len(shown), _PICTURES_ACROSS)
     ]
 
 
-class SymbolTable(Template[tuple[str, ...]]):
-    """Pictures with their words, two to a row and three rows to each.
+class SymbolTable(Template[tuple[Pictured, ...]]):
+    """Pictures with their words, two to a row and four rows to each.
 
     Everything is drawn from `draw_entry` rather than from `draw`, because a
     mosaic picture is placed by cell and is three rows tall: a row writer walks
@@ -559,22 +585,24 @@ class SymbolTable(Template[tuple[str, ...]]):
     rows_per_entry = BANDS + 1
     numbered = False
 
-    def draw(self, row: RowWriter, entry: tuple[str, ...], digit: str | None) -> None:
+    def draw(
+        self, row: RowWriter, entry: tuple[Pictured, ...], digit: str | None
+    ) -> None:
         """Nothing. This shape draws from `draw_entry`; see the class docstring."""
 
     def draw_entry(
-        self, canvas: Canvas, row: int, entry: tuple[str, ...], digit: str | None
+        self, canvas: Canvas, row: int, entry: tuple[Pictured, ...], digit: str | None
     ) -> None:
         del digit  # a legend numbers nothing
-        for slot, code in enumerate(entry):
+        for slot, shown in enumerate(entry):
             column = slot * _PICTURE_CELLS
-            picture = icon_for(code)
+            picture = icon_for(shown.code)
             if picture is not None:
                 draw_icon(canvas, row, column, picture)
             #  Wrapped over two rows, because `heavy sleet shwrs+thunder` is
             #  twenty-five cells and half a row is fourteen. A legend that
             #  truncated the names would be a legend that could not be read.
-            said = wrap_text(in_words(code), _WORD_CELLS)[:2]
+            said = wrap_text(shown.words, _WORD_CELLS)[:2]
             #  Level with the middle band where there is one line of it, so the
             #  words read as belonging to the picture beside them.
             at = row + 1 if len(said) < 2 else row
