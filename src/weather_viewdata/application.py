@@ -53,7 +53,8 @@ from sextile.templates import HOME_KEY, Entry, Menu, MenuItem, Prose, Template
 from sextile.viewdata.canvas import Canvas, RowWriter
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW, draw_chrome
 from sextile.viewdata.controls import Colour
-from sextile.viewdata.drawing import centred, fitted
+from sextile.viewdata.drawing import centred
+from sextile.viewdata.encoding import fitted
 from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
