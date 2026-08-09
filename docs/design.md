@@ -197,24 +197,118 @@ as calm weather, the one wrong answer it must not give.
 
 ## Drawing a forecast
 
-`ForecastTable` is a fourth `Template` shape: a run of hours, one to a row, two
-clocks and a temperature and a wind and a word. Nothing on it is selectable — a
-forecast is something to read, not a menu — so no digit is spent on the rows.
+`_forecast_page` in `application.py` builds it, and `ForecastTable` — a
+`Template[Moment]` — deals the moments into frames. Both `32<geoname-id>` and
+`42<lat><lon>` end here; the only difference is what the preamble says.
+
+A page with nothing to show says why: no forecast is a `Prose` page explaining
+that met.no did not answer and that it is our trouble rather than the reader's.
+An empty table would read as calm weather, which is the one wrong answer a
+weather service must not give.
+
+### What is on it
+
+```
+ TRONDHEIM                    323133880a
+  ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮
+NO  63.4N 10.4E  18m
+Times UTC and CEST (UTC+2)
+Issued 12:30 UTC
+   UTC LOCAL  DEG C  M/S  WEATHER
+ 13:00  15:00   15.3  2.3 heavy rain
+ 14:00  16:00   15.1  1.6 rain
+ ...                          (15 rows)
+  ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮
+ S page down, 0 index
+```
+
+A real response is **86 moments over ten days**, which comes to **five frames**:
+fifteen rows on the first after the preamble, sixteen on the rest.
 
 **Times in UTC and in the place's own zone.** `zoneinfo` reads the system
 database and GeoNames gives the IANA name per place, so daylight saving is
-handled and named: `Times UTC and CEST (UTC+2)`. Not every zone has letters —
-Fiji reports `+12` — so the abbreviation is only shown where it is one.
+handled and named — `Times UTC and CEST (UTC+2)`. Not every zone has letters:
+Fiji reports `+12`, so the abbreviation is only shown where it is one. A point
+page borrows the zone from the nearest known place, timezone borders following
+habitation, and says `Times UTC` where there is nothing within a degree.
+
+**The issue time is worth its row.** met.no runs its models a few times a day,
+so a forecast fetched at nine may have been made at five, and a reader on a slow
+line deciding whether to ask again wants to know which.
 
 **A missing reading is a dash and never a nought.** Nought degrees is weather
-and no reading is not, and on a weather page that is not a distinction to lose.
-Tromsø has no elevation at all in `cities500`, which is the case that made this
-concrete rather than theoretical.
+and no reading is not. Tromsø has no elevation at all in `cities500`, which is
+what made that concrete rather than theoretical.
 
-The weather column takes whatever the row has left, counted from the row rather
-than worked out by hand — an attribute costs a cell, and hand-arithmetic about
-that was wrong the first time. The longest symbol met.no has,
-`heavy sleet shwrs+thunder`, does not fit and is shortened.
+**Column headings on every frame**, which is why `Template` grew `headings`: a
+reader on frame c looking at four columns of figures has no way back to the
+words that say which is the temperature and which the wind.
+
+**The weather column takes whatever the row has left**, counted from the row
+rather than worked out by hand — an attribute costs a cell, and hand-arithmetic
+about that was wrong the first time. met.no's longest symbol,
+`heavy sleet shwrs+thunder`, is twenty-five cells and does not fit; it is
+shortened rather than allowed to overrun. `symbols.py` takes the codes apart
+rather than tabulating ninety of them.
+
+**Nothing on it is selectable.** A forecast is something to read, not a menu, so
+no digit is spent on the rows and `1`–`9` do nothing — which is the rule about
+naming only the keys that work rather than an exception to it. The only key that
+leads anywhere is `0`.
+
+### What it does not yet do
+
+Written down because none of it is obvious from the code, and the page has had
+no iteration since its first draft.
+
+- **No dates anywhere.** Ten days of forecast and nothing says which day a row
+  belongs to. It is worst on the later frames, where the series has coarsened
+  to six-hourly and reads `12:00 18:00 00:00 06:00` over and over with no
+  indication of which day is which. This is the most obviously wrong thing
+  about the page.
+- **The resolution changes silently.** met.no is hourly for two or three days
+  and six-hourly after, and the rows give no sign of the switch. `Moment.covers`
+  knows — it is `1h` or `6h` or `12h` — and nothing uses it.
+- **Precipitation is parsed and not shown.** `Moment.precipitation` in
+  millimetres, over the period `covers` names. Both were deliberately carried
+  through the model because 1.7mm in an hour and 1.7mm over six are different
+  weather; neither reaches the screen.
+- **So are wind direction, cloud cover, humidity and pressure.**
+  `Moment.wind_from` is degrees meteorological — the direction it blows *from* —
+  and `cloud_cover`, `humidity` and `pressure` are all on `Moment` and all
+  unused.
+- **Five frames is a lot of `S`.** A frame is about eight seconds at 1200 baud,
+  so reading to the end of the week costs the better part of a minute. A daily
+  summary — one row a day, high and low and a symbol — would be a different and
+  probably more useful page.
+- **No keys but `0`.** The page offers nothing: not the neighbouring days, not
+  the place's own position page, not back to the search. `request.arrival` is
+  ignored, so a reader who arrived through a suggestion list is offered no way
+  along it.
+- **The last row has no weather.** Correct — the final moment carries no summary
+  block, there being no next hour inside the forecast — but it reads as a gap
+  rather than as the end.
+
+### The data available to draw with
+
+`forecast/model.py`. Every reading is optional, because a missing reading is not
+nought:
+
+| `Forecast` | |
+|---|---|
+| `updated_at` | when the model was run, not when we fetched it |
+| `moments` | in time order, hourly then coarser |
+
+| `Moment` | |
+|---|---|
+| `at` | UTC; the place's zone is applied when drawing |
+| `temperature` | Celsius |
+| `wind_speed`, `wind_from` | m/s, and degrees blown *from* |
+| `cloud_cover`, `humidity` | percent |
+| `pressure` | hPa at sea level |
+| `symbol` | met.no's own word — `rain`, `partlycloudy_day` |
+| `precipitation` | mm over `covers` |
+| `covers` | what `symbol` and `precipitation` describe; None on the last |
 
 ## What it asked of the framework
 
