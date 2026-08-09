@@ -327,7 +327,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LATITUDE_ROW,
                 takes=_takes("NS"),
                 width=_POSITION_CELLS,
-                hint="  north or south: 54.0N or 54.0",
+                hint=" N: 54.0N or 54.0, S: 54.0S or -54.0",
                 hint_row=LATITUDE_ROW + 1,
             ),
             Field(
@@ -336,7 +336,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LONGITUDE_ROW,
                 takes=_takes("EW"),
                 width=_POSITION_CELLS,
-                hint="  east or west: 1.1W or -1.1",
+                hint=" E: 17.2E or 17.2, W: 17.2W or -17.2",
                 hint_row=LONGITUDE_ROW + 1,
             ),
         ],
