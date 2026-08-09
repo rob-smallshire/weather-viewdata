@@ -173,14 +173,14 @@ SUN_SMALL: Final = _piece("""
 .###..
 """)
 
-#: And lower still for the polar twilight, which is neither of the other two:
-#: the sun is below the horizon all day and the sky is lit anyway. Drawn as the
-#: small sun with its foot flattened into a horizon, so it reads as a sun that
-#: has not got up rather than as a smaller one.
+#: And for the polar twilight, which is neither of the other two: the sun is
+#: below the horizon all day and the sky is lit anyway. So it is the small sun
+#: turned over -- the flat edge on top is the horizon and the sun is under it,
+#: which is what the words mean rather than a smaller sun standing on a line.
 SUN_LOW: Final = _piece("""
 ......
+.###..
 ..#...
-#####.
 """)
 
 #: The band-sized moon, lying back on itself as the full-scale one does. Used
@@ -256,17 +256,18 @@ MOON_FIGURE: Final = _figure("""
 ......
 """)
 
-#: A clear sky in the polar twilight: the sun's upper half on the horizon, the
-#: rays still showing above it. The lower rays are what it loses, which is the
-#: right half to lose.
+#: A clear sky in the polar twilight: the sun turned over and set low, so its
+#: flat edge is the horizon and everything drawn is beneath one. The rays that
+#: survive are the downward ones, which is the right half to keep -- the light
+#: in a polar twilight comes from a sun nobody can see.
 TWILIGHT_FIGURE: Final = _figure("""
 ......
 ......
-.#.#.#
-..###.
-.#####
-######
 ......
+......
+.#####
+..###.
+.#.#.#
 ......
 ......
 """)

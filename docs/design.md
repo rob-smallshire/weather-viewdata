@@ -223,9 +223,11 @@ Three consequences worth writing down, since each was a choice:
 - **Rain and snow are the same drawing**, and only the colour tells them apart.
   Which is what makes sleet drawable as both at once.
 - **There are three suns, and the time of day chooses first.** A moon at night;
-  at polar twilight a sun that has not got up, whatever the weather, since where
-  the sun does not rise how high it is says more about the hour than the rain
-  does; and by day the disc where the sky is mostly sky, a smaller one where
+  at polar twilight the sun turned over and set low, so its flat edge is the
+  horizon and everything drawn is beneath one — which is what the words mean,
+  the light coming from a sun nobody can see. The same whatever the weather,
+  since where the sun does not rise how high it is says more about the hour
+  than the rain does; and by day the disc where the sky is mostly sky, a smaller one where
   something is falling.
 
   `polartwilight` is not a typo and not theoretical, though it is seasonal:
