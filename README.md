@@ -28,4 +28,12 @@ Place data from [GeoNames](https://www.geonames.org/), CC BY 4.0.
 Forecasts from the [Norwegian Meteorological Institute](https://www.met.no/),
 CC BY 4.0. Neither endorses this service.
 
+```sh
+uv run weather-viewdata import-places            # 235,176 places, 11 seconds
+uv run weather-viewdata render --page 323133880  # Trondheim
+uv run weather-viewdata serve                    # answer calls on port 6850
+```
+
+[docs/design.md](docs/design.md) is the design as built.
+
 MIT licensed.
