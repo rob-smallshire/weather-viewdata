@@ -47,6 +47,7 @@ being observable. See [what it asked for](#what-it-asked-of-the-framework).
 3                  find a place by name        321<geoname-id>  its forecast
 4                  find a point by position    421<lat><lon>    its forecast
 9  about   90 goodbye   91 help   92/93/94 the framework's pages
+                       95 what the pictures mean
 ```
 
 Stardot's convention, and for its reasons: the first digit names a namespace and
@@ -118,6 +119,87 @@ nearest known place because timezone borders follow habitation.
 Longitude wraps and latitude does not: 190°E is 170°W spelled unusually and is
 taken quietly, where 91°N is a mistake and is refused. The date line gets one
 page number rather than two.
+
+## The weather as a picture
+
+**41 symbol ids, 21 of them with `_day`, `_night` and `_polartwilight`
+variants: 83 codes.** met.no's `symbol_code` is yr's own symbol set — the same
+names NRK publish icons for — and the published list is captured as
+`tests/data/met-symbols.csv`, with a test that takes every code in it apart.
+
+That test earned its keep immediately. **Two codes are misspelled at the
+source**: `lightssleetshowersandthunder` and `lightssnowshowersandthunder`, with
+two esses, in met.no's own legend and in NRK's set, for codes 26 and 28. `lights`
+is not an intensity, so the core was never found and the whole code came back
+raw — twenty-eight characters trimmed to nonsense in a sixteen-cell column, on
+exactly the sort of afternoon a reader would want to know about.
+
+### The grammar
+
+Eighty-three codes and about a dozen drawings, because the codes are built by
+concatenation and the pictures are built the same way. `symbols.taken_apart` is
+the one place that knows how a code is spelled; `in_words` says it and
+`icons.py` draws it, so the two cannot drift apart the way the two folds of a
+place name once did.
+
+**Nine cells, and their shape is decided by what an attribute costs.** A mosaic
+run needs a graphics colour attribute and an attribute takes a cell, so an hour
+column four cells wide is one attribute and three cells of picture, on each of
+three rows — which means **one colour per row, changing only between rows.**
+
+That single fact decides every drawing. A sun cannot sit *behind* a cloud in a
+different colour, because they would share a row; so it sits *above* one, and
+the icon becomes three bands:
+
+| band | holds | colour |
+|---|---|---|
+| top | sun, moon, or the top of a cloud | yellow, white, cyan |
+| middle | the cloud, or the sun where there is none | cyan, or yellow |
+| bottom | what is falling, or a bolt | blue, cyan, white, or yellow |
+
+and the code chooses the pieces:
+
+```
+sky      showers or nothing falling -> sun      (moon if _night)
+         otherwise                  -> cloud top
+cloud    fair -> a small one;  anything else -> a cloud
+fall     rain -> strokes, blue      light: two, clear of the cloud
+         sleet -> strokes and dots, cyan    middling: three, clear of it
+         snow -> flakes, white              heavy: three, touching it
+         thunder -> a bolt, yellow, instead of any of them
+fog      the same bars through all three bands
+```
+
+**The composition explains something in met.no's list that looks arbitrary.**
+Only the *showers* codes have `_day` and `_night` variants — and it is because
+only they have the sun in them: a shower has sky between the clouds and
+continuous rain has not. That is exactly the rule the top band follows, so the
+21 ids with variants are precisely the 21 the grammar draws a sun on.
+
+Three consequences worth writing down, since each was a choice:
+
+- **The cloud is always on the same row.** A dry hour leaves the bottom band
+  empty rather than sitting lower, because in a strip of hours side by side a
+  cloud line that moved up and down would read as weather changing when it is
+  not.
+- **Thunder replaces the fall and turns the band yellow.** There is no room for
+  a bolt *beside* the rain and no second colour to draw it in if there were.
+- **Heavier weather is more blocks**, and it fills the row nearest the cloud —
+  so heavy rain touches what it falls from. It is the one rule a reader can
+  learn without being told.
+
+### `*95#`, the whole set
+
+Every published symbol with its words, two to a row, three rows each, over four
+frames. One at a time small pictures all look plausible; side by side, the two
+that cannot be told apart show up at once. It is also what a reader needs, since
+the table says `sleet shwrs` and gives no other clue what the picture over it
+means.
+
+The day variants only, with a line saying the sun becomes a moon at night —
+which costs less than another forty drawings. Names wrap over two of the three
+rows, because `heavy sleet shwrs+thunder` is twenty-five cells and half a row is
+fourteen.
 
 ## The place index
 
