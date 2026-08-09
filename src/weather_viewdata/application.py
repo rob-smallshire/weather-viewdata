@@ -23,7 +23,8 @@ lets the whole thing be configured without a constructor.
 """
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Final
@@ -54,10 +55,26 @@ DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
 #: hand-arithmetic about that having been wrong the first time.
 _COLOUR_CELL: Final = 1
 
+#: What the place index is held under, in what the service holds.
+PLACES: Final = "places"
+
 #: Spaced to the columns `ForecastTable.draw` writes, with the units said once
 #: rather than in every row: at forty columns a degree sign in eighty places is
 #: a column of forecast nobody can read.
 _HEADINGS: Final = "  UTC LOCAL  DEG C  M/S  WEATHER"
+
+
+def _places(service: Mapping[str, object]) -> Index:
+    """The place index, out of what the service holds.
+
+    A cast with a reason attached: the service mapping is deliberately typed as
+    holding objects, because the framework cannot know what any service puts in
+    it, and this is the one place that knows.
+    """
+    index = service.get(PLACES)
+    if not isinstance(index, Index):
+        raise RuntimeError("the place index is not open; the service has not started")
+    return index
 
 
 def build_application(
@@ -66,7 +83,25 @@ def build_application(
     index_filepath: Path = DEFAULT_INDEX_FILEPATH,
 ) -> Sextile:
     """The service, assembled."""
+
+    @asynccontextmanager
+    async def lifespan(app: Sextile) -> AsyncIterator[Mapping[str, object]]:
+        """What the service holds while it is up, opened and closed in one place.
+
+        The index is an ordinary local held across the yield, which is the
+        whole advantage of a context manager over a pair of handlers: there is
+        nowhere for the opening and the closing to drift apart, and nothing has
+        to be hoisted anywhere for both to see.
+        """
+        index = await asyncio.to_thread(Index.open, index_filepath)
+        try:
+            yield {PLACES: index}
+        finally:
+            await asyncio.to_thread(index.close)
+            await source.aclose()
+
     app = Sextile(
+        lifespan=lifespan,
         name=SERVICE_NAME.title(),
         #  A caller arrives on the title frame once and is never sent back to
         #  it; `0` means the main menu from everywhere else.
@@ -76,23 +111,6 @@ def build_application(
         #  shapes before it compiles a pattern that uses one.
         converters={"latitude": LATITUDE, "longitude": LONGITUDE},
     )
-    held: Index | None = None
-
-    def places() -> Index:
-        if held is None:
-            raise RuntimeError("the place index is not open; call startup first")
-        return held
-
-    @app.on_startup
-    async def _open() -> None:
-        nonlocal held
-        held = await asyncio.to_thread(Index.open, index_filepath)
-
-    @app.on_shutdown
-    async def _close() -> None:
-        if held is not None:
-            await asyncio.to_thread(held.close)
-        await source.aclose()
 
     @app.on_unresolved
     def _find_a_place(target: str) -> PageAddress | None:
@@ -105,7 +123,7 @@ def build_application(
         """
         if target.isdigit():
             return None
-        found = places().matching(target, limit=1)
+        found = _places(app.service).matching(target, limit=1)
         return app.address_for("place", geoname_id=found[0].geoname_id) if found else None
 
     # -- the pages ----------------------------------------------------------
@@ -122,7 +140,7 @@ def build_application(
         centred(canvas, 4, "Forecasts for anywhere on earth", Colour.WHITE)
         centred(canvas, 7, "from the Norwegian", Colour.CYAN)
         centred(canvas, 8, "Meteorological Institute", Colour.CYAN)
-        centred(canvas, 11, f"{places().held():,} places held", Colour.WHITE)
+        centred(canvas, 11, f"{_places(request.service).held():,} places held", Colour.WHITE)
         centred(canvas, 14, "Key # to begin", Colour.YELLOW)
         centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
         centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
@@ -156,7 +174,7 @@ def build_application(
             "Letters only. There is no space bar and no accent on a viewdata "
             "keypad, so run the words together and leave the accents off: "
             "NEWYORK finds New York, TROMSO finds Tromso, MUNICH finds Munchen.",
-            f"{places().held():,} places are held: everywhere with 500 "
+            f"{_places(request.service).held():,} places are held: everywhere with 500 "
             "inhabitants or more, and every seat of local government whatever "
             "its size.",
             "Where several places share a name, the largest is offered.",
@@ -188,7 +206,7 @@ def build_application(
 
     @app.page("32{geoname_id:int}", name="place", title="One place")
     async def place(request: PageRequest, geoname_id: int) -> Page | None:
-        found = await asyncio.to_thread(places().place, geoname_id)
+        found = await asyncio.to_thread(_places(request.service).place, geoname_id)
         if found is None:
             #  Not here, which is different from here and empty. The session
             #  says so and leaves the reader where they were.
@@ -202,7 +220,7 @@ def build_application(
         #  A point is not a place and cannot pretend to be one: at a tenth of a
         #  degree two thirds of the world's towns share a cell with another. So
         #  it borrows a clock from whatever is nearest, and says which.
-        nearby = await asyncio.to_thread(places().nearest, lat, lon)
+        nearby = await asyncio.to_thread(_places(request.service).nearest, lat, lon)
         where = _point_place(lat, lon, nearby)
         return _forecast_page(
             app, request.address, where, await source.forecast_for(where), near=nearby
