@@ -184,10 +184,16 @@ MOON: Final = _piece("""
 
 #: The top of a cloud, for the codes with no sky in them. Overcast is overcast
 #: at midnight, which is why met.no gives these no time of day.
+#:
+#: Set to the right of the cloud beneath rather than square over it, so the two
+#: read as one cloud behind another instead of as a spire on a lump. It is the
+#: same drawing as `CLOUD_SMALL` at the moment and still two names: one is the
+#: back of a bank of cloud and the other is a wisp in a fair sky, and either
+#: could be redrawn without the other wanting to be.
 CLOUD_TOP: Final = _piece("""
 ......
-..##..
-.####.
+...##.
+..####
 """)
 
 #: The cloud itself, flat along the bottom so that what falls out of it starts
