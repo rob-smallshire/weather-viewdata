@@ -280,76 +280,35 @@ class Index:
 
 
 def _keys_for(place: Place) -> set[str]:
-    """Every folded string that should find this place.
+    """Every folded string that should find this place: its own name.
+
+    **Not its alternate names.** They were indexed once and it was a mistake
+    that took three rounds of filtering to stop being obviously wrong and never
+    stopped being wrong: keying `A` offered Oslo, because one of its alternates
+    is `Asloa`. A reader cannot be shown a place whose name does not begin with
+    what they typed and be expected to work out why.
+
+    What was lost is smaller than it looks. GeoNames' own `name` is already the
+    name an English reader knows -- Munich, Vienna, Prague, Rome, Moscow,
+    Tokyo, Beijing are all filed under exactly those -- so the alternates were
+    buying the occasional Koln-for-Cologne and paying for it with airport
+    codes, romanisations from other scripts, and a Cyrillic Madrid with a Latin
+    `a` typed into the middle of it.
+
+    Doing it properly needs the alternates to say which language they are in,
+    which the main dump's column does not and `alternateNamesV2` does. Until
+    then a reader keys what the screen shows them.
 
     A set, because a place whose ascii name equals its name -- most of them --
-    would otherwise be indexed twice under one key.
-
-    Empty keys are dropped rather than stored. `1770` in Queensland folds to
-    nothing, and a key of "" is one that every query in the world matches the
-    front of.
+    would otherwise be indexed twice under one key. Empty keys are dropped
+    rather than stored: `1770` in Queensland folds to nothing, and a key of ""
+    is one that every query in the world matches the front of.
     """
-    names = (place.name, place.ascii_name, *filter(_is_a_name, place.alternate_names))
-    return {key for key in (search_key(name) for name in names) if key}
+    return {key for key in map(search_key, (place.name, place.ascii_name)) if key}
 
 
-#: An airport code is three letters; four is allowed for the few that are, and
-#: to leave a margin rather than to admit anything in particular.
-_CODE_LENGTH: Final = 4
 
 
-def _is_a_name(alternate: str) -> bool:
-    """Whether an entry in the alternate-names column is a name somebody keys.
-
-    The column holds three different things and says which is which nowhere:
-    genuine alternate names, IATA airport codes, and romanised transliterations
-    from other writing systems. Oslo's holds `Christiania`, `OSL` and `awslw`.
-
-    Capitalisation separates them, which was measured against the real
-    `cities500` rather than found documented -- so it is a rule of thumb and
-    not a guarantee. `alternateNamesV2` carries a proper language tag and is a
-    further 193 megabytes; if this heuristic ever misleads, that is the fix.
-
-    Nothing here can make a place unreachable: its own name and its ascii name
-    are indexed whatever this says about the rest.
-    """
-    if alternate.isupper() and len(alternate) <= _CODE_LENGTH:
-        #  MAD, OSL, TRO. Dropped rather than kept, because they win the
-        #  exact-match tiebreak against real names: TRO is Taree's, and it
-        #  outranked both Tromsø and Trondheim.
-        return False
-    if alternate.islower():
-        #  aslw, awslw, madorido -- correct romanisations that nobody keys, and
-        #  a row apiece in an index a keystroke scans. A genuine name always
-        #  appears capitalised in the column as well.
-        return False
-    #  A script without case -- オスロ, 奧斯陸 -- is neither upper nor lower and
-    #  survives both rules above, to be caught here: folding leaves nothing of
-    #  it, and nothing is not a name.
-    return _survives_folding(alternate)
-
-
-#: How much of a name the fold must leave for what remains to still be that
-#: name. A half is generous -- the cases this exists for keep a sixth.
-_ENOUGH: Final = 0.5
-
-
-def _survives_folding(name: str) -> bool:
-    """Whether folding this name leaves enough of it to still be it.
-
-    Madrid's column carries `Мaдрид`: Cyrillic, with a Latin `a` typed into the
-    middle of it. Six letters go in and one comes out, so Madrid was indexed
-    under the key `A` -- and `A` is the first thing anybody types.
-
-    A fold that keeps a sixth of a name has not folded it, it has destroyed it,
-    and the residue is not a name the place goes by. Whole-script names fail
-    this for the same reason and by the same rule, rather than by one of their
-    own.
-    """
-    letters = sum(1 for character in name if character.isalpha())
-    if not letters:
-        return False
-    return len(search_key(name)) >= letters * _ENOUGH
 
 
 def _after(prefix: str) -> str:

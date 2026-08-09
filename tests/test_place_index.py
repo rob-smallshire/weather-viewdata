@@ -10,6 +10,7 @@ from collections.abc import Iterator
 import pytest
 
 from weather_viewdata.geonames import Place
+from weather_viewdata.places import search_key
 from weather_viewdata.store import Index
 
 
@@ -55,12 +56,14 @@ MUNCHEN = place(
     at=(48.13743, 11.57549),
 )
 TROY = place(5141502, "Troy", country="US", population=49928, at=(42.72842, -73.69178))
+NEW_YORK = place(5128581, "New York City", country="US", population=8804190,
+                 feature_code="PPLA2", at=(40.71427, -74.00597))
 
 
 @pytest.fixture
 def index() -> Iterator[Index]:
     with Index.in_memory() as held:
-        held.add_places([TRONDHEIM, TROMSO, BERGEN, BERLIN, MUNCHEN, TROY])
+        held.add_places([TRONDHEIM, TROMSO, BERGEN, BERLIN, MUNCHEN, TROY, NEW_YORK])
         yield held
 
 
@@ -75,19 +78,20 @@ class TestFindingAPlace:
         #  The whole reason the fold exists: there is no ø on a Beeb.
         assert [found.name for found in index.matching("TROMSO")] == ["Tromsø"]
 
-    def test_by_a_name_it_goes_by_elsewhere(self, index: Index) -> None:
-        #  A reader who knows it as Munich should not have to know it is not.
-        assert [found.name for found in index.matching("MUNICH")] == ["München"]
+    def test_but_not_by_a_name_it_only_goes_by_elsewhere(self, index: Index) -> None:
+        #  Alternate names are not indexed, so this finds nothing here. It
+        #  matters less than it looks: GeoNames files Munich under `Munich`,
+        #  and Vienna, Prague, Rome, Moscow and Tokyo under theirs. Koln is the
+        #  exception the fixture keeps, and the note in `_keys_for` says what
+        #  it would take to have both.
+        assert list(index.matching("MUNICH")) == []
 
     def test_by_its_own_spelling_too(self, index: Index) -> None:
         assert [found.name for found in index.matching("MUNCHEN")] == ["München"]
 
-    def test_a_place_is_offered_once_however_many_names_match(
-        self, index: Index
-    ) -> None:
-        #  München answers to Munich, Monaco di Baviera and its own name. A
-        #  suggestion list with the same place three times wastes two of three
-        #  rows a reader has.
+    def test_a_place_is_offered_once(self, index: Index) -> None:
+        #  Its name and its ascii name usually fold to the same key. A
+        #  suggestion list with the same place twice wastes a row of three.
         assert [found.name for found in index.matching("M")].count("München") == 1
 
     def test_a_query_matching_nothing_finds_nothing(self, index: Index) -> None:
@@ -193,68 +197,6 @@ class TestKeepingThePlacesThemselves:
             assert index.place(1) is not None
 
 
-class TestWhichOfAPlacesNamesAreIndexed:
-    """The dump's alternate-names column holds three different things.
-
-    Measured against the real `cities500`, not documented anywhere: the column
-    mixes genuine alternate names with IATA airport codes and with romanised
-    transliterations from other writing systems, and it carries no tag saying
-    which is which. `alternateNamesV2` does carry one, at a further 193M.
-
-    Capitalisation turns out to tell them apart. Oslo's column holds `OSL`,
-    `awslw` and `Christiania`, and only the last is a name a reader would key.
-    """
-
-    def test_a_genuine_alternate_name_is_indexed(self) -> None:
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Oslo", alternates=("Christiania",))])
-            assert [found.name for found in index.matching("CHRISTIANIA")] == ["Oslo"]
-
-    def test_an_airport_code_is_not(self) -> None:
-        #  TRO is Taree's, and it outranked both Tromsø and Trondheim on an
-        #  exact match before this rule existed. A reader keying TRO on a
-        #  viewdata terminal is starting a place name, not naming an airport.
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Taree", country="AU", alternates=("TRO", "Tari"))])
-            assert list(index.matching("TRO")) == []
-            assert [found.name for found in index.matching("TARI")] == ["Taree"]
-
-    def test_a_romanisation_from_another_script_is_not(self) -> None:
-        #  Oslo carries `aslw` and `awslw`, from Arabic and Persian. They are
-        #  not wrong, but nobody keys them, and every one of them is a row in
-        #  an index that a keystroke scans.
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Oslo", alternates=("aslw", "awslw", "oseullo"))])
-            assert list(index.matching("ASLW")) == []
-
-    def test_the_place_is_still_found_by_its_own_name(self) -> None:
-        #  Whatever is thrown out of the alternates, the name and the ascii
-        #  name are always indexed, so nothing becomes unreachable.
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Tromsø", alternates=("TOS", "tromsee"))])
-            assert [found.name for found in index.matching("TROMSO")] == ["Tromsø"]
-
-    def test_a_name_in_a_script_without_case_is_no_trouble(self) -> None:
-        #  Neither upper nor lower, so the rule keeps it -- and it then folds
-        #  to nothing keyable and is dropped for that reason instead.
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Oslo", alternates=("オスロ", "奧斯陸"))])
-            assert index.place(1) is not None
-
-    def test_a_name_the_fold_destroys_is_not_indexed(self) -> None:
-        #  Madrid's column carries `Мaдрид` -- Cyrillic with a Latin `a` typed
-        #  into the middle of it. Folding keeps that one letter and throws the
-        #  rest away, which put Madrid under the key `A`, and `A` is the first
-        #  thing anybody types.
-        #
-        #  A fold that loses most of a name has not folded it; it has destroyed
-        #  it, and what is left is not a name the place goes by.
-        with Index.in_memory() as index:
-            index.add_places([place(1, "Madrid", country="ES", alternates=("Мaдрид",))])
-            assert list(index.matching("A")) == []
-            assert [found.name for found in index.matching("MADRID")] == ["Madrid"]
-
-
 class TestExactnessIsWorthSomethingRatherThanEverything:
     """A hamlet with a three-letter alias should not outrank a capital.
 
@@ -340,3 +282,31 @@ class TestTheNearestPlaceToAPoint:
         #  Rather than the nearest place on earth, which could be a thousand
         #  miles away and would put the wrong clock on the page.
         assert index.nearest(0.0, -140.0) is None
+
+
+class TestEveryResultBeginsWithWhatWasTyped:
+    """The rule the whole search rests on, and it was not always kept.
+
+    Alternate names were indexed once. Keying `A` then offered Oslo -- one of
+    its alternates is `Asloa` -- and a reader shown a place whose name does not
+    begin with what they typed has no way to work out why. What they type is a
+    prefix, and it is honoured as one.
+    """
+
+    @pytest.mark.parametrize("typed", ["A", "TR", "M", "B", "BER"])
+    def test_whatever_is_offered_starts_with_it(self, typed: str, index: Index) -> None:
+        for found in index.matching(typed, limit=9):
+            assert search_key(found.name).startswith(typed), f"{found.name} for {typed}"
+
+    def test_an_alternate_name_does_not_find_a_place(self, index: Index) -> None:
+        #  Munchen goes by Monaco di Baviera. Keying MONACO must not offer it,
+        #  or a reader looking for the principality is shown Germany.
+        assert "München" not in [found.name for found in index.matching("MONACO")]
+
+    def test_the_place_is_still_found_by_its_own_name(self, index: Index) -> None:
+        assert [found.name for found in index.matching("MUNCHEN")] == ["München"]
+
+    def test_and_by_the_start_of_it(self, index: Index) -> None:
+        assert "New York City" in [
+            found.name for found in index.matching("NEWYORK")
+        ]
