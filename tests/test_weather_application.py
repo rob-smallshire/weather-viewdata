@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from sextile import PageAddress
+from sextile.session.session import Session
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
 from weather_viewdata.forecast.model import Forecast
@@ -79,4 +81,41 @@ class TestRefusingAStaleIndex:
             source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
         )
         await app.startup()
+        await app.shutdown()
+
+
+class TestBothWaysOfWritingACoordinate:
+    """The signs are undocumented rather than unsupported.
+
+    A field's advice sits under it on every frame, so it is read far more often
+    than it is needed and had better be short. It shows the hemispheric
+    spelling only -- which teaches the reader who does not know -- while the
+    signed one goes on working for the reader who does.
+
+    Here so that nobody tidies the parser to match the hint.
+    """
+
+    @pytest.mark.parametrize(
+        ("latitude", "longitude"),
+        [
+            ("54.0N", "1.1W"),  # as the hint shows it
+            ("54.0", "-1.1"),  # and as it does not
+            ("54.0N", "-1.1"),  # and one of each
+        ],
+    )
+    async def test_either_spelling_reaches_the_same_point(
+        self, latitude: str, longitude: str, tmp_path: Path
+    ) -> None:
+        filepath = tmp_path / "places.sqlite"
+        with Index.open(filepath) as index:
+            index.add_places([TRONDHEIM])
+        app = build_application(source=NoForecasts(), index_filepath=filepath)
+        await app.startup()
+        session = Session(app, start=PageAddress("4"))
+        await session.greeting()
+        await session.receive(latitude.encode())
+        await session.receive(b"\x09")
+        await session.receive(longitude.encode())
+        await session.receive(b"\x5f")
+        assert session.address == PageAddress("4214401789")
         await app.shutdown()

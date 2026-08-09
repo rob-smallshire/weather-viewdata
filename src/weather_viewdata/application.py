@@ -327,7 +327,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LATITUDE_ROW,
                 takes=_takes("NS"),
                 width=_POSITION_CELLS,
-                hint=" N: 54.0N or 54.0, S: 54.0S or -54.0",
+                hint=" north or south: 54.0N or 54.0S",
                 hint_row=LATITUDE_ROW + 1,
             ),
             Field(
@@ -336,7 +336,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
                 row=LONGITUDE_ROW,
                 takes=_takes("EW"),
                 width=_POSITION_CELLS,
-                hint=" E: 17.2E or 17.2, W: 17.2W or -17.2",
+                hint=" east or west: 17.2E or 17.2W",
                 hint_row=LONGITUDE_ROW + 1,
             ),
         ],
@@ -349,8 +349,17 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
 def _takes(hemispheres: str) -> Callable[[str], bool]:
     """What belongs in a coordinate field.
 
-    Both spellings, because both are in use and a reader should not have to
-    learn which this service prefers: a leading sign, or a trailing hemisphere.
+    Both spellings are taken, because both are in use and a reader arriving
+    with one should not have to discover that this service wanted the other.
+
+    **Only the hemispheric one is advertised.** A field's advice sits under it
+    on every frame, so it is read far more often than it is needed, and one
+    that showed all four spellings shouted louder than the field it was
+    explaining. Showing one way of writing a coordinate teaches the reader who
+    does not know; taking both serves the reader who does.
+
+    So the signs are deliberately undocumented rather than unsupported, and
+    nothing above should be tidied to match the hint.
     """
 
     def takes(key: str) -> bool:
