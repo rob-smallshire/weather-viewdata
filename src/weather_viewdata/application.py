@@ -625,12 +625,16 @@ async def guide(request: PageRequest) -> Page:
             Key("A-Z", "type into a search field"),
             Key(FIND_KEY, "back to your search"),
         ],
+        #  In the order of the numbers, which is the order a reader reads a
+        #  column of numbers in. Grouped by subject it was `95` before `93`,
+        #  and a list of page numbers out of order reads as a mistake whatever
+        #  the grouping was for.
         asking=[
             Key(keyed(app.address_for("goodbye")), "ring off"),
             Key(),
-            Key(keyed(app.address_for("pictures")), "what the pictures mean"),
             Key(keyed(app.address_for("contents")), "every page and its number"),
             Key(keyed(app.address_for("names")), "every word you can key"),
+            Key(keyed(app.address_for("pictures")), "what the pictures mean"),
         ],
     )
 
