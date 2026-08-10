@@ -32,7 +32,7 @@ import asyncio
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -70,6 +70,7 @@ from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
+from weather_viewdata.days import HEADINGS, PICTURE_ROWS, Day, days_of, draw_day
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
@@ -180,10 +181,6 @@ _PICTURES_ACROSS: Final = 2
 _PICTURE_CELLS: Final = COLUMNS // _PICTURES_ACROSS
 _WORD_CELLS: Final = _PICTURE_CELLS - COLUMN_CELLS - 2
 
-#: Spaced to the columns `ForecastTable.draw` writes, with the units said once
-#: rather than in every row: at forty columns a degree sign in eighty places is
-#: a column of forecast nobody can read.
-_HEADINGS: Final = "  UTC LOCAL  DEG C  M/S  WEATHER"
 
 class StaleIndexError(RuntimeError):
     """The place index was built by rules this code no longer uses."""
@@ -836,14 +833,15 @@ def _forecast_page(
             title=_heading(place),
             home=app.index,
         ).build(address)
+    zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
-    #  The strip shows what comes after now, and the table what comes after the
-    #  strip. Each says its piece once: a reader who has just seen sixteen
-    #  hours drawn across the frame does not want them again as rows.
+    #  The strip shows the hours after now; the days show all of them, today
+    #  included. They are not one forecast said twice: the first is what this
+    #  afternoon will do, the second which day to go out on.
     coming = [moment for moment in forecast.moments if now is None or moment.at > now.at]
     return ForecastTable(
         title=_heading(place),
-        entries=coming[HOURS_SHOWN:],
+        entries=days_of(forecast.moments, zone, from_day=_today(zone)),
         home=app.index,
         #  Not `S`, which pages down, and not `0`, which is the index. A reader
         #  who has just found a place usually wants the next place, and the way
@@ -853,44 +851,37 @@ def _forecast_page(
         preamble=_preamble(place, forecast, near, coming),
         #  On every frame: a reader on frame c looking at four columns of
         #  figures has no way back to the words that say what they are.
-        headings=_HEADINGS,
-        zone=_zone_of(place),
+        headings=HEADINGS,
+        today=_today(zone),
     ).build(address)
 
 
-class ForecastTable(Template[Moment]):
-    """A run of hours, one to a row.
+class ForecastTable(Template[Day]):
+    """The days ahead, one to a block of four rows.
 
-    A fourth template shape, which is what the framework asked for rather than
-    a fifth copy of the six steps. Nothing on it is selectable: a forecast is
-    something to read, not a menu, so no digit is spent on the rows and 1-9 do
-    nothing here -- which is the rule about naming only the keys that work,
-    rather than an exception to it.
+    Three rows of pictures and a blank, or two days running would read as one
+    six-row block. Nothing on it is selectable: a forecast is something to
+    read, not a menu, so no digit is spent on the rows and 1-9 do nothing here
+    -- which is the rule about naming only the keys that work, rather than an
+    exception to it.
     """
 
-    rows_per_entry = 1
+    rows_per_entry = PICTURE_ROWS
+    separation = 1
     numbered = False
 
-    def __init__(self, *, zone: ZoneInfo | None = None, **wanted: object) -> None:
+    def __init__(self, *, today: date, **wanted: object) -> None:
         super().__init__(**wanted)  # type: ignore[arg-type]
-        self.zone = zone
+        self.today = today
 
-    def draw(self, row: RowWriter, entry: Moment, digit: str | None) -> None:
+    def draw(self, row: RowWriter, entry: Day, digit: str | None) -> None:
+        """Nothing. A day is placed by cell; see `draw_entry`."""
+
+    def draw_entry(
+        self, canvas: Canvas, row: int, entry: Day, digit: str | None
+    ) -> None:
         del digit  # a forecast numbers nothing
-        row.text(f"{entry.at:%H:%M}", Colour.YELLOW)
-        row.text(f" {_local(entry.at, self.zone)}", Colour.CYAN)
-        #  Temperature and wind in one write, so the row pays for one colour
-        #  attribute rather than two. An attribute is a cell here.
-        row.text(
-            f"{_reading(entry.temperature, 1):>6}{_reading(entry.wind_speed, 1):>5}",
-            Colour.WHITE,
-        )
-        #  Whatever is left, which the longest symbol met.no has does not fit
-        #  into: `heavy sleet shwrs+thunder` is twenty-five cells. Shortened
-        #  rather than allowed to overrun, and the reader keeps the half of it
-        #  that matters.
-        room = row.remaining - _COLOUR_CELL
-        row.text(fitted(in_words(entry.symbol), room), Colour.GREEN)
+        draw_day(canvas, row, entry, self.today)
 
 
 def _heading(place: Place) -> str:
@@ -1143,6 +1134,11 @@ def _reading(value: float | None, places: int) -> str:
     that confuses them is worse than one that says less.
     """
     return "-" if value is None else f"{value:.{places}f}"
+
+
+def _today(zone: ZoneInfo | None) -> date:
+    """The date it is where the forecast is, which is not always ours."""
+    return datetime.now(UTC).astimezone(zone).date()
 
 
 def _zone_of(place: Place) -> ZoneInfo | None:

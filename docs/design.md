@@ -504,14 +504,7 @@ what made that concrete rather than theoretical.
 
 **Column headings on every frame**, which is why `Template` grew `headings`: a
 reader on frame c looking at four columns of figures has no way back to the
-words that say which is the temperature and which the wind.
-
-**The weather column takes whatever the row has left**, counted from the row
-rather than worked out by hand — an attribute costs a cell, and hand-arithmetic
-about that was wrong the first time. met.no's longest symbol,
-`heavy sleet shwrs+thunder`, is twenty-five cells and does not fit; it is
-shortened rather than allowed to overrun. `symbols.py` takes the codes apart
-rather than tabulating ninety of them.
+words that say which is which.
 
 **`F` goes back to the search.** A reader who has just found a place usually
 wants the next place, and the way back was otherwise `*0#` — or a page number
@@ -624,6 +617,66 @@ them was blank.
 
 **Each part says its piece once.** The strip shows what comes after now, and the
 table what comes after the strip.
+
+### The days ahead, four periods to a row
+
+`days.py`, on the frames after the strip. Ten days will not fit across a frame
+and nobody wants them hour by hour anyway, so each day is a row of four pictures
+— night, morning, afternoon, evening — with the day's figures beside them. Five
+days to a frame, so ten days is two frames where the hourly table was four.
+
+```
+       ngt mrn aft eve   hi/lo  mm m/s
+ Today  ▨   ▨   ▨   ▨
+10 Aug  ▨   ▨   ▨   ▨     16/11   2   5
+        ▨   ▨   ▨   ▨
+
+   Tue  ▨   ▨   ▨   ▨
+11 Aug  ▨   ▨   ▨   ▨     14/11   2   6
+        ▨   ▨   ▨   ▨
+```
+
+The row comes to thirty-nine of the forty: a name, sixteen cells of picture, the
+attribute that gets back out of graphics, and fifteen of figures. The name takes
+two of the three rows — what the day is called, then its date — and the figures
+the middle one, level with the middle of the pictures.
+
+**The periods are the reader's, and met.no's blocks are not.** Six hours each
+from *local* midnight is what `night` and `afternoon` mean to somebody looking
+out of a window; met.no's six-hourly summaries are on the meridian, at 00, 06,
+12 and 18 UTC, so they line up with the periods only at Greenwich and straddle
+two of them everywhere else.
+
+**A moment goes in the period its middle falls in**, which is the rule that
+survives the straddling — measured against three zones rather than reasoned
+about:
+
+| met.no's 06:00 UTC block | local | by its start | by its middle |
+|---|---|---|---|
+| Greenwich | 06:00–12:00 | morning | morning |
+| Oslo, +2 | 08:00–14:00 | morning | morning |
+| Karachi, +5 | 11:00–17:00 | *morning* | afternoon |
+| Denver, −6 | 00:00–06:00 | *evening* | night |
+
+By the start, Karachi's afternoon is called a morning and Denver's night an
+evening. It stays one moment to a period whatever the zone, the blocks being six
+hours apart and the periods six hours wide; at the near end of a forecast, where
+the series is hourly, a period simply holds six of them.
+
+**One symbol stands for six hours, and there are two ways to pick it.** Where the
+period holds a moment covering the whole of it, that moment carries met.no's own
+summary of those six hours and is better than anything we could work out. Where
+it holds six hourly readings instead, **the worst of them wins**: a reader asking
+what the afternoon will be like is asking whether they will get wet, and an
+average of six hours would answer a question nobody asked. `symbols.severity`
+ranks them — thunder over what is falling over how hard over how much cloud.
+
+**The figures are the day's, not the period's.** Four sets of three would want a
+frame to themselves, and what is left of the row after sixteen cells of pictures
+is fifteen. High and low, the rain in the day, the strongest wind.
+
+**Today is first, however little of it is left.** A forecast held over the turn
+of a day would otherwise open on an afternoon that has been and gone.
 
 ### What it does not yet do
 

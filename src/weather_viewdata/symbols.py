@@ -168,6 +168,46 @@ def taken_apart(symbol: str | None) -> Weather | None:
     )
 
 
+#: How bad each core state is, for picking one symbol to stand for six hours.
+#: Not a physical ordering -- there is none -- but a reader's: what would make
+#: you take a coat, in the order you would want to be told about it.
+_SEVERITY: Final = {
+    "clearsky": 0,
+    "fair": 1,
+    "partlycloudy": 2,
+    "cloudy": 3,
+    "fog": 4,
+    "rain": 5,
+    "sleet": 6,
+    "snow": 7,
+}
+
+_HARDER: Final = {"light": 0, "": 1, "heavy": 2}
+
+
+def severity(symbol: str | None) -> int:
+    """How much a symbol is worth telling somebody about.
+
+    For choosing one symbol to stand for a period there are two rules to pick
+    from, and this is the second half of the better one: where a period has
+    nothing but hourly readings, the worst hour wins. A reader asking what the
+    afternoon will be like is asking whether they will get wet, and an average
+    of six hours would answer a question nobody asked.
+
+    Thunder outranks everything, then what is falling, then how hard, then how
+    much cloud. A code we cannot read scores nothing: it is drawn as no picture
+    at all, and would be a poor thing to let win.
+    """
+    weather = taken_apart(symbol)
+    if weather is None:
+        return -1
+    return (
+        (100 if weather.thunder else 0)
+        + _SEVERITY[weather.core] * 4
+        + _HARDER[weather.intensity]
+    )
+
+
 def in_full(symbol: str | None) -> str:
     """The same, spelled out, for somewhere with room for it.
 

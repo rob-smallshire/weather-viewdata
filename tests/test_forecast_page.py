@@ -237,17 +237,11 @@ class TestTheHourByHourStrip:
         assert "CEST" in shown
         assert "m/s" in shown
 
-    async def test_the_table_starts_where_the_strip_left_off(
-        self, tmp_path: Path
-    ) -> None:
-        #  Each says its piece once. A reader who has just seen eight hours
-        #  drawn across the frame does not want them again as rows.
+    async def test_the_days_follow_on_the_next_frame(self, tmp_path: Path) -> None:
+        #  Two answers to two questions: the strip says what this afternoon
+        #  will do, the days which day to go out on.
         page = await page_for(hourly(30), tmp_path)
-        #  The strip fills the first frame, so the table begins on the second.
-        first = this_hour() + timedelta(hours=HOURS_SHOWN + 1)
-        assert f"{first:%H:%M}" in text_of(page, 1)
-        skipped = this_hour() + timedelta(hours=HOURS_SHOWN)
-        assert f" {skipped:%H:%M}" not in text_of(page, 1)
+        assert "Today" in text_of(page, 1)
 
     async def test_a_forecast_of_one_hour_still_draws(self, tmp_path: Path) -> None:
         #  Nothing after now, so nothing in the strip and nothing in the table.
@@ -258,7 +252,7 @@ class TestTheHourByHourStrip:
 
     async def test_the_strip_is_on_the_first_frame_only(self, tmp_path: Path) -> None:
         page = await page_for(hourly(80), tmp_path)
-        assert "m/s" not in text_of(page, 1)
+        assert "dir" not in text_of(page, 1)
 
 
 class TestSayingTheHourAsAnHour:
