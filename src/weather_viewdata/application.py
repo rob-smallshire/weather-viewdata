@@ -166,9 +166,6 @@ _SHARING_A_NAME: Final = 3
 #: and the rows it was taking are the ones a long list needs.
 PLACES_HELD_ROW: Final = CONTENT_FIRST_ROW + CONTENT_ROWS - 1
 
-#: What this caller's position form is held under.
-POSITION: Final = "position"
-
 #: Where the position form's own rows sit. Each field has its advice on the
 #: row beneath it and a blank row after that: two labelled fields set solid
 #: read as a block of text rather than as two places to type, and a screen of
@@ -413,12 +410,17 @@ async def by_position(request: PageRequest) -> Page:
     `0` is not the way out here and the footer does not pretend otherwise: on
     a page where digits are data, a `0` that went to the menu would be a key
     that ate a coordinate.
+
+    **Both fields are empty every time the page is fetched**, as the search
+    field is and for the same reason. This one looked like the exception --
+    two figures are more trouble to type than a name, and a reader nudging a
+    latitude would want the old one there -- and it is not: a reader comes back
+    here to look at somewhere *else*, and what a remembered position costs them
+    is twelve presses of the rub-out key across two fields. Nudging is what the
+    arrows and a fresh six characters are for.
     """
     app = _service(request)
-    form = request.session.get(POSITION)
-    if not isinstance(form, Fields):
-        form = _position_fields(app, _places(request.service))
-        request.session[POSITION] = form
+    form = _position_fields(app, _places(request.service))
 
     canvas = Canvas()
     draw_chrome(

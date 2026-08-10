@@ -185,14 +185,14 @@ class TestTheSearchForgetsWhatWasTyped:
 
 
 @asynccontextmanager
-async def _typing(tmp_path: Path) -> AsyncIterator[Session]:
+async def _typing(tmp_path: Path, start: str = "3") -> AsyncIterator[Session]:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([TRONDHEIM])
     app = build_application(source=NoForecasts(), index_filepath=filepath)
     await app.startup()
     try:
-        session = Session(app, start=PageAddress("3"))
+        session = Session(app, start=PageAddress(start))
         await session.greeting()
         yield session
     finally:
@@ -204,6 +204,38 @@ def _shown(session: Session) -> str:
     assert frame is not None
     characters, _ = frame.to_grid()
     return "\n".join(characters)
+
+
+class TestThePositionFormForgetsToo:
+    """Both fields empty every time, as the search field is.
+
+    This one looked like the exception -- two figures are more trouble to type
+    than a name, and a reader nudging a latitude would want the old one there.
+    It is not: a reader comes back to look at somewhere *else*, and a
+    remembered position costs twelve presses of the rub-out key across two
+    fields.
+    """
+
+    async def test_typing_a_position_still_works(self, tmp_path: Path) -> None:
+        async with _typing(tmp_path, start="4") as session:
+            await session.receive(b"54.0N")
+            await session.receive(b"\x09")
+            await session.receive(b"1.1W")
+            await session.receive(b"\x5f")
+            assert session.address == PageAddress("42114401789")
+
+    async def test_but_coming_back_gives_two_empty_fields(
+        self, tmp_path: Path
+    ) -> None:
+        #  Not 54.0N, which is the sample in the field's own advice: the test
+        #  would then find the hint and call it the field.
+        async with _typing(tmp_path, start="4") as session:
+            await session.receive(b"63.4N")
+            assert "63.4N" in _shown(session)
+            #  Away to the menu and back to the position form.
+            await session.receive(b"*1#")
+            await session.receive(b"*4#")
+            assert "63.4N" not in _shown(session)
 
 
 class TestAWordBetweenTheStarAndTheHashIsAPage:

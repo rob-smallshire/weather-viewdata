@@ -403,6 +403,12 @@ Nothing is lost by forgetting. The typing does not go through the page handler
 — and a reader who did want the same search back has `*0#` and the history page,
 which is what a history is for.
 
+**The position form forgets too**, and it looked like the exception: two figures
+are more trouble to type than a name, and a reader nudging a latitude would want
+the old one there. It is not the exception. A reader comes back to look at
+somewhere *else*, and a remembered position costs them twelve presses of the
+rub-out key across two fields — where nudging costs six fresh characters.
+
 **The ranking is computed on the way in, never at query time.** A search frame
 repaints while the reader is still typing, so a keystroke may cost an indexed
 range scan and an `ORDER BY` on a stored column and nothing more. It is
