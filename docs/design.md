@@ -296,6 +296,24 @@ cannot disagree about what a page is called. The cost is that a title long
 enough for the menu is a title the contents page truncates, its first column
 being as wide as `*421<lat><lon>#`.
 
+## The guide and the contents
+
+`*91#` was five sentences of prose and is now a table of keys over two frames,
+with the compass under the first — which is Stardot's page, and was much the
+better of the two. Rather than copy it, it moved into the framework: a guide is
+mostly a description of the framework, and two hand-written copies of that
+description are two things that can drift from it and from each other. Stardot
+now calls the same code, a hundred and twenty lines lighter.
+
+What this service adds is the two keys a reader meets nowhere else — `A-Z` into
+a search field and `F` back to the search — and the pages it keeps its own
+numbers for, `*95#` among them.
+
+`*93#` gained nothing of its own: it wraps a long title onto a second row
+instead of cutting it, which is a framework change and one this service needed
+because its titles are sentences where Stardot's are labels. `Forecast by
+lat/lon position` was `Forecast by lat/lon ` before it.
+
 ## The place index
 
 SQLite, two tables. Places, and every folded string that finds one.

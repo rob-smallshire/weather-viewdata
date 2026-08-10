@@ -50,6 +50,7 @@ from sextile import (
 )
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
+from sextile.guidance import Key
 from sextile.middleware import log_pages
 from sextile.templates import (
     CHOICES_PER_FRAME,
@@ -591,20 +592,29 @@ async def about(request: PageRequest) -> Page:
 
 
 async def guide(request: PageRequest) -> Page:
+    """How to get about, which is mostly the framework's to say.
+
+    The keys this service adds are the two a reader meets nowhere else: the
+    letters that go into a search field, and the one that takes them back to
+    the search they came through. Everything else on the page -- the digits,
+    the way home, the shape of a request, the compass -- is the framework's,
+    generated from what it actually answers rather than described here.
+    """
     app = _service(request)
-    finding = MenuItem.for_page(app, "by_name")
-    return Prose.of(
-        "Key a page number between * and #, as *1#.",
-        f"{keyed(app.address_for('by_name'))} to {finding.text.lower()}: type a "
-        "few letters and it offers the three likeliest.",
-        "# alone shows the next frame of a long page. *0# goes back where you "
-        "came from, and 0 returns to the main menu from anywhere.",
-        "W and S page up and down, and the cursor keys do the same.",
-        "*09# fetches a page again, which on a forecast means asking whether "
-        "there is a fresher one.",
-        title=app.describe(request.address).upper(),
-        home=app.index,
-    ).build(request.address)
+    return await app.guide(
+        request,
+        moving=[
+            Key("A-Z", "type into a search field"),
+            Key(FIND_KEY, "back to your search"),
+        ],
+        asking=[
+            Key(keyed(app.address_for("goodbye")), "ring off"),
+            Key(),
+            Key(keyed(app.address_for("pictures")), "what the pictures mean"),
+            Key(keyed(app.address_for("contents")), "every page and its number"),
+            Key(keyed(app.address_for("names")), "every word you can key"),
+        ],
+    )
 
 
 @dataclass(frozen=True)
