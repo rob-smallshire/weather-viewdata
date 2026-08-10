@@ -274,15 +274,26 @@ fourteen. Five frames.
 
 ## The main menu
 
-Five entries, all the same shape:
+Six entries, all the same shape:
 
 ```
 1  Forecast by placename
 2  Forecast by lat/lon position
-3  How to get about
-4  About this service
-5  Ring off
+3  What the pictures mean
+4  How to get about
+5  About this service
+6  Ring off
 ```
+
+**The legend is on the menu** because a page of pictures a reader cannot read is
+a page of pictures they will not trust, and `*95#` is the only place that says
+what they mean. It sits under the two forecasts, which are what a reader came
+for and what the pictures are on.
+
+It is called `What the pictures mean` and not `Legend`, which is the word for
+this on a map and in met.no's own files: a page whose whole purpose is
+explaining should not have a name that wants explaining. `*LEGEND#` reaches it,
+for the reader who does have the word.
 
 **The two searches used to carry a line of detail in green and no longer do.**
 They were the only entries on the menu that had one, so the green under them
@@ -319,10 +330,11 @@ What this service adds is the two keys a reader meets nowhere else — `A-Z` int
 a search field and `F` back to the search — and the pages it keeps its own
 numbers for, `*95#` among them.
 
-`*93#` gained nothing of its own: it wraps a long title onto a second row
-instead of cutting it, which is a framework change and one this service needed
-because its titles are sentences where Stardot's are labels. `Forecast by
-lat/lon position` was `Forecast by lat/lon ` before it.
+`*93#` and `*94#` gained nothing of their own: a `Listing` now carries a long
+second column on to another row instead of cutting it, which is a framework
+change and one this service needed because its titles are sentences where
+Stardot's are labels. `Forecast by lat/lon position` was `Forecast by lat/lon `
+before it.
 
 ## The place index
 

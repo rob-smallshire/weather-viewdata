@@ -261,7 +261,19 @@ async def main(request: PageRequest) -> Page:
         title=SERVICE_NAME,
         entries=[
             MenuItem.for_page(app, name)
-            for name in ("by_name", "by_position", "help", "about", "goodbye")
+            #  The legend is on the menu because a page of pictures a reader
+            #  cannot read is a page of pictures they will not trust, and this
+            #  is the only place that says what they mean. It sits under the
+            #  two forecasts, which are what a reader came for and what the
+            #  pictures are on.
+            for name in (
+                "by_name",
+                "by_position",
+                "pictures",
+                "help",
+                "about",
+                "goodbye",
+            )
         ],
         home=app.index,
         preamble=["Forecasts for anywhere on earth."],
@@ -780,8 +792,12 @@ PAGES: Final = (
     PageRoute("91", guide, name="help", title="How to get about",
               keywords=("HELP",)),
     PageRoute("95", pictures, name="pictures", title="What the pictures mean",
-              detail="every symbol, and its words",
-              keywords=("PICTURES", "SYMBOLS", "KEY")),
+              #  `LEGEND` among them, which is the word for this on a map and
+              #  in met.no's own files. It is not the title, because a page
+              #  whose whole purpose is explaining should not have a name that
+              #  wants explaining -- but a reader who reaches for the word
+              #  should find the page.
+              keywords=("PICTURES", "SYMBOLS", "KEY", "LEGEND")),
     #  Three the framework builds, mapped into this service's numbering. Each
     #  is generated from what the framework already knows, so none of them can
     #  drift from the service it describes.
