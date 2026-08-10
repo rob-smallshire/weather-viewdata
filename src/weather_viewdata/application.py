@@ -744,14 +744,16 @@ PAGES: Final = (
     PageRoute("0", title, name="title"),
     PageRoute("1", main, name="main", title="Main menu",
               keywords=("MAIN", "INDEX", "HOME")),
-    PageRoute("3", by_name, name="by_name", title="Find a place by name",
-              detail="type it and choose from three",
+    #  No detail on either of the two searches. They were the only entries on
+    #  the menu that had one, so the green line under them broke the rhythm of
+    #  the five rather than helping any of them -- and a title that says what
+    #  the page is for needs no gloss.
+    PageRoute("3", by_name, name="by_name", title="Forecast by placename",
               keywords=("FIND", "PLACE", "SEARCH")),
     PageRoute(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", place, name="place",
               title="One place"),
     PageRoute("4", by_position, name="by_position",
-              title="Find a point by position",
-              detail="anywhere, to a tenth of a degree",
+              title="Forecast by lat/lon position",
               keywords=("POSITION", "COORDS")),
     PageRoute(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", point,
               name="point", title="One point"),

@@ -272,6 +272,30 @@ for every reader at once. Names wrap over two of the rows,
 because `heavy sleet shwrs+thunder` is twenty-five cells and half a row is
 fourteen. Five frames.
 
+## The main menu
+
+Five entries, all the same shape:
+
+```
+1  Forecast by placename
+2  Forecast by lat/lon position
+3  How to get about
+4  About this service
+5  Ring off
+```
+
+**The two searches used to carry a line of detail in green and no longer do.**
+They were the only entries on the menu that had one, so the green under them
+broke the rhythm of the five rather than helping any of them — and a title
+saying what the page is *for* needs no gloss. `Forecast by placename` is what
+the reader wants to do; `Find a place by name` was what the page does, which is
+a different sentence and the wrong one for a menu.
+
+The titles are the routes', so the menu, the contents page and the help page
+cannot disagree about what a page is called. The cost is that a title long
+enough for the menu is a title the contents page truncates, its first column
+being as wide as `*421<lat><lon>#`.
+
 ## The place index
 
 SQLite, two tables. Places, and every folded string that finds one.
