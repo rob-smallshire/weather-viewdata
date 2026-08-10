@@ -279,6 +279,16 @@ class TestHowLongTheSuggestionListIs:
             assert await _suggestions(app, "WELLINGTON") == 9
 
 
+async def _offered(app: Sextile, typed: str) -> list[tuple[str, str]]:
+    page = await app.ask("3")
+    assert page is not None
+    form = page.frames[0].form
+    assert form is not None
+    for letter in typed:
+        await form.typed(letter)
+    return [(entry.text, entry.detail) for entry in form.found]  # type: ignore[attr-defined]
+
+
 async def _suggestions(app: Sextile, typed: str) -> int:
     page = await app.ask("3")
     assert page is not None
@@ -289,11 +299,70 @@ async def _suggestions(app: Sextile, typed: str) -> int:
     return len(form.found)  # type: ignore[attr-defined]
 
 
-def _wellington(number: int) -> Place:
+def _wellington(number: int, country: str = "NZ", admin1: str = "") -> Place:
     return replace(TRONDHEIM, geoname_id=9000 + number, name="Wellington",
-                   ascii_name="Wellington", population=1000 - number)
+                   ascii_name="Wellington", population=1000 - number,
+                   country=country, admin1=admin1)
 
 
 def _somewhere(number: int) -> Place:
     return replace(TRONDHEIM, geoname_id=8000 + number, name=f"Placeb{'x' * number}",
                    ascii_name=f"Placeb{'x' * number}", population=1000 - number)
+
+
+class TestTellingTwoOfTheSameNameApart:
+    """Five of the nine Wellingtons are in the United States.
+
+    A column of `US` says which four to rule out and nothing about the other
+    five. What separates them is the division within the country, and GeoNames
+    has it: `admin1` is the state code in the US and the home nation in the
+    United Kingdom.
+    """
+
+    async def test_the_country_alone_where_it_is_enough(self, tmp_path: Path) -> None:
+        held = [_wellington(0, "NZ"), _wellington(1, "GB"), _wellington(2, "ZA")]
+        async with _held(tmp_path, held) as app:
+            assert await _offered(app, "WELLINGTON") == [
+                ("Wellington", "NZ"),
+                ("Wellington", "GB"),
+                ("Wellington", "ZA"),
+            ]
+
+    async def test_and_the_division_within_it_where_it_is_not(
+        self, tmp_path: Path
+    ) -> None:
+        held = [
+            _wellington(0, "US", "FL"),
+            _wellington(1, "US", "KS"),
+            _wellington(2, "NZ", "G2"),
+        ]
+        async with _held(tmp_path, held) as app:
+            offered = dict(await _offered(app, "WELLINGTON"))
+            assert set(offered) == {"Wellington"}
+
+    async def test_only_the_entries_that_would_have_read_alike(
+        self, tmp_path: Path
+    ) -> None:
+        #  The column is not added to the whole list. Outside the countries
+        #  that use letters `admin1` is a number, and the room it takes is room
+        #  the name has -- so the ordinary row is left exactly as it was.
+        held = [
+            _wellington(0, "US", "FL"),
+            _wellington(1, "US", "KS"),
+            _wellington(2, "NZ", "G2"),
+        ]
+        async with _held(tmp_path, held) as app:
+            details = [detail for _, detail in await _offered(app, "WELLINGTON")]
+            assert sorted(details) == ["NZ", "US FL", "US KS"]
+
+    async def test_a_place_with_no_division_recorded_says_the_country(
+        self, tmp_path: Path
+    ) -> None:
+        #  GeoNames leaves the field empty often enough to matter, and a
+        #  trailing space would be a column that says nothing at all.
+        held = [_wellington(0, "US", ""), _wellington(1, "US", "")]
+        async with _held(tmp_path, held) as app:
+            assert [detail for _, detail in await _offered(app, "WELLINGTON")] == [
+                "US",
+                "US",
+            ]

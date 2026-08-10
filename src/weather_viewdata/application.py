@@ -29,6 +29,7 @@ makes the order things were registered in unobservable.
 """
 
 import asyncio
+from collections import Counter
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -342,13 +343,14 @@ def _field(app: Sextile, places: Index) -> Suggest:
         #  rows instead of three -- and is what lets the count of homographs be
         #  known before the list is drawn.
         found = await asyncio.to_thread(places.matching, typed, MANY_SUGGESTIONS)
+        shown = found[: _how_many(found)]
         return [
             MenuItem(
                 text=place.name,
-                detail=place.country,
+                detail=detail,
                 destination=app.address_for("place", geoname_id=place.geoname_id),
             )
-            for place in found[: _how_many(found)]
+            for place, detail in zip(shown, _details(shown), strict=True)
         ]
 
     return Suggest(
@@ -359,6 +361,31 @@ def _field(app: Sextile, places: Index) -> Suggest:
         limit=MANY_SUGGESTIONS,
         empty="No place of that name is held.",
     )
+
+
+def _details(found: Sequence[Place]) -> list[str]:
+    """What goes beside each name: the country, and where that is not enough.
+
+    Five of the nine Wellingtons are in the United States, so a column of `US`
+    tells a reader which four to rule out and nothing about the other five. The
+    division within the country is what separates them, and GeoNames has it:
+    `admin1` is the state code in the US and the home nation in the United
+    Kingdom -- `FL`, `KS`, `CO`, `OH`, `TX`, `ENG` -- which are the letters
+    somebody looking for Wellington, Ohio already has in mind.
+
+    **Only where it is needed.** A column that appeared on every row would be a
+    column of numbers in most countries, `admin1` being a code rather than a
+    name outside the few that use letters; and the room it takes is room the
+    name has. So it is added to the entries that would otherwise read alike and
+    to no others, which leaves the ordinary list exactly as it was.
+    """
+    alike = Counter((place.name, place.country) for place in found)
+    return [
+        f"{place.country} {place.admin1}".rstrip()
+        if alike[(place.name, place.country)] > 1
+        else place.country
+        for place in found
+    ]
 
 
 def _how_many(found: Sequence[Place]) -> int:

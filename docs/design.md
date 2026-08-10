@@ -311,6 +311,32 @@ Measured against the real index: `WELLINGTON`, `YORK`, `SPRINGFIELD` and
 199,344 distinct names are shared by more than three places** — so the exception
 fires on about one name in sixty, which is the right shape for an exception.
 
+**A second column, and only where it is needed.** Five of the nine Wellingtons
+are in the United States, so a column of `US` says which four to rule out and
+nothing about the other five. What separates them is the division within the
+country, and GeoNames has it: `admin1` is the state code in the US and the home
+nation in the United Kingdom — `FL`, `KS`, `CO`, `OH`, `TX`, `ENG`, which are
+the letters somebody looking for Wellington, Ohio already has in mind.
+
+It is added to the entries that would otherwise read alike and to no others.
+A column on every row would be a column of numbers in most countries — `admin1`
+is a code rather than a name outside the few that use letters — and the room it
+takes is room the name has.
+
+```
+1  Springfield          US IL #      1  Wellington           NZ #
+2  Springfield          US MO        2  Wellington           GB
+3  Springfield          US OH        3  Wellington           US FL
+4  Springfield          US MA        4  Wellington           ZA
+```
+
+It closes most of the gap and not all of it. Measured against the real index,
+**14,045 name-and-country groups are ambiguous and 4,857 still are with the
+division added** — Krajan appears twenty-seven times in one Indonesian district,
+Emiliano Zapata fifteen times in one Mexican state. Those want `admin2`, which
+is another column, another lookup table and another download; the honest present
+answer for them is `*4#` and a position.
+
 **Nine is the ceiling, and 470 names are past it.** Santa Cruz is sixty-nine
 places, San Isidro sixty-eight. Beyond nine there is no digit left to choose
 with and the tenth is simply not offered — and typing more letters does not
