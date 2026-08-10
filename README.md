@@ -14,12 +14,12 @@ nc localhost 6850                                # and call it
 ```
 0                  the title frame
 1                  the main menu
-3                  find a place by name        32<geoname-id>   its forecast
-4                  find a point by position    42<lat><lon>     its forecast
+3                  find a place by name        321<geoname-id>  its forecast
+4                  find a point by position    421<lat><lon>    its forecast
 9  about   90 goodbye   91 help   92/93/94 the framework's pages
+                       95 what the pictures mean
 ```
 
-Or key the name: `*YORK#`, `*TROMSO#`, `*NEWYORK#`.
 
 ## Why a local place index
 
@@ -32,8 +32,13 @@ ranked for a weather service rather than for a map. A keystroke costs 0.08ms.
 
 A viewdata keypad has twenty-six letters and ten digits, and on a search frame
 the digits select from the suggestions. So the index is folded to letters alone:
-`TROMSO` finds Tromsø, `MUNCHEN` finds München, `NEWYORK` finds New York. The
-fold applies to the key and never to the data — the screen still says Tromsø.
+keying `TROMSO` on `*3#` finds Tromsø, `MUNCHEN` finds München, `NEWYORK` finds
+New York. The fold applies to the key and never to the data — the screen still
+says Tromsø.
+
+A word between the star and the hash is a *page*, never a place: `*HISTORY#`
+and `*SEARCH#` go where they say, and there is no guessing which of the dozens
+of Yorks somebody meant.
 
 ## Two ways to name a forecast
 

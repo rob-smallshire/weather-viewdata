@@ -784,14 +784,22 @@ TRONDHEIM cost 107 bytes for the first letter and **one byte** for seven of the
 nine, because a keystroke that changes nothing but the cell under the cursor
 sends that character and nothing else.
 
-The form lives in the session rather than in the handler: it is one caller's
-typing and lasts exactly as long as their line. It survives leaving the page
-and coming back, which is what a reader who has just looked at one of three
-candidates wants.
+**`*YORK#` was a search once, and is not any more.** A word the numbering did
+not know was offered to the place index and the best match was where it went,
+which is what `on_unresolved` is for. Two things were wrong with it, and both
+are worth keeping written down:
 
-`*YORK#` still works too — a word the numbering does not know is offered to the
-index, which is what `on_unresolved` is for — and reaches the same page as
-keying it into the field.
+- **It shared a namespace it could not share.** `*HISTORY#` is a page and
+  `*YORK#` was a place, and nothing about either says which a word will turn
+  out to be — so a reader could not tell what a word between the star and the
+  hash would do until it had done it, and a place called Pages or Words could
+  not be found at all.
+- **It answered with one answer where there are many.** There are dozens of
+  Yorks. The index picked the likeliest and said nothing about the others.
+
+`*3#` shows three and lets the reader choose, which is what the search page is
+for and why it was built. A word between the star and the hash now means one
+thing.
 
 ### 4, finding a point by position
 

@@ -526,8 +526,8 @@ async def guide(request: PageRequest) -> Page:
     finding = MenuItem.for_page(app, "by_name")
     return Prose.of(
         "Key a page number between * and #, as *1#.",
-        f"{keyed(app.address_for('by_name'))} to {finding.text.lower()}, or "
-        "simply key the name itself: *YORK#.",
+        f"{keyed(app.address_for('by_name'))} to {finding.text.lower()}: type a "
+        "few letters and it offers the three likeliest.",
         "# alone shows the next frame of a long page. *0# goes back where you "
         "came from, and 0 returns to the main menu from anywhere.",
         "W and S page up and down, and the cursor keys do the same.",
@@ -676,7 +676,7 @@ PAGES: Final = (
     PageRoute("1", main, name="main", title="Main menu",
               keywords=("MAIN", "INDEX", "HOME")),
     PageRoute("3", by_name, name="by_name", title="Find a place by name",
-              detail="key its name, as *YORK#",
+              detail="type it and choose from three",
               keywords=("FIND", "PLACE", "SEARCH")),
     PageRoute(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", place, name="place",
               title="One place"),
@@ -762,20 +762,20 @@ def build_application(
         lifespan=lifespan,
     )
 
-    @app.on_unresolved
-    def find_a_place(target: str) -> PageAddress | None:
-        """Letters the numbering does not know are a place to look for.
-
-        This is what makes `*YORK#` work before there is any such thing as a
-        search *page*. Only the best match, a page number being one
-        destination; where several places share a name the reader gets the
-        likeliest, and the search page is where the other two will be offered.
-        """
-        if target.isdigit():
-            return None
-        found = _places(app.service).matching(target, limit=1)
-        return app.address_for("place", geoname_id=found[0].geoname_id) if found else None
-
+    #  `*YORK#` used to be a search: a word the numbering did not know was
+    #  offered to the place index, and the best match was where it went. It is
+    #  gone, and both reasons are worth keeping.
+    #
+    #  It shared a namespace it could not share. `*HISTORY#` is a page and
+    #  `*YORK#` was a place, and nothing about either says which it will be --
+    #  so a reader could not tell what a word between the star and the hash was
+    #  going to do until it had done it, and a place called Pages or Words
+    #  could not be found at all.
+    #
+    #  And it answered a question with one answer where there are many. There
+    #  are dozens of Yorks; the index picked the likeliest and said nothing
+    #  about the others. `*3#` shows three and lets the reader choose, which is
+    #  what the search page is for and why it was built.
     return app
 
 

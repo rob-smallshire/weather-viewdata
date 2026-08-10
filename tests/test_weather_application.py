@@ -13,7 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from sextile import PageAddress
+from sextile import PageAddress, Sextile
+from sextile.addressing import UnknownPageError
 from sextile.session.session import Session
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
@@ -202,3 +203,39 @@ def _shown(session: Session) -> str:
     assert frame is not None
     characters, _ = frame.to_grid()
     return "\n".join(characters)
+
+
+class TestAWordBetweenTheStarAndTheHashIsAPage:
+    """`*YORK#` was a search and is not any more.
+
+    Two reasons, both worth keeping. It shared a namespace it could not share:
+    `*HISTORY#` is a page and `*YORK#` was a place, and nothing about either
+    said which a word would turn out to be. And it answered with one answer
+    where there are many -- there are dozens of Yorks, and the index picked the
+    likeliest and said nothing about the rest.
+    """
+
+    async def test_a_place_name_is_not_a_page(self, tmp_path: Path) -> None:
+        async with _held(tmp_path) as app:
+            with pytest.raises(UnknownPageError):
+                app.resolve("TRONDHEIM")
+
+    async def test_and_the_service_own_words_still_are(self, tmp_path: Path) -> None:
+        #  Which is the point: a word between the star and the hash now means
+        #  one thing, and a reader knows which before they key it.
+        async with _held(tmp_path) as app:
+            assert app.resolve("HISTORY") == PageAddress("92")
+            assert app.resolve("SEARCH") == PageAddress("3")
+
+
+@asynccontextmanager
+async def _held(tmp_path: Path) -> AsyncIterator[Sextile]:
+    filepath = tmp_path / "places.sqlite"
+    with Index.open(filepath) as index:
+        index.add_places([TRONDHEIM])
+    app = build_application(source=NoForecasts(), index_filepath=filepath)
+    await app.startup()
+    try:
+        yield app
+    finally:
+        await app.shutdown()
