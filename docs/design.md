@@ -403,6 +403,13 @@ Nothing is lost by forgetting. The typing does not go through the page handler
 — and a reader who did want the same search back has `*0#` and the history page,
 which is what a history is for.
 
+**The nearest place is drawn in cyan, not green.** The two lines of advice under
+the fields are green and the note was too, so the one thing on the page that
+answers what the reader has just keyed read as more instruction. It carries the
+country as well as the distance — `6km from Mjondalen, NO` — because a name on
+its own is not an answer: there are nine Wellingtons, and a reader who keys a
+position in the wrong hemisphere should be told which one they have found.
+
 **The position form forgets too**, and it looked like the exception: two figures
 are more trouble to type than a name, and a reader nudging a latitude would want
 the old one there. It is not the exception. A reader comes back to look at

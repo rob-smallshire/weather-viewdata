@@ -459,9 +459,7 @@ def _position_fields(app: Sextile, places: Index) -> Fields:
             #  earth's surface. Said rather than left blank: a reader who has
             #  keyed a valid position should not wonder whether it took.
             return "Nowhere within 111km."
-        return fitted(
-            f"{found.kilometres:.0f}km from {found.place.name}", COLUMNS - 1
-        )
+        return fitted(_landmark(found), COLUMNS - 1)
 
     def complete(values: Mapping[str, str]) -> PageAddress | None:
         where = _position(values)
@@ -1173,10 +1171,7 @@ def _where(place: Place, near: "Nearby | None") -> str:
     if near is not None:
         #  With the distance, because the nearest place may be ninety
         #  kilometres away and "near" would then be a polite lie.
-        return fitted(
-            f"{position}  {near.kilometres:.0f}km from {near.place.name}",
-            COLUMNS - 1,
-        )
+        return fitted(f"{position}  {_landmark(near)}", COLUMNS - 1)
     return fitted(f"{place.country}  {position}", COLUMNS - 1)
 
 
@@ -1204,6 +1199,18 @@ def _clock_name(zone: ZoneInfo | None) -> str:
         return "UTC"
     named, _ = _zone_named(zone)
     return named if named and len(named) <= LABEL_CELLS else "loc"
+
+
+def _landmark(near: "Nearby") -> str:
+    """The nearest place we know of, as a landmark for a position.
+
+    With the country, because a name on its own is not an answer: there are
+    nine Wellingtons, and a reader who keys a position in the wrong hemisphere
+    is told which one they have found rather than left to wonder. And with the
+    distance, because the nearest place may be ninety kilometres away and
+    "near" would then be a polite lie.
+    """
+    return f"{near.kilometres:.0f}km from {near.place.name}, {near.place.country}"
 
 
 def _degrees(value: float, poles: str) -> str:
