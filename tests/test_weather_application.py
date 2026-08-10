@@ -7,6 +7,8 @@ keying A went on offering Cairo long after alternate names had stopped being
 indexed.
 """
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -144,3 +146,59 @@ class TestBothWaysOfWritingACoordinate:
         await session.receive(b"\x5f")
         assert session.address == PageAddress("42114401789")
         await app.shutdown()
+
+
+class TestTheSearchForgetsWhatWasTyped:
+    """`*3#` gives an empty field, every time.
+
+    It used to keep the word in the session and hand it back, on the argument
+    that a reader looking at one of three candidates would want it there to
+    refine. Used, it turns out the other way round: a reader who has just read
+    a forecast is looking for somewhere *else*, and the kept word costs them a
+    press of the rub-out key for every letter of it -- each one a round trip
+    and a redraw at 1200 baud.
+    """
+
+    async def test_typing_still_works(self, tmp_path: Path) -> None:
+        #  The half that had to keep working. Typing does not fetch the page
+        #  again -- a form answers a keypress by redrawing -- so forgetting on
+        #  arrival costs the letters nothing.
+        async with _typing(tmp_path) as session:
+            for letter in b"TROND":
+                await session.receive(bytes([letter]))
+            assert "TROND" in _shown(session)
+            assert "Trondheim" in _shown(session)
+
+    async def test_but_leaving_and_coming_back_gives_an_empty_field(
+        self, tmp_path: Path
+    ) -> None:
+        async with _typing(tmp_path) as session:
+            await session.receive(b"TROND")
+            assert "TROND" in _shown(session)
+            #  Away to the forecast and back to the search.
+            await session.receive(b"1")
+            await session.receive(b"F")
+            assert "TROND" not in _shown(session)
+            assert "Trondheim" not in _shown(session)
+
+
+@asynccontextmanager
+async def _typing(tmp_path: Path) -> AsyncIterator[Session]:
+    filepath = tmp_path / "places.sqlite"
+    with Index.open(filepath) as index:
+        index.add_places([TRONDHEIM])
+    app = build_application(source=NoForecasts(), index_filepath=filepath)
+    await app.startup()
+    try:
+        session = Session(app, start=PageAddress("3"))
+        await session.greeting()
+        yield session
+    finally:
+        await app.shutdown()
+
+
+def _shown(session: Session) -> str:
+    frame = session.current_frame()
+    assert frame is not None
+    characters, _ = frame.to_grid()
+    return "\n".join(characters)

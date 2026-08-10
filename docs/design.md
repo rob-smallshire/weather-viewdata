@@ -289,6 +289,19 @@ how the screen spells them. Digits go too — on a search frame they are spoken
 for by the suggestions — so `Quận 1` is found by keying `QUAN`. What is folded
 is never the data: the place is still held, forecast and *called* Tromsø.
 
+**The field is empty every time the page is fetched.** It used to be kept in
+the session and to survive leaving the page and coming back, on the argument
+that a reader looking at one of three candidates would want the word still
+there to refine. Used on a real line it turns out the other way round: a reader
+who has just read a forecast is looking for somewhere *else*, and the kept word
+costs them a press of the rub-out key for every letter of it — each one a round
+trip and a suggestion list redrawn at 1200 baud.
+
+Nothing is lost by forgetting. The typing does not go through the page handler
+— a form answers a keypress by redrawing, without the page being fetched again
+— and a reader who did want the same search back has `*0#` and the history page,
+which is what a history is for.
+
 **The ranking is computed on the way in, never at query time.** A search frame
 repaints while the reader is still typing, so a keystroke may cost an indexed
 range scan and an `ORDER BY` on a stored column and nothing more. It is

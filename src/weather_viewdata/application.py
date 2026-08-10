@@ -141,11 +141,6 @@ _TO: Final = "―"
 #: hand-arithmetic about that having been wrong the first time.
 _COLOUR_CELL: Final = 1
 
-#: What this caller's search field is held under, in what the caller has
-#: accumulated. The session's, not the service's: it is one reader's typing and
-#: lasts exactly as long as their line.
-SEARCH: Final = "search"
-
 #: Where the field and its suggestions sit on the search page.
 FIELD_ROW: Final = CONTENT_FIRST_ROW + 2
 FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
@@ -258,17 +253,21 @@ async def main(request: PageRequest) -> Page:
 async def by_name(request: PageRequest) -> Page:
     """A field, with the best three places beneath it as the reader types.
 
-    The form lives in the session rather than in this function, because it is
-    one caller's typing and lasts as long as their line. It survives leaving
-    the page and coming back, which is what a reader who has just looked at one
-    of three candidates wants: the word is still there to be refined rather
-    than typed again.
+    **The field is empty every time the page is fetched.** It used to be kept
+    in the session and to survive leaving the page and coming back, on the
+    argument that a reader looking at one of three candidates would want the
+    word still there to refine. Used, it turns out the other way round: a
+    reader who has just read a forecast is looking for somewhere *else*, and
+    what the kept word costs them is ten presses of the rub-out key, each one a
+    round trip and a redraw at 1200 baud.
+
+    Nothing is lost by forgetting. The typing itself does not go through here
+    -- a form answers a keypress by redrawing, without the page being fetched
+    again -- and a reader who did want the same search back has `*0#` and the
+    history page, which is what a history is for.
     """
     app = _service(request)
-    form = request.session.get(SEARCH)
-    if not isinstance(form, Suggest):
-        form = _field(app, _places(request.service))
-        request.session[SEARCH] = form
+    form = _field(app, _places(request.service))
 
     canvas = Canvas()
     draw_chrome(
@@ -824,6 +823,10 @@ def _forecast_page(
     A page with nothing to show says why. An empty table would read as calm
     weather, which is the one wrong answer a weather service must not give.
     """
+    #  Offered on the page that says there is no forecast as well as on the one
+    #  that has it: a reader told to come back in a few minutes is a reader
+    #  who may prefer to go and look somewhere else instead.
+    shortcuts = () if back_to is None else (Shortcut(FIND_KEY, back_to, "find"),)
     if forecast is None or not forecast.moments:
         return Prose.of(
             f"No forecast for {place.name} just now.",
@@ -832,6 +835,7 @@ def _forecast_page(
             f"Key {keyed(address)} again in a few minutes.",
             title=_heading(place),
             home=app.index,
+            shortcuts=shortcuts,
         ).build(address)
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
@@ -847,7 +851,7 @@ def _forecast_page(
         #  who has just found a place usually wants the next place, and the way
         #  back to the search is otherwise three keys and a page they have to
         #  remember the number of.
-        shortcuts=() if back_to is None else (Shortcut(FIND_KEY, back_to, "find"),),
+        shortcuts=shortcuts,
         preamble=_preamble(place, forecast, near, coming),
         #  On every frame: a reader on frame c looking at four columns of
         #  figures has no way back to the words that say what they are.
