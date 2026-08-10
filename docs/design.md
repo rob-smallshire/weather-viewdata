@@ -289,6 +289,15 @@ how the screen spells them. Digits go too — on a search frame they are spoken
 for by the suggestions — so `Quận 1` is found by keying `QUAN`. What is folded
 is never the data: the place is still held, forecast and *called* Tromsø.
 
+**Two lines of advice came off the page, and neither earned its rows.** `Key a
+name as it is shown here` was not actionable — nothing is shown until the reader
+types, and by then they have found what they wanted. What it was reaching for is
+true and needs no saying: a reader never sees the o-slash in Tromsø because the
+screen cannot draw it either, so they never wonder how to key it. `Spaces do not
+matter` was true of the index and not of the field: a space typed into it left
+the cursor a cell behind, which was a framework bug to fix rather than a thing
+to warn about.
+
 **The field is empty every time the page is fetched.** It used to be kept in
 the session and to survive leaving the page and coming back, on the argument
 that a reader looking at one of three candidates would want the word still

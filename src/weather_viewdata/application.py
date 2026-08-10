@@ -288,22 +288,19 @@ async def by_name(request: PageRequest) -> Page:
     )
     canvas.row(CONTENT_FIRST_ROW).text("Key a place name.", Colour.WHITE)
     draw_form(canvas.frame, form)
-    #  There is nothing to say about letters this keypad has not got, because
-    #  the screen has not got them either: a reader never sees the o-slash in
-    #  Tromso, so they never wonder how to key it. Both folds are the same
-    #  fold, which is what makes "as it is shown here" the whole rule.
+    #  There were two lines of advice here and neither earned its rows.
     #
-    #  It said "no space bar, no accents". There is a space bar -- it sends
-    #  0x20 like any other key -- and the letters in question are not accented
-    #  Latin ones but letters of other alphabets, which this hardware cannot
-    #  draw and so never shows.
-    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 1).text(
-        "Key a name as it is shown here.", Colour.GREEN
-    )
+    #  "Key a name as it is shown here" was not actionable: nothing is shown
+    #  until the reader types, and by then they have found what they wanted.
+    #  What it was trying to say is true and needs no saying -- a reader never
+    #  sees the o-slash in Tromso, because the screen cannot draw it either, so
+    #  they never wonder how to key it. Both folds are the same fold.
+    #
+    #  "Spaces do not matter" was true of the index and not of the field: a
+    #  space typed into it left the cursor a cell behind, because a space over
+    #  a blank changes nothing and the repaint had nothing to send. That is
+    #  fixed in the framework rather than warned about here.
     canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 2).text(
-        "Spaces do not matter.", Colour.GREEN
-    )
-    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 4).text(
         f"{_places(request.service).held():,} places held.", Colour.WHITE
     )
     return Page(
