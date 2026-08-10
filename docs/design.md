@@ -298,6 +298,30 @@ matter` was true of the index and not of the field: a space typed into it left
 the cursor a cell behind, which was a framework bug to fix rather than a thing
 to warn about.
 
+**Three suggestions, or nine where the likeliest name is shared.** Three is the
+measured number — a fourth row costs a keystroke more than it is worth at 1200
+baud — and it is right when the three are three different places. It is wrong
+when they are three Wellingtons: nothing then says whether there is a fourth,
+and there is no way to reach one. So where the top match's name is shared by
+more than three places, the list grows to nine, which is what a single keypress
+can choose from.
+
+Measured against the real index: `WELLINGTON`, `YORK`, `SPRINGFIELD` and
+`LONDON` all take the long list; `TRONDHEIM` and `OSLO` do not. **3,284 of the
+199,344 distinct names are shared by more than three places** — so the exception
+fires on about one name in sixty, which is the right shape for an exception.
+
+**Nine is the ceiling, and 470 names are past it.** Santa Cruz is sixty-nine
+places, San Isidro sixty-eight. Beyond nine there is no digit left to choose
+with and the tenth is simply not offered — and typing more letters does not
+help, the names being identical. Recorded rather than solved: the country beside
+each suggestion is what tells them apart, and a reader wanting the sixty-ninth
+Santa Cruz is better served by `*4#` and a position.
+
+The count of places held moved to the foot of the frame to make room. It is a
+thing to read once and never again, and the rows it was taking are the ones a
+long list needs.
+
 **The field is empty every time the page is fetched.** It used to be kept in
 the session and to survive leaving the page and coming back, on the argument
 that a reader looking at one of three candidates would want the word still

@@ -51,6 +51,7 @@ from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.middleware import log_pages
 from sextile.templates import (
+    CHOICES_PER_FRAME,
     HOME_KEY,
     Block,
     Entry,
@@ -62,7 +63,7 @@ from sextile.templates import (
     Template,
 )
 from sextile.viewdata.canvas import Canvas, RowWriter, Run
-from sextile.viewdata.chrome import CONTENT_FIRST_ROW, draw_chrome
+from sextile.viewdata.chrome import CONTENT_FIRST_ROW, CONTENT_ROWS, draw_chrome
 from sextile.viewdata.controls import Colour, Control
 from sextile.viewdata.drawing import centred
 from sextile.viewdata.encoding import cell_count, fitted
@@ -144,6 +145,24 @@ _COLOUR_CELL: Final = 1
 #: Where the field and its suggestions sit on the search page.
 FIELD_ROW: Final = CONTENT_FIRST_ROW + 2
 FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
+
+#: How many suggestions the list shows, and the most it will ever show. Three
+#: is the measured number -- a fourth row costs a keystroke more than it is
+#: worth on a 1200 baud line -- and is right for the ordinary case, where the
+#: three are three different places and the reader is choosing between them.
+#:
+#: It is wrong for one case. Search for Wellington and the three are all called
+#: Wellington, and there is nothing to say whether there are four of them or
+#: nine, nor any way to reach the rest. So where the likeliest name is shared
+#: by more than three places, the list grows to what a single keypress can
+#: choose from.
+MANY_SUGGESTIONS: Final = CHOICES_PER_FRAME
+_SHARING_A_NAME: Final = 3
+
+#: The last content row, where the count of places held sits. At the foot
+#: rather than under the list: it is a thing to read once and never again,
+#: and the rows it was taking are the ones a long list needs.
+PLACES_HELD_ROW: Final = CONTENT_FIRST_ROW + CONTENT_ROWS - 1
 
 #: What this caller's position form is held under.
 POSITION: Final = "position"
@@ -280,7 +299,11 @@ async def by_name(request: PageRequest) -> Page:
                 #  take, which is where a reader is looking anyway -- so the
                 #  row has the room to say the rest in words.
                 FooterItem("A-Z", "type a name", Priority.PRIMARY),
-                FooterItem("1-3", "choose one", Priority.PRIMARY),
+                #  A range rather than a count, as it always was: with one
+                #  match on offer `1-3` already named two keys that did
+                #  nothing, and the list numbers itself where a reader is
+                #  looking anyway.
+                FooterItem("1-9", "choose one", Priority.PRIMARY),
                 FooterItem(HOME_KEY, "menu", Priority.ESSENTIAL),
             ],
             ROOM,
@@ -300,7 +323,7 @@ async def by_name(request: PageRequest) -> Page:
     #  space typed into it left the cursor a cell behind, because a space over
     #  a blank changes nothing and the repaint had nothing to send. That is
     #  fixed in the framework rather than warned about here.
-    canvas.row(FIRST_SUGGESTION_ROW + SUGGESTIONS + 2).text(
+    canvas.row(PLACES_HELD_ROW).text(
         f"{_places(request.service).held():,} places held.", Colour.WHITE
     )
     return Page(
@@ -314,14 +337,18 @@ def _field(app: Sextile, places: Index) -> Suggest:
     """The search field, told where to look and where its digits lead."""
 
     async def look_up(typed: str) -> Sequence[Entry]:
-        found = await asyncio.to_thread(places.matching, typed, SUGGESTIONS)
+        #  Asked for the long list every time and cut to the short one, which
+        #  costs nothing worth counting -- a range scan already ordered, nine
+        #  rows instead of three -- and is what lets the count of homographs be
+        #  known before the list is drawn.
+        found = await asyncio.to_thread(places.matching, typed, MANY_SUGGESTIONS)
         return [
             MenuItem(
                 text=place.name,
                 detail=place.country,
                 destination=app.address_for("place", geoname_id=place.geoname_id),
             )
-            for place in found
+            for place in found[: _how_many(found)]
         ]
 
     return Suggest(
@@ -329,9 +356,27 @@ def _field(app: Sextile, places: Index) -> Suggest:
         field_row=FIELD_ROW,
         first_row=FIRST_SUGGESTION_ROW,
         label="PLACE:",
-        limit=SUGGESTIONS,
+        limit=MANY_SUGGESTIONS,
         empty="No place of that name is held.",
     )
+
+
+def _how_many(found: Sequence[Place]) -> int:
+    """How many suggestions to offer: three, or as many as a digit can choose.
+
+    Three is right when the three are three different places. It is wrong when
+    they are three Wellingtons, because then it says nothing about whether
+    there is a fourth and offers no way to reach one. So the list grows when
+    the likeliest name is shared -- by the top one and more than two besides.
+
+    Counted over what came back rather than asked of the index, since the
+    ranking has already put the places of that name together at the top: they
+    match the query exactly and nothing else can outrank all of them.
+    """
+    if not found:
+        return SUGGESTIONS
+    sharing = sum(1 for place in found if place.name == found[0].name)
+    return MANY_SUGGESTIONS if sharing > _SHARING_A_NAME else SUGGESTIONS
 
 
 async def by_position(request: PageRequest) -> Page:

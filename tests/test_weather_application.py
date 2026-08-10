@@ -7,8 +7,9 @@ keying A went on offering Cairo long after alternate names had stopped being
 indexed.
 """
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -229,13 +230,70 @@ class TestAWordBetweenTheStarAndTheHashIsAPage:
 
 
 @asynccontextmanager
-async def _held(tmp_path: Path) -> AsyncIterator[Sextile]:
+async def _held(
+    tmp_path: Path, places: Iterable[Place] = (TRONDHEIM,)
+) -> AsyncIterator[Sextile]:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
-        index.add_places([TRONDHEIM])
+        index.add_places(list(places))
     app = build_application(source=NoForecasts(), index_filepath=filepath)
     await app.startup()
     try:
         yield app
     finally:
         await app.shutdown()
+
+
+class TestHowLongTheSuggestionListIs:
+    """Three, unless the likeliest name is shared.
+
+    Three is right when the three are three different places. It is wrong when
+    they are three Wellingtons: nothing then says whether there is a fourth,
+    and there is no way to reach one.
+    """
+
+    async def test_three_where_the_names_differ(self, tmp_path: Path) -> None:
+        async with _held(tmp_path, [_somewhere(n) for n in range(9)]) as app:
+            assert await _suggestions(app, "PLACE") == 3
+
+    async def test_and_nine_where_the_likeliest_is_shared(
+        self, tmp_path: Path
+    ) -> None:
+        async with _held(tmp_path, [_wellington(n) for n in range(9)]) as app:
+            assert await _suggestions(app, "WELLINGTON") == 9
+
+    async def test_three_still_where_only_three_share_it(self, tmp_path: Path) -> None:
+        #  The top one and two besides is the ordinary case of a name a couple
+        #  of places happen to have, and three rows show all of them.
+        held = [*(_wellington(n) for n in range(3)), *(_somewhere(n) for n in range(6))]
+        async with _held(tmp_path, held) as app:
+            assert await _suggestions(app, "WELLINGTON") == 3
+
+    async def test_and_nine_is_the_most_a_keypress_can_choose_from(
+        self, tmp_path: Path
+    ) -> None:
+        #  470 names in the real index are shared by more than nine places --
+        #  Santa Cruz by sixty-nine. Past nine there is no digit left to choose
+        #  with, so the tenth is not offered. Recorded rather than solved.
+        async with _held(tmp_path, [_wellington(n) for n in range(20)]) as app:
+            assert await _suggestions(app, "WELLINGTON") == 9
+
+
+async def _suggestions(app: Sextile, typed: str) -> int:
+    page = await app.ask("3")
+    assert page is not None
+    form = page.frames[0].form
+    assert form is not None
+    for letter in typed:
+        await form.typed(letter)
+    return len(form.found)  # type: ignore[attr-defined]
+
+
+def _wellington(number: int) -> Place:
+    return replace(TRONDHEIM, geoname_id=9000 + number, name="Wellington",
+                   ascii_name="Wellington", population=1000 - number)
+
+
+def _somewhere(number: int) -> Place:
+    return replace(TRONDHEIM, geoname_id=8000 + number, name=f"Placeb{'x' * number}",
+                   ascii_name=f"Placeb{'x' * number}", population=1000 - number)
