@@ -603,6 +603,12 @@ async def guide(request: PageRequest) -> Page:
     app = _service(request)
     return await app.guide(
         request,
+        #  No `A` and `D` on the compass. They step through the run of pages a
+        #  menu offered, and this service does not wire them: a forecast is
+        #  reached from a suggestion list rather than from a menu, and there is
+        #  no run of them to step through. Two keys that did nothing were being
+        #  drawn on the one page a reader goes to to find out what the keys do.
+        items=False,
         moving=[
             Key("A-Z", "type into a search field"),
             Key(FIND_KEY, "back to your search"),

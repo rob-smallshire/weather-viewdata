@@ -305,6 +305,16 @@ mostly a description of the framework, and two hand-written copies of that
 description are two things that can drift from it and from each other. Stardot
 now calls the same code, a hundred and twenty lines lighter.
 
+**No `A` and `D` on its compass.** They step through the run of pages a menu
+offered, and this service does not wire them: a forecast is reached from a
+suggestion list rather than from a menu, and there is no run of them to step
+through. Two keys that did nothing were being drawn on the one page a reader
+goes to to find out what the keys do.
+
+The cursor keys, on the other hand, did nothing everywhere and now work: the
+frames offered them and the session never read an arrow back as the letter it
+stands for.
+
 What this service adds is the two keys a reader meets nowhere else — `A-Z` into
 a search field and `F` back to the search — and the pages it keeps its own
 numbers for, `*95#` among them.
