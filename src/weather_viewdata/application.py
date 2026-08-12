@@ -906,9 +906,13 @@ PAGES: Final = (
               #  in met.no's own files. It is not the title, because a page
               #  whose whole purpose is explaining should not have a name that
               #  wants explaining -- but a reader who reaches for the word
-              #  should find the page, and so should one who reaches for
-              #  `PICTURES`, which is what this page was called for a while.
-              keywords=("SYMBOLS", "PICTURES", "KEY", "LEGEND")),
+              #  should find the page.
+              #
+              #  Not `PICTURES`, which this page answered to for a while: a
+              #  keyword is a name in a namespace of one, and holding a good
+              #  word against a page that has stopped needing it is how the
+              #  namespace fills up.
+              keywords=("SYMBOLS", "KEY", "LEGEND")),
     #  Three the framework builds, mapped into this service's numbering. Each
     #  is generated from what the framework already knows, so none of them can
     #  drift from the service it describes.
