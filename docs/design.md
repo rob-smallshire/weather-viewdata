@@ -336,6 +336,36 @@ change and one this service needed because its titles are sentences where
 Stardot's are labels. `Forecast by lat/lon position` was `Forecast by lat/lon `
 before it.
 
+## What has been looked up
+
+Three pages over one log. The log, the middleware that writes it and two of the
+pages are the framework's — a page number is its vocabulary, so *what has been
+read lately* and *what is read most* are the same shape on any service. The
+third is this one's own.
+
+```
+2   Lately looked up      the places, named          this service's
+96  Pages lately read     the pages, as numbered     the framework's
+97  Pages read most       the pages, as numbered     the framework's
+```
+
+**Why the weather needs its own.** The framework's page can only name a page as
+the service names it, and this service names `321<geoname-id>` *One place* —
+so nine rows of `One place` is what a reader would get. `*2#` asks the index
+what each number *meant*, and shows Trondheim and Wellington. It asks the router
+for the reading rather than taking the digits apart itself: the router is what
+turned the number into a place when the page was served, and this numbering has
+changed once already.
+
+Points are left off. A position is a page and not a place, and nobody looking at
+a list of somewhere-elses wants `59.7N 10.0E`; so is a place GeoNames has since
+dropped, since a row that cannot be named is a row nobody can use.
+
+**`visits.sqlite`, beside the place index and not in it.** The index is derived
+— `import-places` rebuilds it wholesale and stamps it with the rules that built
+it — and a log is the only copy of what it holds. Thirty days by default,
+`--keep` away from being something else.
+
 ## The place index
 
 SQLite, two tables. Places, and every folded string that finds one.

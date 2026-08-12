@@ -14,9 +14,10 @@ from pathlib import Path
 
 import pytest
 
-from sextile import PageAddress, Sextile
+from sextile import Page, PageAddress, Sextile
 from sextile.addressing import UnknownPageError
 from sextile.session.session import Session
+from sextile.visits import SqliteVisits
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
 from weather_viewdata.forecast.model import Forecast
@@ -268,7 +269,11 @@ async def _held(
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places(list(places))
-    app = build_application(source=NoForecasts(), index_filepath=filepath)
+    app = build_application(
+        source=NoForecasts(),
+        index_filepath=filepath,
+        visits_filepath=tmp_path / "visits.sqlite",
+    )
     await app.startup()
     try:
         yield app
@@ -398,3 +403,72 @@ class TestTellingTwoOfTheSameNameApart:
                 "US",
                 "US",
             ]
+
+
+class TestThePlacesLatelyLookedUp:
+    """`*2#`, which is the weather's own and not the framework's.
+
+    The framework has a page of what has been read lately, and it is a list of
+    *pages*: `One place`, nine times over, because a page number is all a
+    framework can know. This one asks the index what the numbers meant.
+    """
+
+    async def test_it_names_the_places_rather_than_the_pages(
+        self, tmp_path: Path
+    ) -> None:
+        async with _held(tmp_path) as app:
+            await _looked_at(app, "3213133880")
+            page = await app.ask("2")
+            assert page is not None
+            assert "Trondheim" in _text(page)
+
+    async def test_and_going_there_is_going_to_the_forecast(
+        self, tmp_path: Path
+    ) -> None:
+        async with _held(tmp_path) as app:
+            await _looked_at(app, "3213133880")
+            page = await app.ask("2")
+            assert page is not None
+            assert page.frames[0].destination("1") == PageAddress("3213133880")
+
+    async def test_a_place_no_longer_held_is_left_off(self, tmp_path: Path) -> None:
+        #  GeoNames drops a village from `cities500` and the number in the log
+        #  stops naming anything. A row that cannot be named is a row nobody
+        #  can use.
+        async with _held(tmp_path) as app:
+            await _looked_at(app, "3219999999")
+            page = await app.ask("2")
+            assert page is not None
+            assert "Nobody has looked anything up yet." in _text(page)
+
+    async def test_and_so_are_positions(self, tmp_path: Path) -> None:
+        #  A position is a page and not a place. Nobody looking at a list of
+        #  somewhere-elses wants `59.7N 10.0E`.
+        async with _held(tmp_path) as app:
+            await _looked_at(app, "42114971900")
+            page = await app.ask("2")
+            assert page is not None
+            assert "Nobody has looked anything up yet." in _text(page)
+
+    async def test_a_service_keeping_no_log_says_so(self, tmp_path: Path) -> None:
+        #  Rather than an empty menu, which reads as "nobody has been here".
+        #  Not started, so the lifespan has opened nothing.
+        app = build_application(
+            source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
+        )
+        page = await app.ask("2")
+        assert page is not None
+        assert "not keeping a log" in _text(page)
+
+
+async def _looked_at(app: Sextile, page: str) -> None:
+    from sextile.middleware import CALLER
+
+    visits = app.service["visits"]
+    assert isinstance(visits, SqliteVisits)
+    await visits.record(PageAddress(page), caller=CALLER, found=True)
+
+
+def _text(page: Page) -> str:
+    characters, _ = page.frames[0].frame.to_grid()
+    return "\n".join(characters)

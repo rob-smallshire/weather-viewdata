@@ -51,7 +51,7 @@ from sextile import (
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.guidance import Key
-from sextile.middleware import log_pages
+from sextile.middleware import held_in, log_pages, record_visits
 from sextile.templates import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -72,6 +72,7 @@ from sextile.viewdata.encoding import cell_count, fitted
 from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
+from sextile.visits import KEPT, SqliteVisits, Visit, Visits
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.days import HEADINGS, PICTURE_ROWS, Day, days_of, draw_day
 from weather_viewdata.forecast.model import Forecast, Moment
@@ -98,6 +99,15 @@ FIND_KEY: Final = "F"
 
 DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
 
+#: Where the log of what has been read is kept. A file of its own, beside the
+#: place index rather than in it: the index is derived and `import-places`
+#: rebuilds it wholesale, where this is the only copy of what it holds.
+DEFAULT_VISITS_FILEPATH: Final = Path("visits.sqlite")
+
+#: What the log is held under, in what the service holds.
+VISITS: Final = "visits"
+
+
 #: What kind of page this is, within a namespace whose root is a search frame.
 #: There is only one kind so far, and naming it leaves room beside it for a
 #: page about a place that is not its weather.
@@ -116,6 +126,11 @@ _FORECAST: Final = "2"
 #: is no reading `323133880` under both schemes and no aliasing the old one.
 TABLE: Final = "1"
 GRAPH: Final = "2"
+
+#: The namespace of forecasts by name, which is what the page of places lately
+#: looked up asks the log for. A prefix is a namespace here, which is what a
+#: first digit already means.
+_FORECASTS_PREFIX: Final = f"3{_FORECAST}{TABLE}"
 
 #: Rows the weather-now block takes: the picture is three cells tall and the
 #: words beside it are two, so the first of the three is the picture's top band
@@ -603,6 +618,73 @@ async def about(request: PageRequest) -> Page:
     ).build(request.address)
 
 
+async def lately(request: PageRequest) -> Page:
+    """The places other readers have looked up, newest first.
+
+    The framework has a page of what has been read lately and this is not it.
+    That one is a list of *pages*, named as the service names them -- `One
+    place`, nine times over -- because a page number is all a framework can
+    know. This one asks the index what the numbers mean, so the reader sees
+    Trondheim and Wellington and can tell one row from another.
+
+    Points are left off rather than shown as coordinates. A position is a page
+    and not a place: nobody looking at a list of somewhere-elses wants
+    `59.7N 10.0E`, and the reader who keyed it has it in their own history.
+    """
+    app = _service(request)
+    visits = _visits(request.service)
+    if visits is None:
+        return _nothing_kept(app, request.address)
+    seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
+    return Menu(
+        title=app.describe(request.address).upper(),
+        entries=[
+            MenuItem(text=place.name, detail=place.country, destination=visit.page)
+            for visit, place in await _places_of(app, request.service, seen)
+        ],
+        home=app.index,
+        preamble=["Places lately looked up here."],
+        empty="Nobody has looked anything up yet.",
+    ).build(request.address)
+
+
+async def _places_of(
+    app: Sextile, service: Mapping[str, object], seen: Sequence[Visit]
+) -> list[tuple[Visit, Place]]:
+    """What each visited page number was a forecast *of*.
+
+    The router is asked, rather than the digits being taken apart here: it is
+    what turned the number into a place when the page was served, and a second
+    reading of the same number is a second thing to get wrong when the
+    numbering changes.
+    """
+    index = _places(service)
+    found = []
+    for visit in seen:
+        meant = app.params_for(visit.page)
+        geoname_id = meant.get("geoname_id") if meant is not None else None
+        if not isinstance(geoname_id, int):
+            continue
+        place = await asyncio.to_thread(index.place, geoname_id)
+        if place is not None:
+            found.append((visit, place))
+    return found
+
+
+def _visits(service: Mapping[str, object]) -> Visits | None:
+    """The log, if this service was given one."""
+    held = service.get(VISITS)
+    return held if isinstance(held, Visits) else None
+
+
+def _nothing_kept(app: Sextile, address: PageAddress) -> Page:
+    return Prose.of(
+        "This service is not keeping a log of what has been looked up.",
+        title=app.describe(address).upper(),
+        home=app.index,
+    ).build(address)
+
+
 async def guide(request: PageRequest) -> Page:
     """How to get about, which is mostly the framework's to say.
 
@@ -764,6 +846,24 @@ async def contents(request: PageRequest) -> Page:
     return await _service(request).contents(request)
 
 
+async def read_lately(request: PageRequest) -> Page:
+    """The framework's page, at this service's number."""
+    app = _service(request)
+    visits = _visits(request.service)
+    if visits is None:
+        return _nothing_kept(app, request.address)
+    return await app.lately_read(request, visits)
+
+
+async def read_most(request: PageRequest) -> Page:
+    """The framework's page, at this service's number."""
+    app = _service(request)
+    visits = _visits(request.service)
+    if visits is None:
+        return _nothing_kept(app, request.address)
+    return await app.most_read(request, visits)
+
+
 async def keywords(request: PageRequest) -> Page:
     return await _service(request).names(request)
 
@@ -789,12 +889,18 @@ PAGES: Final = (
               keywords=("POSITION", "COORDS")),
     PageRoute(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", point,
               name="point", title="One point"),
+    PageRoute("2", lately, name="lately", title="Lately looked up",
+              keywords=("LATELY", "RECENT")),
     PageRoute("9", about, name="about", title="About this service",
               keywords=("ABOUT",)),
     PageRoute("90", goodbye, name="goodbye", title="Ring off",
               keywords=("BYE", "OFF")),
     PageRoute("91", guide, name="help", title="How to get about",
               keywords=("HELP",)),
+    PageRoute("96", read_lately, name="read_lately", title="Pages lately read",
+              keywords=("READ",)),
+    PageRoute("97", read_most, name="read_most", title="Pages read most",
+              keywords=("POPULAR",)),
     PageRoute("95", pictures, name="pictures", title="What the pictures mean",
               #  `LEGEND` among them, which is the word for this on a map and
               #  in met.no's own files. It is not the title, because a page
@@ -818,6 +924,8 @@ def build_application(
     *,
     source: ForecastSource,
     index_filepath: Path = DEFAULT_INDEX_FILEPATH,
+    visits_filepath: Path = DEFAULT_VISITS_FILEPATH,
+    kept: timedelta = KEPT,
 ) -> Sextile:
     """The service, assembled.
 
@@ -848,8 +956,11 @@ def build_application(
                 f"them. Run `weather-viewdata import-places --index "
                 f"{index_filepath}` to rebuild it."
             )
+        visits = await asyncio.to_thread(
+            SqliteVisits.open, visits_filepath, kept=kept
+        )
         try:
-            yield {PLACES: index, FORECASTS: source}
+            yield {PLACES: index, FORECASTS: source, VISITS: visits}
         finally:
             await asyncio.to_thread(index.close)
             await source.aclose()
@@ -865,7 +976,9 @@ def build_application(
         #  A forecast page goes to the network, so how long one took to build
         #  is the question this service will actually be asked. At 1200 baud
         #  the wire and the page are indistinguishable from the reader's end.
-        middleware=[log_pages()],
+        #  One writes to the machine's log, for whoever runs the service; the
+        #  other to a log the service reads back, for whoever reads it.
+        middleware=[log_pages(), record_visits(held_in(VISITS))],
         lifespan=lifespan,
     )
 
