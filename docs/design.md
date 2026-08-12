@@ -13,42 +13,71 @@ numbering scheme with two namespaces is a harder question.
 
 The result, recorded here because it will not be obvious later: **this is the
 first application to have required a change to the framework at all.** The
-calendar's design document records that it needed none. This one found five
-things in a day, and every one of them was the same thing — registration order
-being observable. See [what it asked for](#what-it-asked-of-the-framework).
+calendar's design document records that it needed none. This one has needed
+twenty-odd, in three waves — the way a service is declared, the way a page is
+drawn, and three faults nobody had pressed a key hard enough to find. Not one
+of them was about weather. See
+[what it asked for](#what-it-asked-of-the-framework).
 
 ## The shape of the thing
 
+Two sources, and everything else is between them and a frame.
+
 ```
-   GeoNames' dump
-        |  dump          download, conditional; zip or plain
-        v
-   geonames        Place                             nineteen columns, thirteen wanted
-        |
-   places          search_key                        the fold to what a keypad sends
-        |
-   store/          Index, schema.sql                 the ranked place index
-        |
-   forecast/       model, source, met                Forecast and Moment; met.no behind a port
-        |
-   application     pages, ForecastTable              what a page shows
-        |
-   Sextile
+   GeoNames' dump                            api.met.no
+        |  dump      conditional; zip or plain   |  forecast/met
+        v                                        v
+   geonames     Place                       forecast/    Forecast, Moment
+        |       nineteen columns, thirteen wanted   |    met.no behind a port
+   places       search_key                          |
+        |       the fold to what a keypad sends     |
+   store/       Index, schema.sql                   |
+        |       the ranked place index              |
+        |                                           |
+        |            symbols   taken_apart, in_words, severity
+        |                 |    83 codes, in their parts
+        |                 |
+        |            icons     icon_for, draw
+        |            wind      |    three cells by three
+        |              |       |
+        |              +---+---+
+        |                  |
+        |            hours       the next eight, across
+        |            days        the ten ahead, four periods each
+        |                  |
+        +--------+---------+
+                 v
+            application     the pages, and what each is drawn from
+                 |
+              Sextile       chrome, forms, templates, charting, the log
 ```
 
 `__main__.py` carries the commands that are this application's own:
 `import-places`, and defaulted `serve`/`render`.
+
+**Two files on disk, and only one of them matters.** `places.sqlite` is derived
+— `import-places` rebuilds it from GeoNames and stamps it with the rules that
+built it — where `visits.sqlite` is the only copy of what it holds. That is why
+they are two files and not two tables.
 
 ## Numbering
 
 ```
 0                  the title frame the line opens on; # carries on to the index
 1                  the main menu
-3                  find a place by name        321<geoname-id>  its forecast
-4                  find a point by position    421<lat><lon>    its forecast
-9  about   90 goodbye   91 help   92/93/94 the framework's pages
-                       95 what the symbols mean
+2                  the places lately looked up here
+3                  forecast by placename       321<geoname-id>  its forecast
+4                  forecast by lat/lon         421<lat><lon>    its forecast
+9   about
+90  log off        91 how to get about         95 what the symbols mean
+92  where you have been                        96 pages lately read
+93  every page     94 words you can key        97 pages read most
 ```
+
+Seven of those thirteen are the framework's, drawn from what it already knows
+and mapped into this service's numbering: the history, the contents, the words,
+the guide, and the two readership pages. What is this service's own is `0`–`4`,
+`9`, `90` and `95`.
 
 Stardot's convention, and for its reasons: the first digit names a namespace and
 the second says what kind of page within it. A namespace's root would be its
@@ -916,22 +945,63 @@ nought:
 
 ## What it asked of the framework
 
-Five things, and the first four were one thing wearing four hats: **registration
-order was observable**, so each style of declaring a service was missing
-whatever the other had.
+This is the point of the exercise, so it is worth having in one place. The
+calendar's design document records that it needed no framework change at all.
+This one has needed a great many, and **not one of them was about weather** —
+which is the test the arrangement had to pass.
+
+**The first five were one thing wearing five hats: registration order was
+observable**, so each style of declaring a service was missing whatever the
+other had.
 
 - A converter could not be registered in time for a class-declared pattern that
   used one — `self.converter` needs a router that `super().__init__` creates and
-  then immediately uses. Not a missing feature; an unfixable ordering deadlock
-  in that style.
+  then immediately uses. Not a missing feature; an unfixable ordering deadlock.
 - A module-level application could not open anything, could not resolve a word
   of its own, and could not say a page's keywords beside it.
 - `Handler` was typed as returning a `Page`, so the decorator refused the
   `-> Page | None` handlers the documentation showed on that very decorator.
 
 The answer was to follow Starlette: a lifespan yielding what the service holds,
-`request.application`, pages declared as data, and a middleware stack. See
-[sextile/docs/design.md](../../sextile/docs/design.md).
+`request.application`, pages declared as data, and a middleware stack.
+
+**Then the drawing.** A weather page is a page of shapes where a forum is a page
+of words, and every one of these came from something that could not be drawn:
+
+| what was wanted | what the framework gained |
+|---|---|
+| two clocks in one lead-in, told apart by colour | a preamble line may be `Run`s |
+| a strip of mosaics above a table | `Block`, a lead-in that is drawn |
+| a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
+| a legend of pictures, placed by cell | `Template.draw_entry` |
+| days with air between them | `separation`, blanks between entries and not after each |
+| temperature and wind as lines, rain as bars | `charting.curve`, `charting.bars` |
+| a divider inside a page rather than at its edge | `thin_rule` |
+| a symbol name in three rows of fourteen cells | `wrap_within` |
+| `F` back to the search, on every frame | `Shortcut` |
+| a title too long for a contents column | `Listing` carries it on rather than cutting |
+| a help page as good as Stardot's | `guide`, and Stardot is 122 lines lighter |
+| a page of what has been looked at | `visits`, `record_visits`, and two pages |
+| a compass for a service with no item keys | `compass(items=False)` |
+| the number a page was served under, read back | `Sextile.params_for` |
+
+**And three faults, which are the ones worth having found.** Each was invisible
+until a service did something no service had done before, and each was in the
+framework rather than here:
+
+- **A keystroke that draws nothing still moves the cursor.** A space is a blank
+  cell over a blank cell, so the frame came out identical, the repaint had no
+  rows to send, and the cursor sat a cell behind the form for the rest of the
+  word. Found by typing `ULAN BATOR`.
+- **A field lost its cursor when a `*` request was cancelled.** Putting the
+  footer back begins by hiding the cursor and nothing turned it on again.
+- **The arrow keys did nothing, on any service.** A page names its keys in
+  letters and `with_arrows` offers the arrows beside them, and nothing read a
+  pressed arrow back as the letter it stood for. Every multi-frame page in the
+  workspace advertised the cursor keys and none of them moved.
+
+The last is the clearest argument for a third application: Stardot's arrows had
+been dead since they were written, and nobody had pressed one.
 
 ## The two search pages
 

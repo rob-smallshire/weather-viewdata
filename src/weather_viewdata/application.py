@@ -6,11 +6,21 @@ exactly once, in the ranking, and are settled there.
 
     0                  the title frame
     1                  the main menu
-    3                  find a place by name
+    2                  the places lately looked up here
+    3                  forecast by placename
     321<geoname-id>    one place's forecast, as a table
-    4                  find a point by position
+    4                  forecast by lat/lon position
     421<lat><lon>      one point's forecast, as a table
-    9  about   90 goodbye   91 help   92/93/94 the framework's pages
+    9  about   90 log off   91 how to get about   95 what the symbols mean
+    92 history  93 contents  94 keywords  96/97 what has been read
+
+Seven of those are the framework's, drawn from what it already knows and mapped
+into this numbering. What is this service's own is 0-4, 9, 90 and 95.
+
+The drawing is in four modules and the pages are in this one: `symbols` takes
+met.no's codes apart, `icons` draws one, `hours` puts eight of them across a
+frame with the charts between, and `days` puts ten days down one. Anything a
+page draws that is more than a row of text is in one of those.
 
 Two ways to name a forecast, failing differently. A named place carries a name,
 a timezone and an altitude, and depends on GeoNames still holding that record.
@@ -146,6 +156,9 @@ _ATTRIBUTE_CELL: Final = 1
 #: of its own because there is no next moment inside it.
 _SECONDS_AN_HOUR: Final = 3600
 _AN_HOUR: Final = timedelta(hours=1)
+
+#: What "lately" means on the about page, where the count of callers is.
+_A_WEEK: Final = timedelta(days=7)
 
 #: What separates the two ends of a range. A bar the full width of the cell,
 #: which G0 keeps at 0x60 where ASCII has its backtick, rather than the hyphen
@@ -603,6 +616,13 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
 
 
 async def about(request: PageRequest) -> Page:
+    """What this service is, who it is built out of, and who has called.
+
+    The last of those is the only figure the service keeps about its readers,
+    and it is a count of connections rather than of anybody: the log holds a
+    token minted per call and nothing else, so this can say how many and can
+    never say who.
+    """
     app = _service(request)
     return Prose.of(
         "The weather, served as Viewdata frames to computers that were obsolete "
@@ -613,9 +633,31 @@ async def about(request: PageRequest) -> Page:
         "Forecasts are held for as long as met.no asks them to be, so two "
         "readers asking about the same town within the half hour are one "
         "request rather than two.",
+        await _callers(request),
         title=app.describe(request.address).upper(),
         home=app.index,
     ).build(request.address)
+
+
+async def _callers(request: PageRequest) -> str:
+    """How many have called this week, or nothing where nothing is kept.
+
+    A week rather than the whole log, because "lately" is the only sense in
+    which the figure means anything: thirty days of a service nobody has dialled
+    for a fortnight reads as busier than it is.
+    """
+    visits = _visits(request.service)
+    if visits is None:
+        return ""
+    since = datetime.now(UTC) - _A_WEEK
+    calls = await visits.callers(since=since)
+    if not calls:
+        return ""
+    return (
+        f"{calls} call{'' if calls == 1 else 's'} in the last seven days. "
+        "The log keeps a token for each and nothing else: it can say how many "
+        "and never who."
+    )
 
 
 async def lately(request: PageRequest) -> Page:

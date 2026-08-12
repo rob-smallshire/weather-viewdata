@@ -14,11 +14,15 @@ nc localhost 6850                                # and call it
 ```
 0                  the title frame
 1                  the main menu
-3                  find a place by name        321<geoname-id>  its forecast
-4                  find a point by position    421<lat><lon>    its forecast
-9  about   90 goodbye   91 help   92/93/94 the framework's pages
-                       95 what the symbols mean
+2                  the places lately looked up here
+3                  forecast by placename       321<geoname-id>  its forecast
+4                  forecast by lat/lon         421<lat><lon>    its forecast
+9   about          90 log off                  91 how to get about
+92  where you have been      93 every page     94 words you can key
+95  what the symbols mean    96 lately read    97 read most
 ```
+
+Seven of those are the framework's, mapped into this service's numbering.
 
 
 ## Why a local place index
