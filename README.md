@@ -20,6 +20,7 @@ nc localhost 6850                                # and call it
 9   about          90 log off                  91 how to get about
 92  where you have been      93 every page     94 words you can key
 95  what the symbols mean    96 lately read    97 read most
+98  who has called
 ```
 
 Seven of those are the framework's, mapped into this service's numbering.

@@ -472,3 +472,25 @@ async def _looked_at(app: Sextile, page: str) -> None:
 def _text(page: Page) -> str:
     characters, _ = page.frames[0].frame.to_grid()
     return "\n".join(characters)
+
+
+class TestHowManyHaveCalled:
+    async def test_the_page_counts_distinct_callers(self, tmp_path: Path) -> None:
+        async with _held(tmp_path) as app:
+            visits = app.service["visits"]
+            assert isinstance(visits, SqliteVisits)
+            for caller in ("a", "b", "a"):
+                await visits.record(PageAddress("1"), caller=caller, found=True)
+            page = await app.ask("98")
+            assert page is not None
+            shown = _text(page)
+            assert "Last 24 hours" in shown
+            assert "2" in shown
+
+    async def test_and_a_service_keeping_no_log_says_so(self, tmp_path: Path) -> None:
+        app = build_application(
+            source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
+        )
+        page = await app.ask("98")
+        assert page is not None
+        assert "not keeping a log" in _text(page)

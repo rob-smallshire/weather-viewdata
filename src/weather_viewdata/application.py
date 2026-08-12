@@ -640,23 +640,24 @@ async def about(request: PageRequest) -> Page:
 
 
 async def _callers(request: PageRequest) -> str:
-    """How many have called this week, or nothing where nothing is kept.
+    """How many have called this week, and where the rest of it is.
 
     A week rather than the whole log, because "lately" is the only sense in
-    which the figure means anything: thirty days of a service nobody has dialled
-    for a fortnight reads as busier than it is.
+    which one figure means anything: thirty days of a service nobody has
+    dialled for a fortnight reads as busier than it is. The other periods are
+    on a page of their own, which this points at rather than repeating.
     """
     visits = _visits(request.service)
     if visits is None:
         return ""
-    since = datetime.now(UTC) - _A_WEEK
-    calls = await visits.callers(since=since)
+    calls = await visits.callers(since=datetime.now(UTC) - _A_WEEK)
     if not calls:
         return ""
+    app = _service(request)
     return (
-        f"{calls} call{'' if calls == 1 else 's'} in the last seven days. "
-        "The log keeps a token for each and nothing else: it can say how many "
-        "and never who."
+        f"{calls} call{'' if calls == 1 else 's'} in the last seven days; "
+        f"{keyed(app.address_for('who_called'))} for more. The log keeps a "
+        "token for each and nothing else: it can say how many and never who."
     )
 
 
@@ -893,6 +894,15 @@ async def contents(request: PageRequest) -> Page:
     return await _service(request).contents(request)
 
 
+async def who_called(request: PageRequest) -> Page:
+    """The framework's page, at this service's number."""
+    app = _service(request)
+    visits = _visits(request.service)
+    if visits is None:
+        return _nothing_kept(app, request.address)
+    return await app.who_has_called(request, visits)
+
+
 async def read_lately(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
     app = _service(request)
@@ -948,6 +958,8 @@ PAGES: Final = (
               keywords=("READ",)),
     PageRoute("97", read_most, name="read_most", title="Pages read most",
               keywords=("POPULAR",)),
+    PageRoute("98", who_called, name="who_called", title="Who has called",
+              keywords=("CALLERS",)),
     PageRoute("95", symbols, name="symbols", title="What the symbols mean",
               #  `LEGEND` among them, which is the word for this on a map and
               #  in met.no's own files. It is not the title, because a page

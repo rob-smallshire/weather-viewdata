@@ -72,6 +72,7 @@ they are two files and not two tables.
 90  log off        91 how to get about         95 what the symbols mean
 92  where you have been                        96 pages lately read
 93  every page     94 words you can key        97 pages read most
+                                               98 who has called
 ```
 
 Seven of those thirteen are the framework's, drawn from what it already knows
@@ -382,7 +383,16 @@ third is this one's own.
 2   Lately looked up      the places, named          this service's
 96  Pages lately read     the pages, as numbered     the framework's
 97  Pages read most       the pages, as numbered     the framework's
+98  Who has called        distinct callers, by period    the framework's
 ```
+
+`*98#` is the only figure this service keeps about its readers, and it is a
+count of connections rather than of anybody — the log holds a token minted per
+call and nothing else, which the page says on itself. Three windows: the last
+day, week and thirty days. **A window longer than the log is kept for reads
+low**, and silently, so a service that trims sooner than thirty days should pass
+its own periods. The about page carries the seven-day figure and points here for
+the rest.
 
 **Why the weather needs its own.** The framework's page can only name a page as
 the service names it, and this service names `321<geoname-id>` *One place* —
