@@ -712,7 +712,7 @@ async def guide(request: PageRequest) -> Page:
         #  and a list of page numbers out of order reads as a mistake whatever
         #  the grouping was for.
         asking=[
-            Key(keyed(app.address_for("goodbye")), "ring off"),
+            Key(keyed(app.address_for("goodbye")), "log off"),
             Key(),
             Key(keyed(app.address_for("contents")), "every page and its number"),
             Key(keyed(app.address_for("names")), "every word you can key"),
@@ -834,6 +834,11 @@ async def goodbye(request: PageRequest) -> Page:
     canvas = Canvas()
     canvas.row(0).text("GOODBYE", Colour.CYAN)
     canvas.row(2).text("Thank you for calling.", Colour.WHITE)
+    #  `Ring off` here and `Log off` on the menu, which are two different
+    #  jobs: the menu names an action, and Prestel called that logging off,
+    #  where this is an instruction to somebody holding a handset. Dated
+    #  British rather than an Americanism -- the American is "hang up" -- and
+    #  the register the rest of the service is written in.
     canvas.row(4).text("Ring off.", Colour.WHITE)
     return Page(frames=(PageFrame(frame=canvas.frame),), hang_up=True)
 
@@ -893,7 +898,7 @@ PAGES: Final = (
               keywords=("LATELY", "RECENT")),
     PageRoute("9", about, name="about", title="About this service",
               keywords=("ABOUT",)),
-    PageRoute("90", goodbye, name="goodbye", title="Ring off",
+    PageRoute("90", goodbye, name="goodbye", title="Log off",
               keywords=("BYE", "OFF")),
     PageRoute("91", guide, name="help", title="How to get about",
               keywords=("HELP",)),

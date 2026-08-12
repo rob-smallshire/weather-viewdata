@@ -288,7 +288,7 @@ Six entries, all the same shape:
 3  What the symbols mean
 4  How to get about
 5  About this service
-6  Ring off
+6  Log off
 ```
 
 **The legend is on the menu** because a page of symbols a reader cannot read is
