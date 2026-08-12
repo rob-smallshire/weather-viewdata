@@ -17,7 +17,7 @@ nc localhost 6850                                # and call it
 3                  find a place by name        321<geoname-id>  its forecast
 4                  find a point by position    421<lat><lon>    its forecast
 9  about   90 goodbye   91 help   92/93/94 the framework's pages
-                       95 what the pictures mean
+                       95 what the symbols mean
 ```
 
 

@@ -47,7 +47,7 @@ being observable. See [what it asked for](#what-it-asked-of-the-framework).
 3                  find a place by name        321<geoname-id>  its forecast
 4                  find a point by position    421<lat><lon>    its forecast
 9  about   90 goodbye   91 help   92/93/94 the framework's pages
-                       95 what the pictures mean
+                       95 what the symbols mean
 ```
 
 Stardot's convention, and for its reasons: the first digit names a namespace and
@@ -137,7 +137,7 @@ exactly the sort of afternoon a reader would want to know about.
 ### The grammar
 
 Eighty-three codes and about a dozen drawings, because the codes are built by
-concatenation and the pictures are built the same way. `symbols.taken_apart` is
+concatenation and the drawings are built the same way. `symbols.taken_apart` is
 the one place that knows how a code is spelled; `in_words` says it and
 `icons.py` draws it, so the two cannot drift apart the way the two folds of a
 place name once did.
@@ -238,7 +238,13 @@ Three consequences worth writing down, since each was a choice:
 
 ### `*95#`, the whole set
 
-One at a time small pictures all look plausible; side by side, the two that
+**"Symbols" on the page, "pictures" in the drawing code.** They are two things
+and the words are worth keeping apart: a *symbol* is met.no's code and the
+weather it names, which is what a reader wants explained; a *picture* is the
+three cells by three we draw for one. The page explains symbols. `icons.py`
+draws pictures.
+
+One at a time small symbols all look plausible; side by side, the two that
 cannot be told apart show up at once. It is also what a reader needs, since the
 table says `sleet shwrs` and gives no other clue what the picture over it means.
 
@@ -246,11 +252,11 @@ Every published symbol with its words, two to a row, four rows each — three of
 picture and **a blank one between**, without which the bottom band of one
 picture and the top band of the next read as a single icon: they are three rows
 apart, in the same colours, and nothing between them says where one ends. The
-strip on a forecast page has no such trouble, its pictures being side by side.
+strip on a forecast page has no such trouble, its symbols being side by side.
 
 The set is drawn by day, and **the four sky variants follow it** — a moon at
 night and a sun on the horizon in the polar twilight, on a clear sky and on a
-shower, which is the whole of what the time of day changes. Forty more pictures
+shower, which is the whole of what the time of day changes. Forty more drawings
 would say the same thing four times over, and words alone said it in a way
 nobody could judge a picture from. Each carries its own label, since the words
 drop the time of day and three entries all saying `clear sky` would explain
@@ -279,18 +285,18 @@ Six entries, all the same shape:
 ```
 1  Forecast by placename
 2  Forecast by lat/lon position
-3  What the pictures mean
+3  What the symbols mean
 4  How to get about
 5  About this service
 6  Ring off
 ```
 
-**The legend is on the menu** because a page of pictures a reader cannot read is
-a page of pictures they will not trust, and `*95#` is the only place that says
+**The legend is on the menu** because a page of symbols a reader cannot read is
+a page of symbols they will not trust, and `*95#` is the only place that says
 what they mean. It sits under the two forecasts, which are what a reader came
-for and what the pictures are on.
+for and what the symbols are drawn on.
 
-It is called `What the pictures mean` and not `Legend`, which is the word for
+It is called `What the symbols mean` and not `Legend`, which is the word for
 this on a map and in met.no's own files: a page whose whole purpose is
 explaining should not have a name that wants explaining. `*LEGEND#` reaches it,
 for the reader who does have the word.

@@ -202,12 +202,12 @@ _POSITION_CELLS: Final = 6
 PLACES: Final = "places"
 FORECASTS: Final = "forecasts"
 
-#: The legend page's grid: two pictures to a row, each with its words beside
-#: it. Half a row apiece, less the picture and the attribute that colours the
+#: The legend page's grid: two symbols to a row, each with its words beside it.
+#: Half a row apiece, less the drawing and the attribute that colours the
 #: words, and one more cell so the two halves do not touch.
-_PICTURES_ACROSS: Final = 2
-_PICTURE_CELLS: Final = COLUMNS // _PICTURES_ACROSS
-_WORD_CELLS: Final = _PICTURE_CELLS - COLUMN_CELLS - 2
+_SYMBOLS_ACROSS: Final = 2
+_SYMBOL_CELLS: Final = COLUMNS // _SYMBOLS_ACROSS
+_WORD_CELLS: Final = _SYMBOL_CELLS - COLUMN_CELLS - 2
 
 
 class StaleIndexError(RuntimeError):
@@ -276,15 +276,15 @@ async def main(request: PageRequest) -> Page:
         title=SERVICE_NAME,
         entries=[
             MenuItem.for_page(app, name)
-            #  The legend is on the menu because a page of pictures a reader
-            #  cannot read is a page of pictures they will not trust, and this
+            #  The legend is on the menu because a page of symbols a reader
+            #  cannot read is a page of symbols they will not trust, and this
             #  is the only place that says what they mean. It sits under the
             #  two forecasts, which are what a reader came for and what the
-            #  pictures are on.
+            #  symbols are drawn on.
             for name in (
                 "by_name",
                 "by_position",
-                "pictures",
+                "symbols",
                 "help",
                 "about",
                 "goodbye",
@@ -716,13 +716,13 @@ async def guide(request: PageRequest) -> Page:
             Key(),
             Key(keyed(app.address_for("contents")), "every page and its number"),
             Key(keyed(app.address_for("names")), "every word you can key"),
-            Key(keyed(app.address_for("pictures")), "what the pictures mean"),
+            Key(keyed(app.address_for("symbols")), "what the symbols mean"),
         ],
     )
 
 
 @dataclass(frozen=True)
-class Pictured:
+class Shown:
     """One entry of the legend: a symbol code, and what to call it here.
 
     The words are carried rather than worked out from the code, because the
@@ -736,7 +736,7 @@ class Pictured:
 
 #: The sky variants, shown after the set rather than through it. They differ
 #: from the day drawings in one piece and only for the 21 codes that have a sky
-#: in them, so forty more pictures would say this four times over.
+#: in them, so forty more drawings would say this four times over.
 _SKIES: Final = (
     ("clearsky_night", "clear sky at night"),
     ("clearsky_polartwilight", "clear sky in polar twilight"),
@@ -745,17 +745,17 @@ _SKIES: Final = (
 )
 
 
-async def pictures(request: PageRequest) -> Page:
-    """Every picture the service draws, beside the words for it.
+async def symbols(request: PageRequest) -> Page:
+    """Every symbol the service draws, beside the words for it.
 
     The set, as met.no publishes it, in their order. Which is the only way to
-    judge a set of pictures: one at a time they all look plausible, and side by
+    judge a set of symbols: one at a time they all look plausible, and side by
     side the two that cannot be told apart show up at once.
 
     The set is drawn by day, and the four sky variants follow it: a moon at
     night and a sun on the horizon in the polar twilight, on a clear sky and on
     a shower, which is the whole of what the time of day changes. Forty more
-    pictures would say the same thing four times over.
+    drawings would say the same thing four times over.
 
     **The set is drawn by day whatever the hour.** A legend is a legend and not
     a forecast: there is no clock it could sensibly follow. Not the reader's --
@@ -768,23 +768,23 @@ async def pictures(request: PageRequest) -> Page:
     return SymbolTable(
         title=app.describe(request.address).upper(),
         entries=_in_pairs(
-            [Pictured(code, in_full(code)) for code in PUBLISHED]
-            + [Pictured(code, words) for code, words in _SKIES]
+            [Shown(code, in_full(code)) for code in PUBLISHED]
+            + [Shown(code, words) for code, words in _SKIES]
         ),
         home=app.index,
         preamble=["Drawn by day, except where it says."],
     ).build(request.address)
 
 
-def _in_pairs(shown: Sequence[Pictured]) -> list[tuple[Pictured, ...]]:
+def _in_pairs(shown: Sequence[Shown]) -> list[tuple[Shown, ...]]:
     """Two to a row, because a picture and its words are half a row wide."""
     return [
-        tuple(shown[at : at + _PICTURES_ACROSS])
-        for at in range(0, len(shown), _PICTURES_ACROSS)
+        tuple(shown[at : at + _SYMBOLS_ACROSS])
+        for at in range(0, len(shown), _SYMBOLS_ACROSS)
     ]
 
 
-class SymbolTable(Template[tuple[Pictured, ...]]):
+class SymbolTable(Template[tuple[Shown, ...]]):
     """Pictures with their words, two to a row and four rows to each.
 
     Everything is drawn from `draw_entry` rather than from `draw`, because a
@@ -796,21 +796,21 @@ class SymbolTable(Template[tuple[Pictured, ...]]):
     #  A blank row after each, or the bottom band of one picture and the top
     #  band of the next read as one picture: they are three rows apart, in the
     #  same colours, and nothing between them says where one ends. The strip on
-    #  a forecast page has no such trouble, its pictures being side by side.
+    #  a forecast page has no such trouble, its symbols being side by side.
     rows_per_entry = BANDS + 1
     numbered = False
 
     def draw(
-        self, row: RowWriter, entry: tuple[Pictured, ...], digit: str | None
+        self, row: RowWriter, entry: tuple[Shown, ...], digit: str | None
     ) -> None:
         """Nothing. This shape draws from `draw_entry`; see the class docstring."""
 
     def draw_entry(
-        self, canvas: Canvas, row: int, entry: tuple[Pictured, ...], digit: str | None
+        self, canvas: Canvas, row: int, entry: tuple[Shown, ...], digit: str | None
     ) -> None:
         del digit  # a legend numbers nothing
         for slot, shown in enumerate(entry):
-            column = slot * _PICTURE_CELLS
+            column = slot * _SYMBOL_CELLS
             picture = icon_for(shown.code)
             if picture is not None:
                 draw_icon(canvas, row, column, picture)
@@ -901,13 +901,14 @@ PAGES: Final = (
               keywords=("READ",)),
     PageRoute("97", read_most, name="read_most", title="Pages read most",
               keywords=("POPULAR",)),
-    PageRoute("95", pictures, name="pictures", title="What the pictures mean",
+    PageRoute("95", symbols, name="symbols", title="What the symbols mean",
               #  `LEGEND` among them, which is the word for this on a map and
               #  in met.no's own files. It is not the title, because a page
               #  whose whole purpose is explaining should not have a name that
               #  wants explaining -- but a reader who reaches for the word
-              #  should find the page.
-              keywords=("PICTURES", "SYMBOLS", "KEY", "LEGEND")),
+              #  should find the page, and so should one who reaches for
+              #  `PICTURES`, which is what this page was called for a while.
+              keywords=("SYMBOLS", "PICTURES", "KEY", "LEGEND")),
     #  Three the framework builds, mapped into this service's numbering. Each
     #  is generated from what the framework already knows, so none of them can
     #  drift from the service it describes.
