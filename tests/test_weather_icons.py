@@ -14,7 +14,6 @@ import pytest
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata import build_application
-from weather_viewdata.application import _WORD_CELLS
 from weather_viewdata.forecast.model import Forecast
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
@@ -37,6 +36,7 @@ from weather_viewdata.icons import (
     WeatherIcon,
     icon_for,
 )
+from weather_viewdata.legend import WORD_CELLS
 from weather_viewdata.store import Index
 from weather_viewdata.symbols import PUBLISHED, in_full
 
@@ -251,7 +251,7 @@ class TestTheLegendPage:
         for code in PUBLISHED:
             #  The first line of the words, because the long ones wrap over two
             #  rows and would not be found whole.
-            first = wrap_within(in_full(code), cells=_WORD_CELLS, rows=BANDS)[0]
+            first = wrap_within(in_full(code), cells=WORD_CELLS, rows=BANDS)[0]
             assert first in shown, code
 
     async def test_and_the_four_sky_variants_after_them(self, tmp_path: Path) -> None:

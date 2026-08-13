@@ -45,9 +45,15 @@ Two sources, and everything else is between them and a frame.
         |            hours       the next eight, across
         |            days        the ten ahead, four periods each
         |                  |
+        |     forecast_page      one forecast, dealt into frames
+        |     search             the two forms, and reading what is typed
+        |     legend             the symbols page's shape
+        |                  |
         +--------+---------+
                  v
-            application     the pages, and what each is drawn from
+              pages         the pages, each declared beside its function
+                 |
+            application     the assembly: what it holds, what wraps it
                  |
               Sextile       chrome, forms, templates, charting, the log
 ```
@@ -606,7 +612,7 @@ as calm weather, the one wrong answer it must not give.
 
 ## Drawing a forecast
 
-`_forecast_page` in `application.py` builds it, and `ForecastTable` — a
+`forecast_page` in `forecast_page.py` builds it, and `ForecastTable` — a
 `Template[Moment]` — deals the moments into frames. Both `321<geoname-id>` and
 `421<lat><lon>` end here; the only difference is what the preamble says.
 

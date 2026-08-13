@@ -19,9 +19,9 @@ from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
-from weather_viewdata.application import FIND_KEY
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource
+from weather_viewdata.forecast_page import FIND_KEY
 from weather_viewdata.geonames import Place
 from weather_viewdata.hours import HOURS_SHOWN
 from weather_viewdata.icons import COLUMN_CELLS
