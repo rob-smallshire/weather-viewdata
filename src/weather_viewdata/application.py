@@ -58,6 +58,7 @@ from sextile import (
     Sextile,
     Suggest,
     draw_form,
+    pages,
 )
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
@@ -858,14 +859,6 @@ async def goodbye(request: PageRequest) -> Page:
     return Page(frames=(PageFrame(frame=canvas.frame),), hang_up=True)
 
 
-async def history(request: PageRequest) -> Page:
-    return await Sextile.of(request).history(request)
-
-
-async def contents(request: PageRequest) -> Page:
-    return await Sextile.of(request).contents(request)
-
-
 async def who_called(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
     app = Sextile.of(request)
@@ -891,10 +884,6 @@ async def read_most(request: PageRequest) -> Page:
     if visits is None:
         return _nothing_kept(app, request.address)
     return await app.most_read(request, visits)
-
-
-async def keywords(request: PageRequest) -> Page:
-    return await Sextile.of(request).names(request)
 
 
 #: What the service is made of, in the order a reader meets it. Everything
@@ -944,14 +933,14 @@ PAGES: Final = (
               #  word against a page that has stopped needing it is how the
               #  namespace fills up.
               keywords=("SYMBOLS", "KEY", "LEGEND")),
-    #  Three the framework builds, mapped into this service's numbering. Each
-    #  is generated from what the framework already knows, so none of them can
-    #  drift from the service it describes.
-    PageRoute("92", history, name="history", title="Where you have been",
+    #  Three the framework builds and hands over as handlers, mapped into this
+    #  service's numbering. Each is generated from what the framework already
+    #  knows, so none of them can drift from the service it describes.
+    PageRoute("92", pages.history, title="Where you have been",
               detail="this call, newest first", keywords=("HISTORY",)),
-    PageRoute("93", contents, name="contents", title="Every page",
+    PageRoute("93", pages.contents, title="Every page",
               detail="and the number that fetches it", keywords=("PAGES",)),
-    PageRoute("94", keywords, name="names", title="Words you can key",
+    PageRoute("94", pages.names, title="Words you can key",
               detail="instead of a page number", keywords=("KEYWORDS", "WORDS")),
 )
 
