@@ -33,6 +33,7 @@ DEFAULT_DUMP_FILEPATH: Final = Path("cities500.zip")
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """The command line this service answers to, subcommands and all."""
     parser = argparse.ArgumentParser(
         prog="weather-viewdata",
         description="The weather as a Viewdata service",
@@ -97,6 +98,15 @@ def _add_index_argument(parser: argparse.ArgumentParser) -> None:
 
 
 def import_command(arguments: argparse.Namespace) -> int:
+    """Fill the gazetteer from a GeoNames dump, downloading it if need be.
+
+    Args:
+        arguments: The parsed command line, which says where the dump and
+            the index live and whether to work offline.
+
+    Returns:
+        The process exit status: nought where the import succeeded.
+    """
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     log = logging.getLogger("weather-viewdata")
 
@@ -126,6 +136,15 @@ def _application(arguments: argparse.Namespace) -> Sextile:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run one command.
+
+    Args:
+        argv: The arguments after the program name, or None to take
+            them from `sys.argv`.
+
+    Returns:
+        The process exit status: nought where the command succeeded.
+    """
     parser = build_parser()
     arguments = parser.parse_args(argv)
     if arguments.command == "import-places":

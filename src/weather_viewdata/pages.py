@@ -124,6 +124,7 @@ async def title(request: PageRequest) -> Page:
 
 @page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
 async def main(request: PageRequest) -> Page:
+    """The index: the ways in to a forecast, and the legend for reading one."""
     app = Sextile.of(request)
     return Menu(
         title=SERVICE_NAME,
@@ -219,6 +220,12 @@ async def by_name(request: PageRequest) -> Page:
 
 @page(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", title="One place")
 async def place(request: PageRequest, geoname_id: int) -> Page | None:
+    """The forecast for one place in the gazetteer.
+
+    Returns None where no place has that id, which is not the same as a
+    place with no forecast: the session says so and leaves the reader where
+    they were.
+    """
     found = await asyncio.to_thread(PLACES.of(request.service).place, geoname_id)
     if found is None:
         #  Not here, which is different from here and empty. The session says
@@ -279,6 +286,12 @@ async def by_position(request: PageRequest) -> Page:
 
 @page(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", title="One point")
 async def point(request: PageRequest, lat: float, lon: float) -> Page:
+    """The forecast for a latitude and longitude, named by what is nearest.
+
+    A point is not a place and does not pretend to be one: at a tenth of a
+    degree two thirds of the world's towns share a cell with another. It
+    borrows a clock from the nearest place, and says which.
+    """
     #  A point is not a place and cannot pretend to be one: at a tenth of a
     #  degree two thirds of the world's towns share a cell with another. So it
     #  borrows a clock from whatever is nearest, and says which.
@@ -426,6 +439,7 @@ async def _callers(request: PageRequest) -> str:
 
 @page("90", title="Log off", keywords=("BYE", "OFF"))
 async def goodbye(request: PageRequest) -> Page:
+    """The farewell frame, after which the line drops."""
     #  `Ring off` here and `Log off` on the menu, which are two different
     #  jobs: the menu names an action, and Prestel called that logging off,
     #  where this is an instruction to somebody holding a handset. Dated
