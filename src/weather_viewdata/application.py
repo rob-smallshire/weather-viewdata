@@ -145,20 +145,6 @@ def build_application(
         lifespan=lifespan,
     )
 
-    #  `*YORK#` used to be a search: a word the numbering did not know was
-    #  offered to the place index, and the best match was where it went. It is
-    #  gone, and both reasons are worth keeping.
-    #
-    #  It shared a namespace it could not share. `*HISTORY#` is a page and
-    #  `*YORK#` was a place, and nothing about either says which it will be --
-    #  so a reader could not tell what a word between the star and the hash was
-    #  going to do until it had done it, and a place called Pages or Words
-    #  could not be found at all.
-    #
-    #  And it answered a question with one answer where there are many. There
-    #  are dozens of Yorks; the index picked the likeliest and said nothing
-    #  about the others. `*3#` shows three and lets the reader choose, which is
-    #  what the search page is for and why it was built.
     return app
 
 
