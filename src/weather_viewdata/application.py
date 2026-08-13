@@ -231,19 +231,6 @@ class StaleIndexError(RuntimeError):
     """The place index was built by rules this code no longer uses."""
 
 
-def _service(request: PageRequest) -> Sextile:
-    """The application a page belongs to, narrowed to the one it is.
-
-    `request.application` is optional because a request built by hand in a test
-    has no service behind it. Every request the session or the renderer makes
-    carries one, so a handler reached through either may say so.
-    """
-    app = request.application
-    if not isinstance(app, Sextile):
-        raise RuntimeError("this page was asked for outside a running service")
-    return app
-
-
 # -- the pages ---------------------------------------------------------------
 #
 #  Ordinary functions, declared beside one another and given to the constructor
@@ -270,12 +257,12 @@ async def title(request: PageRequest) -> Page:
     #  `follows` is what makes `#` mean something here. Without it the title
     #  frame is a dead end under the one key a viewdata reader tries first.
     return Page(
-        frames=(PageFrame(frame=canvas.frame),), follows=_service(request).index
+        frames=(PageFrame(frame=canvas.frame),), follows=Sextile.of(request).index
     )
 
 
 async def main(request: PageRequest) -> Page:
-    app = _service(request)
+    app = Sextile.of(request)
     return Menu(
         title=SERVICE_NAME,
         entries=[
@@ -315,7 +302,7 @@ async def by_name(request: PageRequest) -> Page:
     again -- and a reader who did want the same search back has `*0#` and the
     history page, which is what a history is for.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     form = _field(app, PLACES.of(request.service))
 
     canvas = Canvas()
@@ -450,7 +437,7 @@ async def by_position(request: PageRequest) -> Page:
     is twelve presses of the rub-out key across two fields. Nudging is what the
     arrows and a fresh six characters are for.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     form = _position_fields(app, PLACES.of(request.service))
 
     canvas = Canvas()
@@ -581,7 +568,7 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
         return None
     source = FORECASTS.of(request.service)
     return _forecast_page(
-        _service(request),
+        Sextile.of(request),
         request.address,
         found,
         await source.forecast_for(found),
@@ -597,7 +584,7 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
     where = _point_place(lat, lon, nearby)
     source = FORECASTS.of(request.service)
     return _forecast_page(
-        _service(request),
+        Sextile.of(request),
         request.address,
         where,
         await source.forecast_for(where),
@@ -614,7 +601,7 @@ async def about(request: PageRequest) -> Page:
     token minted per call and nothing else, so this can say how many and can
     never say who.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     return Prose.of(
         "The weather, served as Viewdata frames to computers that were obsolete "
         "before the forecast models were written.",
@@ -644,7 +631,7 @@ async def _callers(request: PageRequest) -> str:
     calls = await visits.callers(since=datetime.now(UTC) - _A_WEEK)
     if not calls:
         return ""
-    app = _service(request)
+    app = Sextile.of(request)
     return (
         f"{calls} call{'' if calls == 1 else 's'} in the last seven days; "
         f"{keyed(app.address_for('who_called'))} for more. The log keeps a "
@@ -665,7 +652,7 @@ async def lately(request: PageRequest) -> Page:
     and not a place: nobody looking at a list of somewhere-elses wants
     `59.7N 10.0E`, and the reader who keyed it has it in their own history.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -722,7 +709,7 @@ async def guide(request: PageRequest) -> Page:
     the way home, the shape of a request, the compass -- is the framework's,
     generated from what it actually answers rather than described here.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     return await app.guide(
         request,
         #  No `A` and `D` on the compass. They step through the run of pages a
@@ -792,7 +779,7 @@ async def symbols(request: PageRequest) -> Page:
     day and showing what changes is the only reading that is right for every
     reader at once.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     return SymbolTable(
         title=app.describe(request.address).upper(),
         entries=_in_pairs(
@@ -872,16 +859,16 @@ async def goodbye(request: PageRequest) -> Page:
 
 
 async def history(request: PageRequest) -> Page:
-    return await _service(request).history(request)
+    return await Sextile.of(request).history(request)
 
 
 async def contents(request: PageRequest) -> Page:
-    return await _service(request).contents(request)
+    return await Sextile.of(request).contents(request)
 
 
 async def who_called(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = _service(request)
+    app = Sextile.of(request)
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -890,7 +877,7 @@ async def who_called(request: PageRequest) -> Page:
 
 async def read_lately(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = _service(request)
+    app = Sextile.of(request)
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -899,7 +886,7 @@ async def read_lately(request: PageRequest) -> Page:
 
 async def read_most(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = _service(request)
+    app = Sextile.of(request)
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -907,7 +894,7 @@ async def read_most(request: PageRequest) -> Page:
 
 
 async def keywords(request: PageRequest) -> Page:
-    return await _service(request).names(request)
+    return await Sextile.of(request).names(request)
 
 
 #: What the service is made of, in the order a reader meets it. Everything
@@ -1063,7 +1050,7 @@ def _searched_from(request: PageRequest) -> PageAddress:
     no search at all -- and is offered the one they would most likely have used,
     a name being how nearly everybody looks for weather.
     """
-    app = _service(request)
+    app = Sextile.of(request)
     searches = {app.address_for("by_name"), app.address_for("by_position")}
     for been in reversed(request.history):
         if been in searches:
