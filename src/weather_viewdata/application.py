@@ -1420,10 +1420,6 @@ def _degrees(value: float, poles: str) -> str:
     return f"{abs(value):.1f}{poles[0] if value >= 0 else poles[1]}"
 
 
-def _local(at: datetime, zone: ZoneInfo | None) -> str:
-    return "  -  " if zone is None else f"{at.astimezone(zone):%H:%M}"
-
-
 def _reading(value: float | None, places: int) -> str:
     """A number, or a dash where there is no reading.
 
