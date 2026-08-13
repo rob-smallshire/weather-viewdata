@@ -38,8 +38,8 @@ from pathlib import Path
 from typing import Final
 
 from sextile import PageRoute, Sextile, routes_in
+from sextile.handlers import contents, history, names
 from sextile.middleware import log_pages, record_visits
-from sextile.pages import contents, history, names
 from sextile.visits import KEPT, SqliteVisits
 from weather_viewdata import pages
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE

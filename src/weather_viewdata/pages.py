@@ -29,7 +29,7 @@ from sextile import (
     page,
 )
 from sextile.addressing import keyed
-from sextile.guidance import Key
+from sextile.pages.guidance import Key
 from sextile.templates import (
     CHOICES_PER_FRAME,
     HOME_KEY,
