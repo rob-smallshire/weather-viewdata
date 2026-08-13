@@ -30,7 +30,14 @@ from sextile import (
 )
 from sextile.addressing import keyed
 from sextile.guidance import Key
-from sextile.templates import CHOICES_PER_FRAME, HOME_KEY, Menu, MenuItem, Prose
+from sextile.templates import (
+    CHOICES_PER_FRAME,
+    HOME_KEY,
+    Menu,
+    MenuItem,
+    Prose,
+    farewell_page,
+)
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW, CONTENT_ROWS, draw_chrome
 from sextile.viewdata.controls import Colour
@@ -168,7 +175,7 @@ async def by_name(request: PageRequest) -> Page:
     canvas = Canvas()
     draw_chrome(
         canvas,
-        title=app.describe(request.address).upper(),
+        title=app.heading_for(request.address),
         page_number=request.address.frame_number(0),
         prompt=render_footer(
             [
@@ -249,7 +256,7 @@ async def by_position(request: PageRequest) -> Page:
     canvas = Canvas()
     draw_chrome(
         canvas,
-        title=app.describe(request.address).upper(),
+        title=app.heading_for(request.address),
         page_number=request.address.frame_number(0),
         prompt=render_footer(
             [
@@ -328,7 +335,7 @@ async def lately(request: PageRequest) -> Page:
         return _nothing_kept(app, request.address)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
     return Menu(
-        title=app.describe(request.address).upper(),
+        title=app.heading_for(request.address),
         entries=[
             MenuItem(text=place.name, detail=place.country, destination=visit.page)
             for visit, place in await _places_of(app, request.service, seen)
@@ -365,7 +372,7 @@ async def _places_of(
 def _nothing_kept(app: Sextile, address: PageAddress) -> Page:
     return Prose.of(
         "This service is not keeping a log of what has been looked up.",
-        title=app.describe(address).upper(),
+        title=app.heading_for(address),
         home=app.index,
     ).build(address)
 
@@ -390,7 +397,7 @@ async def about(request: PageRequest) -> Page:
         "readers asking about the same town within the half hour are one "
         "request rather than two.",
         await _callers(request),
-        title=app.describe(request.address).upper(),
+        title=app.heading_for(request.address),
         home=app.index,
     ).build(request.address)
 
@@ -419,18 +426,12 @@ async def _callers(request: PageRequest) -> str:
 
 @page("90", title="Log off", keywords=("BYE", "OFF"))
 async def goodbye(request: PageRequest) -> Page:
-    #  No footer and nothing below: the reader is about to be talking to their
-    #  modem, and needs somewhere blank for the cursor to be left.
-    canvas = Canvas()
-    canvas.row(0).text("GOODBYE", Colour.CYAN)
-    canvas.row(2).text("Thank you for calling.", Colour.WHITE)
     #  `Ring off` here and `Log off` on the menu, which are two different
     #  jobs: the menu names an action, and Prestel called that logging off,
     #  where this is an instruction to somebody holding a handset. Dated
     #  British rather than an Americanism -- the American is "hang up" -- and
     #  the register the rest of the service is written in.
-    canvas.row(4).text("Ring off.", Colour.WHITE)
-    return Page(frames=(PageFrame(frame=canvas.frame),), hang_up=True)
+    return farewell_page("GOODBYE", "Thank you for calling.", "", "Ring off.")
 
 
 @page("91", name="help", title="How to get about", keywords=("HELP",))
@@ -530,7 +531,7 @@ async def symbols(request: PageRequest) -> Page:
     """
     app = Sextile.of(request)
     return SymbolTable(
-        title=app.describe(request.address).upper(),
+        title=app.heading_for(request.address),
         entries=in_pairs(
             [Shown(code, in_full(code)) for code in PUBLISHED]
             + [Shown(code, words) for code, words in SKIES]
