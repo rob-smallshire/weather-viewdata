@@ -17,7 +17,7 @@ exactly once, in the ranking, and are settled there.
 Seven of those are the framework's, drawn from what it already knows and mapped
 into this numbering. What is this service's own is 0-4, 9, 90 and 95.
 
-The pages are in `pages`, each declared beside the function that builds it,
+The handlers are in `handlers`, each declared beside its function,
 and this module only assembles them into a running service. The drawing is
 elsewhere again: `forecast_page` turns a forecast into frames, `search`
 builds the two forms, `legend` draws the symbols page; beneath those,
@@ -41,10 +41,10 @@ from sextile import PageRoute, Sextile, routes_in
 from sextile.handlers import contents, history, names
 from sextile.middleware import log_pages, record_visits
 from sextile.visits import KEPT, SqliteVisits
-from weather_viewdata import pages
+from weather_viewdata import handlers
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.source import ForecastSource
-from weather_viewdata.pages import FORECASTS, PLACES, SERVICE_NAME, VISITS
+from weather_viewdata.handlers import FORECASTS, PLACES, SERVICE_NAME, VISITS
 from weather_viewdata.store import Index
 
 DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
@@ -65,7 +65,7 @@ class StaleIndexError(RuntimeError):
 #: framework already knows, so none of them can drift from the service it
 #: describes.
 PAGES: Final = (
-    *routes_in(pages),
+    *routes_in(handlers),
     PageRoute("92", history, title="Where you have been",
               detail="this call, newest first", keywords=("HISTORY",)),
     PageRoute("93", contents, title="Every page",

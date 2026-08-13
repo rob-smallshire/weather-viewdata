@@ -1,4 +1,4 @@
-"""The weather service's pages, each declared beside the function that builds it.
+"""The weather service's page handlers, each declared beside its function.
 
 Ordinary functions, each taking what it needs from the request: the index
 from what the service holds, the numbering from the service itself. Nothing
