@@ -49,6 +49,7 @@ from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import (
+    Held,
     Page,
     PageAddress,
     PageFrame,
@@ -61,7 +62,7 @@ from sextile import (
 from sextile.addressing import keyed
 from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.guidance import Key
-from sextile.middleware import held_in, log_pages, record_visits
+from sextile.middleware import log_pages, record_visits
 from sextile.templates import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -114,8 +115,10 @@ DEFAULT_INDEX_FILEPATH: Final = Path("places.sqlite")
 #: rebuilds it wholesale, where this is the only copy of what it holds.
 DEFAULT_VISITS_FILEPATH: Final = Path("visits.sqlite")
 
-#: What the log is held under, in what the service holds.
-VISITS: Final = "visits"
+#: What the log is held under, in what the service holds. `found_in` rather
+#: than `of` at each use, because the log is the one thing this service can
+#: run without: the pages that read it say so instead of failing.
+VISITS: Final[Held[Visits]] = Held.checking("visits", Visits)
 
 
 #: What kind of page this is, within a namespace whose root is a search frame.
@@ -210,10 +213,11 @@ NOTE_ROW: Final = LONGITUDE_ROW + 3
 _POSITION_CELLS: Final = 6
 
 #: What the place index and the forecast source are held under, in what the
-#: service holds. Named constants rather than literals at each use, since a
-#: mistyped key is a page that fails at the far end of a telephone line.
-PLACES: Final = "places"
-FORECASTS: Final = "forecasts"
+#: service holds. Keys rather than strings at each use, since a mistyped key
+#: is a page that fails at the far end of a telephone line -- and the key
+#: carries the type, so each page narrows what it takes in the same call.
+PLACES: Final = Held("places", Index)
+FORECASTS: Final[Held[ForecastSource]] = Held.checking("forecasts", ForecastSource)
 
 #: The legend page's grid: two symbols to a row, each with its words beside it.
 #: Half a row apiece, less the drawing and the attribute that colours the
@@ -225,19 +229,6 @@ _WORD_CELLS: Final = _SYMBOL_CELLS - COLUMN_CELLS - 2
 
 class StaleIndexError(RuntimeError):
     """The place index was built by rules this code no longer uses."""
-
-
-def _places(service: Mapping[str, object]) -> Index:
-    """The place index, out of what the service holds.
-
-    A narrowing with a reason attached: what a service holds is typed as
-    objects, because the framework cannot know what any service puts in it, and
-    this is the one function that does know.
-    """
-    index = service.get(PLACES)
-    if not isinstance(index, Index):
-        raise RuntimeError("the place index is not open; the service has not started")
-    return index
 
 
 def _service(request: PageRequest) -> Sextile:
@@ -272,7 +263,7 @@ async def title(request: PageRequest) -> Page:
     centred(canvas, 4, "Forecasts for anywhere on earth", Colour.WHITE)
     centred(canvas, 7, "from the Norwegian", Colour.CYAN)
     centred(canvas, 8, "Meteorological Institute", Colour.CYAN)
-    centred(canvas, 11, f"{_places(request.service).held():,} places held", Colour.WHITE)
+    centred(canvas, 11, f"{PLACES.of(request.service).held():,} places held", Colour.WHITE)
     centred(canvas, 14, "Key # to begin", Colour.YELLOW)
     centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
     centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
@@ -325,7 +316,7 @@ async def by_name(request: PageRequest) -> Page:
     history page, which is what a history is for.
     """
     app = _service(request)
-    form = _field(app, _places(request.service))
+    form = _field(app, PLACES.of(request.service))
 
     canvas = Canvas()
     draw_chrome(
@@ -363,7 +354,7 @@ async def by_name(request: PageRequest) -> Page:
     #  a blank changes nothing and the repaint had nothing to send. That is
     #  fixed in the framework rather than warned about here.
     canvas.row(PLACES_HELD_ROW).text(
-        f"{_places(request.service).held():,} places held.", Colour.WHITE
+        f"{PLACES.of(request.service).held():,} places held.", Colour.WHITE
     )
     return Page(
         frames=(
@@ -460,7 +451,7 @@ async def by_position(request: PageRequest) -> Page:
     arrows and a fresh six characters are for.
     """
     app = _service(request)
-    form = _position_fields(app, _places(request.service))
+    form = _position_fields(app, PLACES.of(request.service))
 
     canvas = Canvas()
     draw_chrome(
@@ -583,12 +574,12 @@ def _position(values: Mapping[str, str]) -> tuple[float, float] | None:
 
 
 async def place(request: PageRequest, geoname_id: int) -> Page | None:
-    found = await asyncio.to_thread(_places(request.service).place, geoname_id)
+    found = await asyncio.to_thread(PLACES.of(request.service).place, geoname_id)
     if found is None:
         #  Not here, which is different from here and empty. The session says
         #  so and leaves the reader where they were.
         return None
-    source = _forecasts(request.service)
+    source = FORECASTS.of(request.service)
     return _forecast_page(
         _service(request),
         request.address,
@@ -602,9 +593,9 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
     #  A point is not a place and cannot pretend to be one: at a tenth of a
     #  degree two thirds of the world's towns share a cell with another. So it
     #  borrows a clock from whatever is nearest, and says which.
-    nearby = await asyncio.to_thread(_places(request.service).nearest, lat, lon)
+    nearby = await asyncio.to_thread(PLACES.of(request.service).nearest, lat, lon)
     where = _point_place(lat, lon, nearby)
-    source = _forecasts(request.service)
+    source = FORECASTS.of(request.service)
     return _forecast_page(
         _service(request),
         request.address,
@@ -647,7 +638,7 @@ async def _callers(request: PageRequest) -> str:
     dialled for a fortnight reads as busier than it is. The other periods are
     on a page of their own, which this points at rather than repeating.
     """
-    visits = _visits(request.service)
+    visits = VISITS.found_in(request.service)
     if visits is None:
         return ""
     calls = await visits.callers(since=datetime.now(UTC) - _A_WEEK)
@@ -675,7 +666,7 @@ async def lately(request: PageRequest) -> Page:
     `59.7N 10.0E`, and the reader who keyed it has it in their own history.
     """
     app = _service(request)
-    visits = _visits(request.service)
+    visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
@@ -701,7 +692,7 @@ async def _places_of(
     reading of the same number is a second thing to get wrong when the
     numbering changes.
     """
-    index = _places(service)
+    index = PLACES.of(service)
     found = []
     for visit in seen:
         meant = app.params_for(visit.page)
@@ -712,12 +703,6 @@ async def _places_of(
         if place is not None:
             found.append((visit, place))
     return found
-
-
-def _visits(service: Mapping[str, object]) -> Visits | None:
-    """The log, if this service was given one."""
-    held = service.get(VISITS)
-    return held if isinstance(held, Visits) else None
 
 
 def _nothing_kept(app: Sextile, address: PageAddress) -> Page:
@@ -897,7 +882,7 @@ async def contents(request: PageRequest) -> Page:
 async def who_called(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
     app = _service(request)
-    visits = _visits(request.service)
+    visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
     return await app.who_has_called(request, visits)
@@ -906,7 +891,7 @@ async def who_called(request: PageRequest) -> Page:
 async def read_lately(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
     app = _service(request)
-    visits = _visits(request.service)
+    visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
     return await app.lately_read(request, visits)
@@ -915,7 +900,7 @@ async def read_lately(request: PageRequest) -> Page:
 async def read_most(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
     app = _service(request)
-    visits = _visits(request.service)
+    visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
     return await app.most_read(request, visits)
@@ -1024,7 +1009,7 @@ def build_application(
             SqliteVisits.open, visits_filepath, kept=kept
         )
         try:
-            yield {PLACES: index, FORECASTS: source, VISITS: visits}
+            yield PLACES.holding(index) | FORECASTS.holding(source) | VISITS.holding(visits)
         finally:
             await asyncio.to_thread(index.close)
             await source.aclose()
@@ -1042,7 +1027,7 @@ def build_application(
         #  the wire and the page are indistinguishable from the reader's end.
         #  One writes to the machine's log, for whoever runs the service; the
         #  other to a log the service reads back, for whoever reads it.
-        middleware=[log_pages(), record_visits(held_in(VISITS))],
+        middleware=[log_pages(), record_visits(VISITS.find)],
         lifespan=lifespan,
     )
 
@@ -1061,13 +1046,6 @@ def build_application(
     #  about the others. `*3#` shows three and lets the reader choose, which is
     #  what the search page is for and why it was built.
     return app
-
-
-def _forecasts(service: Mapping[str, object]) -> ForecastSource:
-    source = service.get(FORECASTS)
-    if not isinstance(source, ForecastSource):
-        raise RuntimeError("the forecast source is not open")
-    return source
 
 
 # -- drawing a forecast ------------------------------------------------------
