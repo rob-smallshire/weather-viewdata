@@ -7,6 +7,7 @@ that is more than a row of text is here or in `hours`, `days` and `icons`.
 """
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -14,7 +15,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sextile import Page, PageAddress, Sextile
 from sextile.addressing import keyed
 from sextile.templates import Block, PreambleLine, Prose, Shortcut, Template
-from sextile.viewdata.canvas import Canvas, RowWriter, Run
+from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
 from sextile.viewdata.frame import COLUMNS
@@ -106,6 +107,7 @@ def forecast_page(
     ).build(address)
 
 
+@dataclass(kw_only=True, eq=False)
 class ForecastTable(Template[Day]):
     """The days ahead, one to a block of four rows.
 
@@ -113,19 +115,15 @@ class ForecastTable(Template[Day]):
     six-row block. Nothing on it is selectable: a forecast is something to
     read, not a menu, so no digit is spent on the rows and 1-9 do nothing here
     -- which is the rule about naming only the keys that work, rather than an
-    exception to it.
+    exception to it. A `Template` rather than a `RowTemplate`: a day is
+    placed by cell.
     """
 
     rows_per_entry = PICTURE_ROWS
     separation = 1
     numbered = False
 
-    def __init__(self, *, today: date, **wanted: object) -> None:
-        super().__init__(**wanted)  # type: ignore[arg-type]
-        self.today = today
-
-    def draw(self, row: RowWriter, entry: Day, digit: str | None) -> None:
-        """Nothing. A day is placed by cell; see `draw_entry`."""
+    today: date
 
     def draw_entry(
         self, canvas: Canvas, row: int, entry: Day, digit: str | None

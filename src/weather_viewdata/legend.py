@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from sextile.templates import Template
-from sextile.viewdata.canvas import Canvas, RowWriter
+from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Control
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
@@ -60,10 +60,10 @@ def in_pairs(shown: Sequence[Shown]) -> list[tuple[Shown, ...]]:
 class SymbolTable(Template[tuple[Shown, ...]]):
     """Pictures with their words, two to a row and four rows to each.
 
-    Everything is drawn from `draw_entry` rather than from `draw`, because a
-    mosaic picture is placed by cell and is three rows tall: a row writer walks
-    one row from left to right, which is the wrong shape for this and the right
-    shape for everything else.
+    A `Template` rather than a `RowTemplate`, because a mosaic picture is
+    placed by cell and is three rows tall: a row writer walks one row from
+    left to right, which is the wrong shape for this and the right shape for
+    everything else.
     """
 
     #  A blank row after each, or the bottom band of one picture and the top
@@ -72,11 +72,6 @@ class SymbolTable(Template[tuple[Shown, ...]]):
     #  a forecast page has no such trouble, its symbols being side by side.
     rows_per_entry = BANDS + 1
     numbered = False
-
-    def draw(
-        self, row: RowWriter, entry: tuple[Shown, ...], digit: str | None
-    ) -> None:
-        """Nothing. This shape draws from `draw_entry`; see the class docstring."""
 
     def draw_entry(
         self, canvas: Canvas, row: int, entry: tuple[Shown, ...], digit: str | None
