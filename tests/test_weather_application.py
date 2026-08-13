@@ -7,6 +7,7 @@ keying A went on offering Cairo long after alternate names had stopped being
 indexed.
 """
 
+import sqlite3
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
 from dataclasses import replace
@@ -52,7 +53,11 @@ class TestRefusingAStaleIndex:
         filepath = tmp_path / "places.sqlite"
         with Index.open(filepath) as index:
             index.add_places([TRONDHEIM])
-        app = build_application(source=NoForecasts(), index_filepath=filepath)
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            visits_filepath=tmp_path / "visits.sqlite",
+        )
         await app.startup()
         assert await app.ask("1") is not None
         await app.shutdown()
@@ -62,7 +67,11 @@ class TestRefusingAStaleIndex:
         with Index.open(filepath) as index:
             index.add_places([TRONDHEIM])
             index.stamp(RULES - 1)
-        app = build_application(source=NoForecasts(), index_filepath=filepath)
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            visits_filepath=tmp_path / "visits.sqlite",
+        )
         with pytest.raises(StaleIndexError):
             await app.startup()
 
@@ -72,7 +81,11 @@ class TestRefusingAStaleIndex:
         with Index.open(filepath) as index:
             index.add_places([TRONDHEIM])
             index.stamp(RULES - 1)
-        app = build_application(source=NoForecasts(), index_filepath=filepath)
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            visits_filepath=tmp_path / "visits.sqlite",
+        )
         with pytest.raises(StaleIndexError, match="import-places"):
             await app.startup()
 
@@ -83,7 +96,9 @@ class TestRefusingAStaleIndex:
         #  It will say it holds no places, which is true and is a different
         #  complaint.
         app = build_application(
-            source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
+            source=NoForecasts(),
+            index_filepath=tmp_path / "places.sqlite",
+            visits_filepath=tmp_path / "visits.sqlite",
         )
         await app.startup()
         await app.shutdown()
@@ -139,7 +154,11 @@ class TestBothWaysOfWritingACoordinate:
         filepath = tmp_path / "places.sqlite"
         with Index.open(filepath) as index:
             index.add_places([TRONDHEIM])
-        app = build_application(source=NoForecasts(), index_filepath=filepath)
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            visits_filepath=tmp_path / "visits.sqlite",
+        )
         await app.startup()
         session = Session(app, start=PageAddress("4"))
         await session.greeting()
@@ -190,7 +209,11 @@ async def _typing(tmp_path: Path, start: str = "3") -> AsyncIterator[Session]:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([TRONDHEIM])
-    app = build_application(source=NoForecasts(), index_filepath=filepath)
+    app = build_application(
+        source=NoForecasts(),
+        index_filepath=filepath,
+        visits_filepath=tmp_path / "visits.sqlite",
+    )
     await app.startup()
     try:
         session = Session(app, start=PageAddress(start))
@@ -494,3 +517,58 @@ class TestHowManyHaveCalled:
         page = await app.ask("98")
         assert page is not None
         assert "not keeping a log" in _text(page)
+
+
+class TestTheLifespanClosesWhatItOpens:
+    """The log and the index are files, and files are handed back.
+
+    The lifespan opens three things and must close all three however far it
+    got: a log left open holds its file, and an index left open by a startup
+    that failed halfway holds its file against the rebuild the failure told
+    somebody to run.
+    """
+
+    async def test_the_visits_log_is_closed_at_shutdown(
+        self, tmp_path: Path
+    ) -> None:
+        filepath = tmp_path / "places.sqlite"
+        with Index.open(filepath) as index:
+            index.add_places([TRONDHEIM])
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            visits_filepath=tmp_path / "visits.sqlite",
+        )
+        await app.startup()
+        visits = app.service["visits"]
+        assert isinstance(visits, SqliteVisits)
+        await app.shutdown()
+        with pytest.raises(sqlite3.ProgrammingError):
+            await visits.recent(1)
+
+    async def test_the_index_is_closed_when_the_log_cannot_be_opened(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        filepath = tmp_path / "places.sqlite"
+        with Index.open(filepath) as index:
+            index.add_places([TRONDHEIM])
+        opened: list[Index] = []
+        real_open = Index.open
+
+        def capturing(index_filepath: Path | str) -> Index:
+            found = real_open(index_filepath)
+            opened.append(found)
+            return found
+
+        monkeypatch.setattr(Index, "open", capturing)
+        app = build_application(
+            source=NoForecasts(),
+            index_filepath=filepath,
+            #  A directory, which sqlite cannot open as a database file.
+            visits_filepath=tmp_path,
+        )
+        with pytest.raises(sqlite3.OperationalError):
+            await app.startup()
+        (index,) = opened
+        with pytest.raises(sqlite3.ProgrammingError):
+            index.held()

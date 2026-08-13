@@ -275,7 +275,11 @@ async def _legend(tmp_path: Path) -> str:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([])
-    app = build_application(source=_NoForecasts(), index_filepath=filepath)
+    app = build_application(
+        source=_NoForecasts(),
+        index_filepath=filepath,
+        visits_filepath=tmp_path / "visits.sqlite",
+    )
     await app.startup()
     try:
         page = await app.ask("95")

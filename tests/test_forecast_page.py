@@ -93,7 +93,11 @@ async def page_for(
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([TRONDHEIM])
-    app = build_application(source=Fixed(forecast), index_filepath=filepath)
+    app = build_application(
+        source=Fixed(forecast),
+        index_filepath=filepath,
+        visits_filepath=tmp_path / "visits.sqlite",
+    )
     await app.startup()
     try:
         page = await app.respond(

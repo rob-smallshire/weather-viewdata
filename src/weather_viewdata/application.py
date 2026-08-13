@@ -100,23 +100,31 @@ def build_application(
         to be hoisted anywhere for both to see.
         """
         index = await asyncio.to_thread(Index.open, index_filepath)
-        #  Refused rather than warned about. A stale index does not fail, it
-        #  answers -- by rules the code stopped using, with nothing on the
-        #  screen to say so. A service that will not start says exactly what to
-        #  run; one that starts and lies costs somebody an afternoon.
-        if index.stale:
-            await asyncio.to_thread(index.close)
-            raise StaleIndexError(
-                f"{index_filepath} was built by older rules and would answer by "
-                f"them. Run `weather-viewdata import-places --index "
-                f"{index_filepath}` to rebuild it."
+        try:
+            #  Refused rather than warned about. A stale index does not fail,
+            #  it answers -- by rules the code stopped using, with nothing on
+            #  the screen to say so. A service that will not start says exactly
+            #  what to run; one that starts and lies costs somebody an
+            #  afternoon.
+            if index.stale:
+                raise StaleIndexError(
+                    f"{index_filepath} was built by older rules and would "
+                    f"answer by them. Run `weather-viewdata import-places "
+                    f"--index {index_filepath}` to rebuild it."
+                )
+            visits = await asyncio.to_thread(
+                SqliteVisits.open, visits_filepath, kept=kept
             )
-        visits = await asyncio.to_thread(
-            SqliteVisits.open, visits_filepath, kept=kept
-        )
+        except BaseException:
+            #  Whatever went wrong after the index opened, the index closes:
+            #  a service that will not start should not hold the file either,
+            #  least of all against the rebuild its own error names.
+            await asyncio.to_thread(index.close)
+            raise
         try:
             yield PLACES.holding(index) | FORECASTS.holding(source) | VISITS.holding(visits)
         finally:
+            await asyncio.to_thread(visits.close)
             await asyncio.to_thread(index.close)
             await source.aclose()
 
