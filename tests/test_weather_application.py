@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from sextile import Page, PageAddress, Sextile, UnknownPageError
-from sextile.session.session import Session
+from sextile.testing import Caller, calling
 from sextile.visits import SqliteVisits
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
@@ -158,15 +158,12 @@ class TestBothWaysOfWritingACoordinate:
             index_filepath=filepath,
             visits_filepath=tmp_path / "visits.sqlite",
         )
-        await app.startup()
-        session = Session(app, start=PageAddress("4"))
-        await session.greeting()
-        await session.receive(latitude.encode())
-        await session.receive(b"\x09")
-        await session.receive(longitude.encode())
-        await session.receive(b"\x5f")
-        assert session.address == PageAddress("42114401789")
-        await app.shutdown()
+        async with calling(app, start="4") as caller:
+            await caller.key(latitude)
+            await caller.key(b"\x09")
+            await caller.key(longitude)
+            await caller.key(b"\x5f")
+            assert caller.address == PageAddress("42114401789")
 
 
 class TestTheSearchForgetsWhatWasTyped:
@@ -184,27 +181,27 @@ class TestTheSearchForgetsWhatWasTyped:
         #  The half that had to keep working. Typing does not fetch the page
         #  again -- a form answers a keypress by redrawing -- so forgetting on
         #  arrival costs the letters nothing.
-        async with _typing(tmp_path) as session:
-            for letter in b"TROND":
-                await session.receive(bytes([letter]))
-            assert "TROND" in _shown(session)
-            assert "Trondheim" in _shown(session)
+        async with _typing(tmp_path) as caller:
+            for letter in "TROND":
+                await caller.key(letter)
+            assert "TROND" in caller.shown
+            assert "Trondheim" in caller.shown
 
     async def test_but_leaving_and_coming_back_gives_an_empty_field(
         self, tmp_path: Path
     ) -> None:
-        async with _typing(tmp_path) as session:
-            await session.receive(b"TROND")
-            assert "TROND" in _shown(session)
+        async with _typing(tmp_path) as caller:
+            await caller.key("TROND")
+            assert "TROND" in caller.shown
             #  Away to the forecast and back to the search.
-            await session.receive(b"1")
-            await session.receive(b"F")
-            assert "TROND" not in _shown(session)
-            assert "Trondheim" not in _shown(session)
+            await caller.key("1")
+            await caller.key("F")
+            assert "TROND" not in caller.shown
+            assert "Trondheim" not in caller.shown
 
 
 @asynccontextmanager
-async def _typing(tmp_path: Path, start: str = "3") -> AsyncIterator[Session]:
+async def _typing(tmp_path: Path, start: str = "3") -> AsyncIterator[Caller]:
     filepath = tmp_path / "places.sqlite"
     with Index.open(filepath) as index:
         index.add_places([TRONDHEIM])
@@ -213,20 +210,8 @@ async def _typing(tmp_path: Path, start: str = "3") -> AsyncIterator[Session]:
         index_filepath=filepath,
         visits_filepath=tmp_path / "visits.sqlite",
     )
-    await app.startup()
-    try:
-        session = Session(app, start=PageAddress(start))
-        await session.greeting()
-        yield session
-    finally:
-        await app.shutdown()
-
-
-def _shown(session: Session) -> str:
-    frame = session.current_frame()
-    assert frame is not None
-    characters, _ = frame.to_grid()
-    return "\n".join(characters)
+    async with calling(app, start=start) as caller:
+        yield caller
 
 
 class TestThePositionFormForgetsToo:
@@ -240,25 +225,25 @@ class TestThePositionFormForgetsToo:
     """
 
     async def test_typing_a_position_still_works(self, tmp_path: Path) -> None:
-        async with _typing(tmp_path, start="4") as session:
-            await session.receive(b"54.0N")
-            await session.receive(b"\x09")
-            await session.receive(b"1.1W")
-            await session.receive(b"\x5f")
-            assert session.address == PageAddress("42114401789")
+        async with _typing(tmp_path, start="4") as caller:
+            await caller.key("54.0N")
+            await caller.key(b"\x09")
+            await caller.key("1.1W")
+            await caller.key(b"\x5f")
+            assert caller.address == PageAddress("42114401789")
 
     async def test_but_coming_back_gives_two_empty_fields(
         self, tmp_path: Path
     ) -> None:
         #  Not 54.0N, which is the sample in the field's own advice: the test
         #  would then find the hint and call it the field.
-        async with _typing(tmp_path, start="4") as session:
-            await session.receive(b"63.4N")
-            assert "63.4N" in _shown(session)
+        async with _typing(tmp_path, start="4") as caller:
+            await caller.key("63.4N")
+            assert "63.4N" in caller.shown
             #  Away to the menu and back to the position form.
-            await session.receive(b"*1#")
-            await session.receive(b"*4#")
-            assert "63.4N" not in _shown(session)
+            await caller.key("*1#")
+            await caller.key("*4#")
+            assert "63.4N" not in caller.shown
 
 
 class TestAWordBetweenTheStarAndTheHashIsAPage:
