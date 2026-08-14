@@ -9,11 +9,13 @@ that is more than a row of text is here or in `hours`, `days` and `icons`.
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from typing import Final
+from typing import ClassVar, Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, Sextile, keyed
-from sextile.templates import Block, PreambleLine, Prose, Shortcut, Template
+from sextile.formatting import Formatter, Lines, Prose
+from sextile.layout import Drawn, Every, Flowing, Laid, Once, PageLayout
+from sextile.templates import Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
@@ -74,14 +76,20 @@ def forecast_page(
     #  who may prefer to go and look somewhere else instead.
     shortcuts = () if back_to is None else (Shortcut(FIND_KEY, back_to, "find"),)
     if forecast is None or not forecast.moments:
-        return Prose.of(
-            f"No forecast for {place.name} just now.",
-            "The Norwegian Meteorological Institute did not answer. This is our "
-            "trouble rather than yours.",
-            f"Key {keyed(address)} again in a few minutes.",
+        return PageLayout(
             title=_heading(place),
             home=app.index,
             shortcuts=shortcuts,
+            parts=[
+                Flowing(
+                    Prose.of(
+                        f"No forecast for {place.name} just now.",
+                        "The Norwegian Meteorological Institute did not answer. "
+                        "This is our trouble rather than yours.",
+                        f"Key {keyed(address)} again in a few minutes.",
+                    )
+                )
+            ],
         ).build(address)
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
@@ -89,25 +97,31 @@ def forecast_page(
     #  included. They are not one forecast said twice: the first is what this
     #  afternoon will do, the second which day to go out on.
     coming = [moment for moment in forecast.moments if now is None or moment.at > now.at]
-    return ForecastTable(
+    return PageLayout(
         title=_heading(place),
-        entries=days_of(forecast.moments, zone, from_day=_today(zone)),
         home=app.index,
         #  Not `S`, which pages down, and not `0`, which is the index. A reader
         #  who has just found a place usually wants the next place, and the way
         #  back to the search is otherwise three keys and a page they have to
         #  remember the number of.
         shortcuts=shortcuts,
-        preamble=_preamble(place, forecast, near, coming),
-        #  On every frame: a reader on frame c looking at four columns of
-        #  figures has no way back to the words that say what they are.
-        headings=HEADINGS,
-        today=_today(zone),
+        parts=[
+            *_preamble(place, forecast, near, coming),
+            #  On every frame: a reader on frame c looking at four columns of
+            #  figures has no way back to the words that say what they are.
+            Every(Lines(said=(HEADINGS,), colour=Colour.CYAN)),
+            Flowing(
+                ForecastTable(
+                    entries=days_of(forecast.moments, zone, from_day=_today(zone)),
+                    today=_today(zone),
+                )
+            ),
+        ],
     ).build(address)
 
 
-@dataclass(kw_only=True, eq=False)
-class ForecastTable(Template[Day]):
+@dataclass(frozen=True, kw_only=True)
+class ForecastTable(Formatter[Day]):
     """The days ahead, one to a block of four rows.
 
     Three rows of pictures and a blank, or two days running would read as one
@@ -118,9 +132,9 @@ class ForecastTable(Template[Day]):
     placed by cell.
     """
 
-    rows_per_entry = PICTURE_ROWS
-    separation = 1
-    numbered = False
+    rows_per_entry: ClassVar[int] = PICTURE_ROWS
+    separation: ClassVar[int] = 1
+    numbered: ClassVar[bool] = False
 
     today: date
 
@@ -140,26 +154,31 @@ def _preamble(
     forecast: Forecast,
     near: Nearby | None,
     coming: Sequence[Moment],
-) -> Sequence[PreambleLine]:
+) -> list[Laid]:
     """Where this is, which clocks it keeps, how old it is, and the weather now.
 
     A blank row after the position, and then the weather the reader is standing
     in -- three rows of it, since that is what a picture is tall, with the issue
     time filling the first of them beside the picture's top band.
+
+    Returns the parts to lay above the table, each drawn on the first frame
+    alone, with a blank row after the last of them.
     """
-    lines: list[PreambleLine] = [_where(place, near), ""]
+    lines: list[Laid] = [Once(Lines(said=(_where(place, near), "")))]
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     issued = f"Issued {forecast.updated_at:%H:%M} UTC"
     if now is not None:
         lines.append(
-            Block(
-                NOW_ROWS,
-                lambda canvas, row: _draw_now(canvas, row, now, zone, issued),
+            Once(
+                Drawn(
+                    rows=NOW_ROWS,
+                    draw=lambda canvas, row: _draw_now(canvas, row, now, zone, issued),
+                )
             )
         )
     else:
-        lines.append(issued)
+        lines.append(Once(Lines(said=(issued,))))
     if coming:
         #  Drawn rather than written, and the template counts its rows like any
         #  others -- so the strip filling what is left of the frame simply
@@ -168,11 +187,17 @@ def _preamble(
         hours = list(coming[:HOURS_SHOWN])
         clock = _clock_name(zone)
         lines.append(
-            Block(
-                STRIP_ROWS,
-                lambda canvas, row: draw_strip(canvas, row, hours, zone, clock),
+            Once(
+                Drawn(
+                    rows=STRIP_ROWS,
+                    draw=lambda canvas, row: draw_strip(canvas, row, hours, zone, clock),
+                )
             )
         )
+    #  A blank row between the lead-in and the table, so the two read as two
+    #  things. The templates added this of their own accord; a list of parts
+    #  says it.
+    lines.append(Once(Lines(said=("",))))
     return lines
 
 

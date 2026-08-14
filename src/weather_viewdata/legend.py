@@ -7,9 +7,9 @@ the drawings are `icons`'.
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
-from sextile.templates import Template
+from sextile.formatting import Formatter
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Control
 from sextile.viewdata.frame import COLUMNS
@@ -57,10 +57,11 @@ def in_pairs(shown: Sequence[Shown]) -> list[tuple[Shown, ...]]:
     ]
 
 
-class SymbolTable(Template[tuple[Shown, ...]]):
+@dataclass(frozen=True, kw_only=True)
+class SymbolTable(Formatter[tuple[Shown, ...]]):
     """Pictures with their words, two to a row and four rows to each.
 
-    A `Template` rather than a `RowTemplate`, because a mosaic picture is
+    A `Formatter` rather than a `RowFormatter`, because a mosaic picture is
     placed by cell and is three rows tall: a row writer walks one row from
     left to right, which is the wrong shape for this and the right shape for
     everything else.
@@ -70,8 +71,8 @@ class SymbolTable(Template[tuple[Shown, ...]]):
     #  band of the next read as one picture: they are three rows apart, in the
     #  same colours, and nothing between them says where one ends. The strip on
     #  a forecast page has no such trouble, its symbols being side by side.
-    rows_per_entry = BANDS + 1
-    numbered = False
+    rows_per_entry: ClassVar[int] = BANDS + 1
+    numbered: ClassVar[bool] = False
 
     def draw_entry(
         self, canvas: Canvas, row: int, entry: tuple[Shown, ...], digit: str | None

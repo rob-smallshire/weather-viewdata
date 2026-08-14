@@ -30,14 +30,9 @@ from sextile import (
     keyed,
     page,
 )
-from sextile.templates import (
-    CHOICES_PER_FRAME,
-    HOME_KEY,
-    Menu,
-    MenuItem,
-    Prose,
-    farewell_page,
-)
+from sextile.formatting import Lines, Menu, MenuItem, Prose
+from sextile.layout import CHOICES_PER_FRAME, Flowing, Once, PageLayout
+from sextile.templates import HOME_KEY, farewell_page
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW, CONTENT_ROWS, draw_chrome
 from sextile.viewdata.controls import Colour
@@ -126,26 +121,32 @@ async def title(request: PageRequest) -> Page:
 async def main(request: PageRequest) -> Page:
     """The index: the ways in to a forecast, and the legend for reading one."""
     app = Sextile.of(request)
-    return Menu(
+    return PageLayout(
         title=SERVICE_NAME,
-        entries=[
-            MenuItem.for_page(app, name)
+        home=app.index,
+        parts=[
+            Once(Lines(said=("Forecasts for anywhere on earth.", ""))),
+            Flowing(
+                Menu(
+                    entries=[
+                        MenuItem.for_page(app, name)
             #  The legend is on the menu because a page of symbols a reader
             #  cannot read is a page of symbols they will not trust, and this
             #  is the only place that says what they mean. It sits under the
             #  two forecasts, which are what a reader came for and what the
             #  symbols are drawn on.
-            for name in (
-                "by_name",
-                "by_position",
-                "symbols",
-                "help",
-                "about",
-                "goodbye",
-            )
+                        for name in (
+                            "by_name",
+                            "by_position",
+                            "symbols",
+                            "help",
+                            "about",
+                            "goodbye",
+                        )
+                    ]
+                )
+            ),
         ],
-        home=app.index,
-        preamble=["Forecasts for anywhere on earth."],
     ).build(request.address)
 
 
@@ -347,15 +348,27 @@ async def lately(request: PageRequest) -> Page:
     if visits is None:
         return _nothing_kept(app, request.address)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
-    return Menu(
+    return PageLayout(
         title=app.heading_for(request.address),
-        entries=[
-            MenuItem(text=place.name, detail=place.country, destination=visit.page)
-            for visit, place in await _places_of(app, request.service, seen)
-        ],
         home=app.index,
-        preamble=["Places lately looked up here."],
-        empty="Nobody has looked anything up yet.",
+        parts=[
+            Once(Lines(said=("Places lately looked up here.", ""))),
+            Flowing(
+                Menu(
+                    entries=[
+                        MenuItem(
+                            text=place.name,
+                            detail=place.country,
+                            destination=visit.page,
+                        )
+                        for visit, place in await _places_of(
+                            app, request.service, seen
+                        )
+                    ],
+                    empty="Nobody has looked anything up yet.",
+                )
+            ),
+        ],
     ).build(request.address)
 
 
@@ -383,10 +396,14 @@ async def _places_of(
 
 
 def _nothing_kept(app: Sextile, address: PageAddress) -> Page:
-    return Prose.of(
-        "This service is not keeping a log of what has been looked up.",
+    return PageLayout(
         title=app.heading_for(address),
         home=app.index,
+        parts=[
+            Flowing(
+                Prose.of("This service is not keeping a log of what has been looked up.")
+            )
+        ],
     ).build(address)
 
 
@@ -400,18 +417,25 @@ async def about(request: PageRequest) -> Page:
     never say who.
     """
     app = Sextile.of(request)
-    return Prose.of(
-        "The weather, served as Viewdata frames to computers that were obsolete "
-        "before the forecast models were written.",
-        "Forecasts come from the Norwegian Meteorological Institute, who "
-        "publish them for anyone to use. Place names come from GeoNames. Both "
-        "are licensed CC BY 4.0, and neither endorses this service.",
-        "Forecasts are held for as long as met.no asks them to be, so two "
-        "readers asking about the same town within the half hour are one "
-        "request rather than two.",
-        await _callers(request),
+    return PageLayout(
         title=app.heading_for(request.address),
         home=app.index,
+        parts=[
+            Flowing(
+                Prose.of(
+                    "The weather, served as Viewdata frames to computers that "
+                    "were obsolete before the forecast models were written.",
+                    "Forecasts come from the Norwegian Meteorological Institute, "
+                    "who publish them for anyone to use. Place names come from "
+                    "GeoNames. Both are licensed CC BY 4.0, and neither endorses "
+                    "this service.",
+                    "Forecasts are held for as long as met.no asks them to be, so "
+                    "two readers asking about the same town within the half hour "
+                    "are one request rather than two.",
+                    await _callers(request),
+                )
+            )
+        ],
     ).build(request.address)
 
 
@@ -544,12 +568,18 @@ async def symbols(request: PageRequest) -> Page:
     reader at once.
     """
     app = Sextile.of(request)
-    return SymbolTable(
+    return PageLayout(
         title=app.heading_for(request.address),
-        entries=in_pairs(
-            [Shown(code, in_full(code)) for code in PUBLISHED]
-            + [Shown(code, words) for code, words in SKIES]
-        ),
         home=app.index,
-        preamble=["Drawn by day, except where it says."],
+        parts=[
+            Once(Lines(said=("Drawn by day, except where it says.", ""))),
+            Flowing(
+                SymbolTable(
+                    entries=in_pairs(
+                        [Shown(code, in_full(code)) for code in PUBLISHED]
+                        + [Shown(code, words) for code, words in SKIES]
+                    )
+                )
+            ),
+        ],
     ).build(request.address)
