@@ -23,17 +23,25 @@ from sextile import (
     Held,
     Page,
     PageAddress,
-    PageFrame,
     PageRequest,
     Sextile,
     keyed,
     page,
 )
 from sextile.formatting import Lines, Menu, MenuItem, Prose, farewell_page
-from sextile.layout import CHOICES_PER_FRAME, HOME_KEY, Flowing, Once, PageLayout, Shortcut
+from sextile.layout import (
+    CHOICES_PER_FRAME,
+    HOME_KEY,
+    Drawn,
+    Flowing,
+    Once,
+    PageLayout,
+    Shortcut,
+)
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
+from sextile.viewdata.frame import ROWS
 from sextile.visits import Visit, Visits
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.forecast_page import FIND_KEY, forecast_page, point_place
@@ -96,20 +104,28 @@ async def title(request: PageRequest) -> Page:
     No page number in the header: `*0#` is the back command, so a number here
     would be an instruction that does not work.
     """
-    canvas = Canvas()
-    centred(canvas, 2, SERVICE_NAME, Colour.YELLOW)
-    centred(canvas, 4, "Forecasts for anywhere on earth", Colour.WHITE)
-    centred(canvas, 7, "from the Norwegian", Colour.CYAN)
-    centred(canvas, 8, "Meteorological Institute", Colour.CYAN)
-    centred(canvas, 11, f"{PLACES.of(request.service).held():,} places held", Colour.WHITE)
-    centred(canvas, 14, "Key # to begin", Colour.YELLOW)
-    centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
-    centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
-    #  `follows` is what makes `#` mean something here. Without it the title
-    #  frame is a dead end under the one key a viewdata reader tries first.
-    return Page(
-        frames=(PageFrame(frame=canvas.frame),), follows=Sextile.of(request).index
-    )
+    held = PLACES.of(request.service).held()
+
+    def draw(canvas: Canvas, row: int) -> None:
+        centred(canvas, row + 2, SERVICE_NAME, Colour.YELLOW)
+        centred(canvas, row + 4, "Forecasts for anywhere on earth", Colour.WHITE)
+        centred(canvas, row + 7, "from the Norwegian", Colour.CYAN)
+        centred(canvas, row + 8, "Meteorological Institute", Colour.CYAN)
+        centred(canvas, row + 11, f"{held:,} places held", Colour.WHITE)
+        centred(canvas, row + 14, "Key # to begin", Colour.YELLOW)
+        centred(canvas, row + 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
+        centred(canvas, row + 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
+
+    return PageLayout(
+        #  None at all: a masthead is the whole frame, and a footer offering
+        #  keys would be a footer on a page with one key.
+        furniture=(),
+        #  `follows` is what makes `#` mean something here, and brings the key
+        #  that reaches it. Without it the title frame is a dead end under the
+        #  one key a viewdata reader tries first.
+        follows=Sextile.of(request).index,
+        parts=[Once(Drawn(rows=ROWS, draw=draw))],
+    ).build(None)
 
 
 @page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
@@ -124,12 +140,13 @@ async def main(request: PageRequest) -> Page:
             Flowing(
                 Menu(
                     entries=[
+                        #  The legend is on the menu because a page of symbols
+                        #  a reader cannot read is a page of symbols they will
+                        #  not trust, and this is the only place that says what
+                        #  they mean. It sits under the two forecasts, which
+                        #  are what a reader came for and what the symbols are
+                        #  drawn on.
                         MenuItem.for_page(app, name)
-            #  The legend is on the menu because a page of symbols a reader
-            #  cannot read is a page of symbols they will not trust, and this
-            #  is the only place that says what they mean. It sits under the
-            #  two forecasts, which are what a reader came for and what the
-            #  symbols are drawn on.
                         for name in (
                             "by_name",
                             "by_position",
