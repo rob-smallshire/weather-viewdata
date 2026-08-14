@@ -13,8 +13,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from sextile import PageAddress, PageRequest
-from sextile.page import Page
+from sextile import Page, PageAddress, PageRequest
 from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.frame import COLUMNS

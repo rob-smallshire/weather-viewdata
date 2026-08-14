@@ -15,8 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from sextile import Page, PageAddress, Sextile
-from sextile.addressing import UnknownPageError
+from sextile import Page, PageAddress, Sextile, UnknownPageError
 from sextile.session.session import Session
 from sextile.visits import SqliteVisits
 from weather_viewdata import build_application

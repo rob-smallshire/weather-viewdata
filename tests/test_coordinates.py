@@ -16,8 +16,7 @@ fields sit side by side in a page number with nothing between them.
 
 import pytest
 
-from sextile import Page, PageAddress, PageFrame, PageRequest, Sextile
-from sextile.routing import NoSuchRouteError
+from sextile import NoSuchRouteError, Page, PageAddress, PageFrame, PageRequest, Sextile
 from sextile.viewdata.canvas import Canvas
 from weather_viewdata.coordinates import (
     LATITUDE,
