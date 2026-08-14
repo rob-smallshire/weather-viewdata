@@ -19,6 +19,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Final
 
 from sextile import (
+    GuideRow,
     Held,
     Page,
     PageAddress,
@@ -26,10 +27,9 @@ from sextile import (
     PageRequest,
     Sextile,
     draw_form,
+    keyed,
     page,
 )
-from sextile.addressing import keyed
-from sextile.pages.guidance import Key
 from sextile.templates import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -468,19 +468,19 @@ async def guide(request: PageRequest) -> Page:
         #  drawn on the one page a reader goes to to find out what the keys do.
         items=False,
         moving=[
-            Key("A-Z", "type into a search field"),
-            Key(FIND_KEY, "back to your search"),
+            GuideRow("A-Z", "type into a search field"),
+            GuideRow(FIND_KEY, "back to your search"),
         ],
         #  In the order of the numbers, which is the order a reader reads a
         #  column of numbers in. Grouped by subject it was `95` before `93`,
         #  and a list of page numbers out of order reads as a mistake whatever
         #  the grouping was for.
         asking=[
-            Key(keyed(app.address_for("goodbye")), "log off"),
-            Key(),
-            Key(keyed(app.address_for("contents")), "every page and its number"),
-            Key(keyed(app.address_for("names")), "every word you can key"),
-            Key(keyed(app.address_for("symbols")), "what the symbols mean"),
+            GuideRow(keyed(app.address_for("goodbye")), "log off"),
+            GuideRow(),
+            GuideRow(keyed(app.address_for("contents")), "every page and its number"),
+            GuideRow(keyed(app.address_for("names")), "every word you can key"),
+            GuideRow(keyed(app.address_for("symbols")), "what the symbols mean"),
         ],
     )
 

@@ -12,8 +12,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sextile import Page, PageAddress, Sextile
-from sextile.addressing import keyed
+from sextile import Page, PageAddress, Sextile, keyed
 from sextile.templates import Block, PreambleLine, Prose, Shortcut, Template
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour

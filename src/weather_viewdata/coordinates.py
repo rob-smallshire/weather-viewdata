@@ -27,7 +27,7 @@ in, so that a handler is given degrees rather than a code to decode.
 
 from typing import Final
 
-from sextile.routing import Converter
+from sextile import Converter
 
 #: Tenths of a degree per whole degree. The resolution, in one place.
 _TENTHS: Final = 10
