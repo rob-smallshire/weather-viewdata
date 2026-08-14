@@ -26,18 +26,15 @@ from sextile import (
     PageFrame,
     PageRequest,
     Sextile,
-    draw_form,
     keyed,
     page,
 )
 from sextile.formatting import Lines, Menu, MenuItem, Prose
 from sextile.layout import CHOICES_PER_FRAME, Flowing, Once, PageLayout
-from sextile.templates import HOME_KEY, farewell_page
+from sextile.templates import HOME_KEY, Shortcut, farewell_page
 from sextile.viewdata.canvas import Canvas
-from sextile.viewdata.chrome import CONTENT_FIRST_ROW, CONTENT_ROWS, draw_chrome
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
-from sextile.viewdata.footer import ROOM, FooterItem, Priority, render_footer
 from sextile.visits import Visit, Visits
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.forecast_page import FIND_KEY, forecast_page, point_place
@@ -91,7 +88,6 @@ _A_WEEK: Final = timedelta(days=7)
 #: The last content row, where the count of places held sits. At the foot
 #: rather than under the list: it is a thing to read once and never again,
 #: and the rows it was taking are the ones a long list needs.
-PLACES_HELD_ROW: Final = CONTENT_FIRST_ROW + CONTENT_ROWS - 1
 
 
 @page("0")
@@ -172,31 +168,6 @@ async def by_name(request: PageRequest) -> Page:
     history page, which is what a history is for.
     """
     app = Sextile.of(request)
-    form = suggest_field(app, PLACES.of(request.service))
-
-    canvas = Canvas()
-    draw_chrome(
-        canvas,
-        title=app.heading_for(request.address),
-        page_number=request.address.frame_number(0),
-        prompt=render_footer(
-            [
-                #  What `#` does is marked against the suggestion it would
-                #  take, which is where a reader is looking anyway -- so the
-                #  row has the room to say the rest in words.
-                FooterItem("A-Z", "type a name", Priority.PRIMARY),
-                #  A range rather than a count, as it always was: with one
-                #  match on offer `1-3` already named two keys that did
-                #  nothing, and the list numbers itself where a reader is
-                #  looking anyway.
-                FooterItem("1-9", "choose one", Priority.PRIMARY),
-                FooterItem(HOME_KEY, "menu", Priority.ESSENTIAL),
-            ],
-            ROOM,
-        ),
-    )
-    canvas.row(CONTENT_FIRST_ROW).text("Key a place name.", Colour.WHITE)
-    draw_form(canvas.frame, form)
     #  There were two lines of advice here and neither earned its rows.
     #
     #  "Key a name as it is shown here" was not actionable: nothing is shown
@@ -209,14 +180,19 @@ async def by_name(request: PageRequest) -> Page:
     #  space typed into it left the cursor a cell behind, because a space over
     #  a blank changes nothing and the repaint had nothing to send. That is
     #  fixed in the framework rather than warned about here.
-    canvas.row(PLACES_HELD_ROW).text(
-        f"{PLACES.of(request.service).held():,} places held.", Colour.WHITE
-    )
-    return Page(
-        frames=(
-            PageFrame(frame=canvas.frame, form=form, choices={HOME_KEY: app.index}),
-        )
-    )
+    return PageLayout(
+        title=app.heading_for(request.address),
+        home=Shortcut(key=HOME_KEY, destination=app.index, says="menu"),
+        parts=[
+            Once(Lines(said=("Key a place name.", ""))),
+            Once(suggest_field(app, PLACES.of(request.service))),
+            Once(
+                Lines(
+                    said=("", f"{PLACES.of(request.service).held():,} places held.")
+                )
+            ),
+        ],
+    ).build(request.address)
 
 
 @page(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", title="One place")
@@ -259,30 +235,15 @@ async def by_position(request: PageRequest) -> Page:
     arrows and a fresh six characters are for.
     """
     app = Sextile.of(request)
-    form = position_fields(app, PLACES.of(request.service))
-
-    canvas = Canvas()
-    draw_chrome(
-        canvas,
+    return PageLayout(
         title=app.heading_for(request.address),
-        page_number=request.address.frame_number(0),
-        prompt=render_footer(
-            [
-                #  Not `#`. It moves to the next field from every field but
-                #  the last, so a footer saying "# go there" is false wherever
-                #  the reader most likely is. What it does on the last field is
-                #  marked against that field, where the reader is looking.
-                FooterItem("TAB", "next field", Priority.PRIMARY),
-                FooterItem("DEL", "rub out", Priority.SECONDARY),
-                FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),
-            ],
-            ROOM,
-        ),
-    )
-    canvas.row(CONTENT_FIRST_ROW).text("Key a position in degrees,", Colour.WHITE)
-    canvas.row(CONTENT_FIRST_ROW + 1).text("to one decimal place.", Colour.WHITE)
-    draw_form(canvas.frame, form)
-    return Page(frames=(PageFrame(frame=canvas.frame, form=form),))
+        #  No way home on this page: `0` keyed into a coordinate is a nought,
+        #  so the field takes it and the prompt says how to leave instead.
+        parts=[
+            Once(Lines(said=("Key a position in degrees,", "to one decimal place."))),
+            Once(position_fields(app, PLACES.of(request.service))),
+        ],
+    ).build(request.address)
 
 
 @page(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", title="One point")

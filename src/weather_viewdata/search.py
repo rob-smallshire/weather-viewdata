@@ -10,18 +10,21 @@ from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from typing import Final
 
-from sextile import PageAddress, Sextile, Suggest
+from sextile import PageAddress, Sextile, Suggest, keyed
+from sextile.formatting import Entry, MenuItem
 from sextile.forms import SUGGESTIONS, Field, Fields
-from sextile.templates import CHOICES_PER_FRAME, Entry, MenuItem
-from sextile.viewdata.chrome import CONTENT_FIRST_ROW
+from sextile.layout import CHOICES_PER_FRAME
 from sextile.viewdata.encoding import fitted
+from sextile.viewdata.footer import FooterItem, Priority
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata.forecast_page import landmark
 from weather_viewdata.geonames import Place
 from weather_viewdata.store import Index
 
 #: Where the field and its suggestions sit on the search page.
-FIELD_ROW: Final = CONTENT_FIRST_ROW + 2
+#: Where a form's own rows begin, counted from wherever the layout puts
+#: it rather than from the top of a frame.
+FIELD_ROW: Final = 0
 FIRST_SUGGESTION_ROW: Final = FIELD_ROW + 2
 
 #: How many suggestions the list shows, and the most it will ever show. Three
@@ -41,7 +44,7 @@ _SHARING_A_NAME: Final = 3
 #: row beneath it and a blank row after that: two labelled fields set solid
 #: read as a block of text rather than as two places to type, and a screen of
 #: twenty content rows has the room to spare.
-LATITUDE_ROW: Final = CONTENT_FIRST_ROW + 2
+LATITUDE_ROW: Final = 0
 LONGITUDE_ROW: Final = LATITUDE_ROW + 3
 
 #: Where it says what is nearest to what has been keyed.
@@ -171,6 +174,10 @@ def position_fields(app: Sextile, places: Index) -> Fields:
         note=nearest,
         note_row=NOTE_ROW,
         sends="forecast",
+        #  This page cannot offer `0` for the index: a nought keyed into a
+        #  coordinate is a nought, and the field takes it. So it says how to
+        #  leave by keying a number instead.
+        advice=(FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),),
     )
 
 
