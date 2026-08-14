@@ -14,8 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, Sextile, keyed
 from sextile.formatting import Formatter, Lines, Prose
-from sextile.layout import Drawn, Every, Flowing, Laid, Once, PageLayout
-from sextile.templates import Shortcut
+from sextile.layout import Drawn, Every, Flowing, Laid, Once, PageLayout, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted

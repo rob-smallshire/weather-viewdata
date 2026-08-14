@@ -14,8 +14,8 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from sextile import Page, PageAddress, PageRequest
+from sextile.layout import DEFAULT_FURNITURE, content_rows
 from sextile.viewdata.charset import encode_g0
-from sextile.viewdata.chrome import CONTENT_FIRST_ROW
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
 from weather_viewdata.forecast.model import Forecast, Moment
@@ -199,7 +199,8 @@ class TestTheBlockAtTheTop:
         page = await page_for(hourly(6), tmp_path)
         found = page.frame(0)
         assert found is not None
-        for row in (CONTENT_FIRST_ROW + 2, CONTENT_FIRST_ROW + 3, CONTENT_FIRST_ROW + 4):
+        first = content_rows(DEFAULT_FURNITURE).start
+        for row in (first + 2, first + 3, first + 4):
             assert found.frame.is_attribute(row, COLUMNS - COLUMN_CELLS), row
 
     async def test_it_is_on_the_first_frame_only(self, tmp_path: Path) -> None:
