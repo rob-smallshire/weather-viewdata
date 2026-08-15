@@ -128,10 +128,10 @@ async def title(request: PageRequest) -> Page:
         #  No `0` either: the opening frame is where a reader arrives, so there
         #  is no index to send them back to that they are not already at.
         home=None,
-        #  `follows` is what makes `#` mean something here, and brings the key
+        #  `next_page` is what makes `#` mean something here, and brings the key
         #  that reaches it. Without it the title frame is a dead end under the
         #  one key a viewdata reader tries first.
-        follows=request.app.index,
+        next_page=request.app.index,
         parts=[OnFirstFrame(Custom(rows=ROWS, draw=draw))],
     ).build(request)
 
