@@ -94,7 +94,7 @@ def _details(found: Sequence[Place]) -> list[str]:
     Kingdom -- `FL`, `KS`, `CO`, `OH`, `TX`, `ENG` -- which are the letters
     somebody looking for Wellington, Ohio already has in mind.
 
-    **Only where it is needed.** A column that appeared on every row would be a
+    Only where it is needed. A column that appeared on every row would be a
     column of numbers in most countries, `admin1` being a code rather than a
     name outside the few that use letters; and the room it takes is room the
     name has. So it is added to the entries that would otherwise read alike and
@@ -186,7 +186,7 @@ def _takes(hemispheres: str) -> Callable[[str], bool]:
     Both spellings are taken, because both are in use and a reader arriving
     with one should not have to discover that this service wanted the other.
 
-    **Only the hemispheric one is advertised.** A field's advice sits under it
+    Only the hemispheric one is advertised. A field's advice sits under it
     on every frame, so it is read far more often than it is needed, and one
     that showed all four spellings shouted louder than the field it was
     explaining. Showing one way of writing a coordinate teaches the reader who
