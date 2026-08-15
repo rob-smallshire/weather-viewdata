@@ -990,7 +990,7 @@ of words, and every one of these came from something that could not be drawn:
 | a strip of mosaics above a table | `Block`, a lead-in that is drawn |
 | a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
 | a legend of pictures, placed by cell | `SequencePart.draw_entry` |
-| days with air between them | `separation`, blanks between entries and not after each |
+| days with air between them | `gap`, blanks between entries and not after each |
 | temperature and wind as lines, rain as bars | `charting.curve`, `charting.bars` |
 | a divider inside a page rather than at its edge | `thin_rule` |
 | a symbol name in three rows of fourteen cells | `wrap_within` |

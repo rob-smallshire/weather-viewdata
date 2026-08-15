@@ -124,7 +124,7 @@ class ForecastTable(SequencePart[Day]):
     """
 
     rows_per_entry: ClassVar[int] = PICTURE_ROWS
-    separation: ClassVar[int] = 1
+    gap: ClassVar[int] = 1
     numbered: ClassVar[bool] = False
 
     today: date
