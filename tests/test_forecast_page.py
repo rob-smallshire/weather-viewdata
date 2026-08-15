@@ -105,7 +105,7 @@ async def page_for(
                 params={"geoname_id": TRONDHEIM.geoname_id},
                 history=history,
                 app=app,
-                service=app.service,
+                state=app.state,
             )
         )
     finally:

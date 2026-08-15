@@ -31,7 +31,7 @@ A point carries none of those and depends on nothing at all.
 """
 
 import asyncio
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
@@ -72,7 +72,7 @@ PAGES: Final = (
         recent="96",
         popular="97",
         callers="98",
-        visits=VISITS.find,
+        visits=VISITS,
     ),
 )
 
@@ -92,7 +92,7 @@ def build_application(
     """
 
     @asynccontextmanager
-    async def lifespan(app: Sextile) -> AsyncIterator[Mapping[str, object]]:
+    async def lifespan(app: Sextile) -> AsyncIterator[None]:
         """What the service holds while it is up, opened and closed in one place.
 
         The index is an ordinary local held across the yield, which is the
@@ -122,7 +122,10 @@ def build_application(
             await asyncio.to_thread(index.close)
             raise
         try:
-            yield PLACES.holding(index) | FORECASTS.holding(source) | VISITS.holding(visits)
+            app.state[PLACES] = index
+            app.state[FORECASTS] = source
+            app.state[VISITS] = visits
+            yield
         finally:
             await asyncio.to_thread(visits.close)
             await asyncio.to_thread(index.close)
@@ -141,7 +144,7 @@ def build_application(
         #  the wire and the page are indistinguishable from the reader's end.
         #  One writes to the machine's log, for whoever runs the service; the
         #  other to a log the service reads back, for whoever reads it.
-        middleware=[log_pages(), record_visits(VISITS.find)],
+        middleware=[log_pages(), record_visits(VISITS)],
         lifespan=lifespan,
     )
 

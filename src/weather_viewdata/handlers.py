@@ -14,17 +14,17 @@ The drawing lives elsewhere: `forecast_page` turns a forecast into frames,
 """
 
 import asyncio
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
 from sextile import (
     GuideRow,
-    Held,
     Page,
     PageAddress,
     PageRequest,
     Sextile,
+    StateKey,
     farewell_page,
     keyed,
     menu_page,
@@ -41,6 +41,7 @@ from sextile.layout import (
     PageLayout,
     Shortcut,
 )
+from sextile.state import StateReader
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
@@ -56,17 +57,18 @@ from weather_viewdata.symbols import PUBLISHED, in_full
 
 SERVICE_NAME: Final = "WEATHER"
 
-#: What the log is held under, in what the service holds. `found_in` rather
-#: than `of` at each use, because the log is the one thing this service can
-#: run without: the pages that read it say so instead of failing.
-VISITS: Final[Held[Visits]] = Held.checking("visits", Visits)
+#: What the log is held under, in what the service holds. Read with
+#: `request.state.get(VISITS)` rather than `request.state[VISITS]` at each use,
+#: because the log is the one thing this service can run without: the pages
+#: that read it say so instead of failing.
+VISITS: Final = StateKey[Visits]("visits")
 
 #: What the place index and the forecast source are held under, in what the
 #: service holds. Keys rather than strings at each use, since a mistyped key
 #: is a page that fails at the far end of a telephone line -- and the key
 #: carries the type, so each page narrows what it takes in the same call.
-PLACES: Final = Held("places", Index)
-FORECASTS: Final[Held[ForecastSource]] = Held.checking("forecasts", ForecastSource)
+PLACES: Final = StateKey[Index]("places")
+FORECASTS: Final = StateKey[ForecastSource]("forecasts")
 
 #: What kind of page this is, within a namespace whose root is a search frame.
 #: There is only one kind so far; the digit leaves room for another about a
@@ -103,7 +105,7 @@ async def title(request: PageRequest) -> Page:
     No page number in the header: `*0#` is the back command, so a number here
     would be an instruction that does not work.
     """
-    held = PLACES.of(request.service).held()
+    held = request.state[PLACES].held()
 
     def draw(canvas: Canvas, row: int) -> None:
         centred(canvas, row + 2, SERVICE_NAME, Colour.YELLOW)
@@ -184,10 +186,10 @@ async def by_name(request: PageRequest) -> Page:
         home=Shortcut(key=HOME_KEY, destination=app.index, says="menu"),
         parts=[
             Once(Lines(said=("Key a place name.", ""))),
-            Once(suggest_field(app, PLACES.of(request.service))),
+            Once(suggest_field(app, request.state[PLACES])),
             Once(
                 Lines(
-                    said=("", f"{PLACES.of(request.service).held():,} places held.")
+                    said=("", f"{request.state[PLACES].held():,} places held.")
                 )
             ),
         ],
@@ -202,12 +204,12 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
     place with no forecast: the session says so and leaves the reader where
     they were.
     """
-    found = await asyncio.to_thread(PLACES.of(request.service).place, geoname_id)
+    found = await asyncio.to_thread(request.state[PLACES].place, geoname_id)
     if found is None:
         #  Not here, which is different from here and empty. The session says
         #  so and leaves the reader where they were.
         return None
-    source = FORECASTS.of(request.service)
+    source = request.state[FORECASTS]
     return forecast_page(
         request,
         found,
@@ -237,7 +239,7 @@ async def by_position(request: PageRequest) -> Page:
         home=None,
         parts=[
             Once(Lines(said=("Key a position in degrees,", "to one decimal place."))),
-            Once(position_fields(app, PLACES.of(request.service))),
+            Once(position_fields(app, request.state[PLACES])),
         ],
     ).build(request)
 
@@ -253,9 +255,9 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
     #  A point is not a place and cannot pretend to be one: at a tenth of a
     #  degree two thirds of the world's towns share a cell with another. So it
     #  borrows a clock from whatever is nearest, and says which.
-    nearby = await asyncio.to_thread(PLACES.of(request.service).nearest, lat, lon)
+    nearby = await asyncio.to_thread(request.state[PLACES].nearest, lat, lon)
     where = point_place(lat, lon, nearby)
-    source = FORECASTS.of(request.service)
+    source = request.state[FORECASTS]
     return forecast_page(
         request,
         where,
@@ -300,7 +302,7 @@ async def lately(request: PageRequest) -> Page:
     `59.7N 10.0E`, and the reader who keyed it has it in their own history.
     """
     app = request.app
-    visits = VISITS.found_in(request.service)
+    visits = request.state.get(VISITS)
     if visits is None:
         return _nothing_kept(request)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
@@ -309,14 +311,14 @@ async def lately(request: PageRequest) -> Page:
         preamble=("Places lately looked up here.",),
         items=[
             MenuItem(text=place.name, detail=place.country, destination=visit.page)
-            for visit, place in await _places_of(app, request.service, seen)
+            for visit, place in await _places_of(app, request.state, seen)
         ],
         empty="Nobody has looked anything up yet.",
     )
 
 
 async def _places_of(
-    app: Sextile, service: Mapping[str, object], seen: Sequence[Visit]
+    app: Sextile, state: StateReader, seen: Sequence[Visit]
 ) -> list[tuple[Visit, Place]]:
     """What each visited page number was a forecast *of*.
 
@@ -325,7 +327,7 @@ async def _places_of(
     reading of the same number is a second thing to get wrong when the
     numbering changes.
     """
-    index = PLACES.of(service)
+    index = state[PLACES]
     found = []
     for visit in seen:
         meant = app.params_for(visit.page)
@@ -381,7 +383,7 @@ async def _callers(request: PageRequest) -> str:
     dialled for a fortnight reads as busier than it is. The other periods are
     on a page of their own, which this points at rather than repeating.
     """
-    visits = VISITS.found_in(request.service)
+    visits = request.state.get(VISITS)
     if visits is None:
         return ""
     calls = await visits.callers(since=datetime.now(UTC) - _A_WEEK)

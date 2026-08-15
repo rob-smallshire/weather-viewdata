@@ -23,6 +23,7 @@ from weather_viewdata.application import StaleIndexError
 from weather_viewdata.forecast.model import Forecast
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.geonames import Place
+from weather_viewdata.handlers import VISITS
 from weather_viewdata.store import RULES, Index
 
 TRONDHEIM = Place(
@@ -471,7 +472,7 @@ class TestThePlacesLatelyLookedUp:
 async def _looked_at(app: Sextile, page: str) -> None:
     from sextile.middleware import CALLER
 
-    visits = app.service["visits"]
+    visits = app.state[VISITS]
     assert isinstance(visits, SqliteVisits)
     await visits.record(PageAddress(page), caller=CALLER, found=True)
 
@@ -484,7 +485,7 @@ def _text(page: Page) -> str:
 class TestHowManyHaveCalled:
     async def test_the_page_counts_distinct_callers(self, tmp_path: Path) -> None:
         async with _held(tmp_path) as app:
-            visits = app.service["visits"]
+            visits = app.state[VISITS]
             assert isinstance(visits, SqliteVisits)
             for caller in ("a", "b", "a"):
                 await visits.record(PageAddress("1"), caller=caller, found=True)
@@ -524,7 +525,7 @@ class TestTheLifespanClosesWhatItOpens:
             visits_filepath=tmp_path / "visits.sqlite",
         )
         await app.startup()
-        visits = app.service["visits"]
+        visits = app.state[VISITS]
         assert isinstance(visits, SqliteVisits)
         await app.shutdown()
         with pytest.raises(sqlite3.ProgrammingError):
