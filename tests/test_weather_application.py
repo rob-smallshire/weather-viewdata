@@ -59,7 +59,7 @@ class TestRefusingAStaleIndex:
             visits_filepath=tmp_path / "visits.sqlite",
         )
         await app.startup()
-        assert await app.ask("1") is not None
+        assert await app.fetch("1") is not None
         await app.shutdown()
 
     async def test_one_built_by_older_rules_does_not(self, tmp_path: Path) -> None:
@@ -325,7 +325,7 @@ class TestHowLongTheSuggestionListIs:
 
 
 async def _offered(app: Sextile, typed: str) -> list[tuple[str, str]]:
-    page = await app.ask("3")
+    page = await app.fetch("3")
     assert page is not None
     form = page.frames[0].form
     assert form is not None
@@ -335,7 +335,7 @@ async def _offered(app: Sextile, typed: str) -> list[tuple[str, str]]:
 
 
 async def _suggestions(app: Sextile, typed: str) -> int:
-    page = await app.ask("3")
+    page = await app.fetch("3")
     assert page is not None
     form = page.frames[0].form
     assert form is not None
@@ -426,7 +426,7 @@ class TestThePlacesLatelyLookedUp:
     ) -> None:
         async with _held(tmp_path) as app:
             await _looked_at(app, "3213133880")
-            page = await app.ask("2")
+            page = await app.fetch("2")
             assert page is not None
             assert "Trondheim" in text_of(page)
 
@@ -435,7 +435,7 @@ class TestThePlacesLatelyLookedUp:
     ) -> None:
         async with _held(tmp_path) as app:
             await _looked_at(app, "3213133880")
-            page = await app.ask("2")
+            page = await app.fetch("2")
             assert page is not None
             assert page.frames[0].destination("1") == PageAddress("3213133880")
 
@@ -445,7 +445,7 @@ class TestThePlacesLatelyLookedUp:
         #  can use.
         async with _held(tmp_path) as app:
             await _looked_at(app, "3219999999")
-            page = await app.ask("2")
+            page = await app.fetch("2")
             assert page is not None
             assert "Nobody has looked anything up yet." in text_of(page)
 
@@ -454,7 +454,7 @@ class TestThePlacesLatelyLookedUp:
         #  somewhere-elses wants `59.7N 10.0E`.
         async with _held(tmp_path) as app:
             await _looked_at(app, "42114971900")
-            page = await app.ask("2")
+            page = await app.fetch("2")
             assert page is not None
             assert "Nobody has looked anything up yet." in text_of(page)
 
@@ -464,7 +464,7 @@ class TestThePlacesLatelyLookedUp:
         app = build_application(
             source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
         )
-        page = await app.ask("2")
+        page = await app.fetch("2")
         assert page is not None
         assert "not keeping a log" in text_of(page)
 
@@ -484,7 +484,7 @@ class TestHowManyHaveCalled:
             assert isinstance(visits, SqliteVisits)
             for caller in ("a", "b", "a"):
                 await visits.record(PageAddress("1"), caller=caller, found=True)
-            page = await app.ask("98")
+            page = await app.fetch("98")
             assert page is not None
             shown = text_of(page)
             assert "Last 24 hours" in shown
@@ -494,7 +494,7 @@ class TestHowManyHaveCalled:
         app = build_application(
             source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
         )
-        page = await app.ask("98")
+        page = await app.fetch("98")
         assert page is not None
         assert "No log" in text_of(page)
 

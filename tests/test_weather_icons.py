@@ -282,7 +282,7 @@ async def _legend(tmp_path: Path) -> str:
     )
     await app.startup()
     try:
-        page = await app.ask("95")
+        page = await app.fetch("95")
     finally:
         await app.shutdown()
     assert page is not None

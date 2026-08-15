@@ -156,7 +156,7 @@ class TestAsAPageNumber:
         #  Not a code to decode. The converter is where the arithmetic lives,
         #  so a handler that draws a forecast never sees a biased integer.
         app = _app()
-        page = await app.ask("415341904")
+        page = await app.fetch("415341904")
         assert page is not None
         assert _seen == [(63.4, 10.4)]
 
@@ -164,7 +164,7 @@ class TestAsAPageNumber:
         #  1801 is north of the north pole. The pattern admits it and the
         #  converter does not, so the router moves on and finds nothing.
         app = _app()
-        assert await app.ask("418011904") is None
+        assert await app.fetch("418011904") is None
 
     def test_a_position_that_is_not_a_number_will_not_build_one(self) -> None:
         app = _app()
