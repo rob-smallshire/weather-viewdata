@@ -189,11 +189,11 @@ async def by_name(request: PageRequest) -> Page:
     return PageLayout(
         home=Shortcut(key=HOME_KEY, destination=app.index, label="menu"),
         parts=[
-            OnOneFrame(Lines(said=("Key a place name.", ""))),
+            OnOneFrame(Lines(("Key a place name.", ""))),
             OnOneFrame(suggest_field(app, request.state[PLACES])),
             OnOneFrame(
                 Lines(
-                    said=("", f"{request.state[PLACES].held():,} places held.")
+                    ("", f"{request.state[PLACES].held():,} places held.")
                 )
             ),
         ],
@@ -242,7 +242,7 @@ async def by_position(request: PageRequest) -> Page:
         #  so the field takes it and the prompt says how to leave instead.
         home=None,
         parts=[
-            OnOneFrame(Lines(said=("Key a position in degrees,", "to one decimal place."))),
+            OnOneFrame(Lines(("Key a position in degrees,", "to one decimal place."))),
             OnOneFrame(position_fields(app, request.state[PLACES])),
         ],
     ).build(request)
@@ -479,7 +479,7 @@ async def symbols(request: PageRequest) -> Page:
     """
     return PageLayout(
         parts=[
-            OnOneFrame(Lines(said=("Drawn by day, except where it says.", ""))),
+            OnOneFrame(Lines(("Drawn by day, except where it says.", ""))),
             Flow(
                 SymbolTable(
                     entries=in_pairs(
