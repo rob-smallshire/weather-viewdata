@@ -1,14 +1,14 @@
 """met.no's weather symbols, taken apart.
 
-**41 symbol ids, 21 of which have `_day`, `_night` and `_polartwilight`
-variants: 83 codes in all**, and they are built by concatenation rather than
+41 symbol ids, 21 of which have `_day`, `_night` and `_polartwilight`
+variants: 83 codes in all, and they are built by concatenation rather than
 enumerated -- `light` + `sleet` + `showers` + `andthunder`. So they are taken
 apart here rather than tabulated. A table of eighty-three entries would be
 eighty-three chances to mistype one, and it would say nothing about a code added
 next year. The published list is in `tests/data/met-symbols.csv` and every code
 in it is taken apart in a test.
 
-**One decomposition, two renderings.** `taken_apart` is the whole of the
+One decomposition, two renderings. `taken_apart` is the whole of the
 knowledge of how a code is spelled; `in_words` says it in words, and `icons.py`
 draws the same parts as a picture. The alternative -- a second reading of the
 codes for the pictures -- is the mistake the place index already made once, with
