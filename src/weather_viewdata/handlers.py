@@ -1,12 +1,10 @@
 """The weather service's page handlers, each declared beside its function.
 
-Ordinary functions, each taking what it needs from the request: the index
-from what the service holds, the numbering from the service itself. Nothing
-here closes over anything. The `@router.page` declaration above each function
-is everything the service says about it -- where it is in the numbering, what
-it is called where it is listed, and the words that reach it -- and the
-order the functions are written in is the order the contents page lists
-them. The assembly spreads `router` into the service.
+The `@router.page` line above each function is everything the service says about
+that page -- where it is in the numbering, what it is called where it is listed,
+and the words that reach it -- and the order the functions are written in is the
+order the contents page lists them; the assembly spreads `router` into the
+service.
 
 The drawing lives elsewhere: `forecast_page` turns a forecast into frames,
 `search` builds the two forms, `legend` draws the symbols page, and

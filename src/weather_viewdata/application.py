@@ -14,20 +14,9 @@ exactly once, in the ranking, and are settled there.
     9  about   90 log off   91 how to get about   95 what the symbols mean
     92 history  93 contents  94 keywords  96/97 what has been read
 
-Seven of those are the framework's, drawn from what it already knows and mapped
-into this numbering. What is this service's own is 0-4, 9, 90 and 95.
-
-The handlers are in `handlers`, each declared beside its function,
-and this module only assembles them into a running service. The drawing is
-elsewhere again: `forecast_page` turns a forecast into frames, `search`
-builds the two forms, `legend` draws the symbols page; beneath those,
-`symbols` takes met.no's codes apart, `icons` draws one, `hours` puts eight
-of them across a frame with the charts between, and `days` puts ten days
-down one.
-
-Two ways to name a forecast, failing differently. A named place carries a name,
-a timezone and an altitude, and depends on GeoNames still holding that record.
-A point carries none of those and depends on nothing at all.
+Seven of those are the framework's, mapped into this numbering; what is this
+service's own is 0-4, 9, 90 and 95. The handlers are in `handlers`, each
+declared beside its function; this module is the assembly alone.
 """
 
 import asyncio
@@ -58,25 +47,6 @@ class StaleIndexError(RuntimeError):
     """The place index was built by rules this code no longer uses."""
 
 
-#: What the service is made of: its own pages, declared beside the functions
-#: that build them, and three the framework builds and hands over as handlers,
-#: mapped into this numbering. Each of those is generated from what the
-#: framework already knows, so none of them can drift from the service it
-#: describes.
-PAGES: Final = (
-    *handlers.router,
-    *standard_pages(
-        history="92",
-        contents="93",
-        keywords="94",
-        recent="96",
-        popular="97",
-        callers="98",
-        visits=VISITS,
-    ),
-)
-
-
 def build_application(
     *,
     source: ForecastSource,
@@ -84,22 +54,25 @@ def build_application(
     visits_filepath: Path = DEFAULT_VISITS_FILEPATH,
     retention: timedelta = RETENTION,
 ) -> Sextile:
-    """The service, assembled.
+    """Assemble the service, told where its forecasts and its files come from.
 
-    Everything it is arrives in one call: what it holds, what field shapes its
-    numbering needs, what wraps every page, and the pages themselves, so
-    registration order does not matter.
+    Args:
+        source: Where forecasts are fetched from, the one dependency with no
+            default: a test passes a fake, and `__main__` the met.no source.
+        index_filepath: The place index, opened when the service starts and
+            closed when it stops. A stale index refuses to start.
+        visits_filepath: The log of what has been read, kept beside the index
+            rather than in it, since `import-places` rebuilds the index whole.
+        retention: How long the visit log keeps a call before forgetting it.
+
+    Returns:
+        The service, its index, forecast source and visit log held under
+        `PLACES`, `FORECASTS` and `VISITS`.
     """
 
     @asynccontextmanager
     async def lifespan(app: Sextile) -> AsyncIterator[None]:
-        """What the service holds while it is up, opened and closed in one place.
-
-        The index is an ordinary local held across the yield, which is the
-        advantage of a context manager over a pair of handlers: there is
-        nowhere for the opening and the closing to drift apart, and nothing has
-        to be hoisted anywhere for both to see.
-        """
+        """What the service holds while it is up, opened and closed in one place."""
         index = await asyncio.to_thread(Index.open, index_filepath)
         try:
             #  Refused rather than warned about. A stale index still answers,
@@ -131,14 +104,27 @@ def build_application(
             await asyncio.to_thread(index.close)
             await source.aclose()
 
-    app = Sextile(
+    return Sextile(
         name=SERVICE_NAME.title(),
         #  A caller arrives on the title frame once and is never sent back to
         #  it; `0` means the main menu from everywhere else.
         home="0",
         index="1",
         converters={"latitude": LATITUDE, "longitude": LONGITUDE},
-        pages=PAGES,
+        #  Its own pages, declared beside the functions that build them, and the
+        #  framework's read/history/keyword pages mapped into this numbering.
+        pages=[
+            *handlers.router,
+            *standard_pages(
+                history="92",
+                contents="93",
+                keywords="94",
+                recent="96",
+                popular="97",
+                callers="98",
+                visits=VISITS,
+            ),
+        ],
         #  A forecast page goes to the network, so how long one took to build
         #  is the question this service will actually be asked. At 1200 baud
         #  the wire and the page are indistinguishable from the reader's end.
@@ -147,8 +133,6 @@ def build_application(
         middleware=[log_pages(), record_visits(VISITS)],
         lifespan=lifespan,
     )
-
-    return app
 
 
 __all__ = ["SERVICE_NAME", "StaleIndexError", "build_application"]
