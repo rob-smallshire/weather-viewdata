@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from sextile import Page, PageAddress, Sextile, UnknownPageError
-from sextile.testing import Caller, calling
+from sextile import PageAddress, Sextile, UnknownPageError
+from sextile.testing import Caller, calling, text_of
 from sextile.visits import SqliteVisits
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
@@ -428,7 +428,7 @@ class TestThePlacesLatelyLookedUp:
             await _looked_at(app, "3213133880")
             page = await app.ask("2")
             assert page is not None
-            assert "Trondheim" in _text(page)
+            assert "Trondheim" in text_of(page)
 
     async def test_and_going_there_is_going_to_the_forecast(
         self, tmp_path: Path
@@ -447,7 +447,7 @@ class TestThePlacesLatelyLookedUp:
             await _looked_at(app, "3219999999")
             page = await app.ask("2")
             assert page is not None
-            assert "Nobody has looked anything up yet." in _text(page)
+            assert "Nobody has looked anything up yet." in text_of(page)
 
     async def test_and_so_are_positions(self, tmp_path: Path) -> None:
         #  A position is a page and not a place. Nobody looking at a list of
@@ -456,7 +456,7 @@ class TestThePlacesLatelyLookedUp:
             await _looked_at(app, "42114971900")
             page = await app.ask("2")
             assert page is not None
-            assert "Nobody has looked anything up yet." in _text(page)
+            assert "Nobody has looked anything up yet." in text_of(page)
 
     async def test_a_service_keeping_no_log_says_so(self, tmp_path: Path) -> None:
         #  Rather than an empty menu, which reads as "nobody has been here".
@@ -466,7 +466,7 @@ class TestThePlacesLatelyLookedUp:
         )
         page = await app.ask("2")
         assert page is not None
-        assert "not keeping a log" in _text(page)
+        assert "not keeping a log" in text_of(page)
 
 
 async def _looked_at(app: Sextile, page: str) -> None:
@@ -475,11 +475,6 @@ async def _looked_at(app: Sextile, page: str) -> None:
     visits = app.state[VISITS]
     assert isinstance(visits, SqliteVisits)
     await visits.record(PageAddress(page), caller=CALLER, found=True)
-
-
-def _text(page: Page) -> str:
-    characters, _ = page.frames[0].frame.to_grid()
-    return "\n".join(characters)
 
 
 class TestHowManyHaveCalled:
@@ -491,7 +486,7 @@ class TestHowManyHaveCalled:
                 await visits.record(PageAddress("1"), caller=caller, found=True)
             page = await app.ask("98")
             assert page is not None
-            shown = _text(page)
+            shown = text_of(page)
             assert "Last 24 hours" in shown
             assert "2" in shown
 
@@ -501,7 +496,7 @@ class TestHowManyHaveCalled:
         )
         page = await app.ask("98")
         assert page is not None
-        assert "No log" in _text(page)
+        assert "No log" in text_of(page)
 
 
 class TestTheLifespanClosesWhatItOpens:

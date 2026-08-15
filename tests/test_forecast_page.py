@@ -15,6 +15,7 @@ import pytest
 
 from sextile import Page, PageAddress, PageRequest
 from sextile.layout import DEFAULT_FURNITURE, content_rows
+from sextile.testing import text_of
 from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata import build_application
@@ -112,13 +113,6 @@ async def page_for(
         await app.shutdown()
     assert page is not None
     return page
-
-
-def text_of(page: Page, index: int = 0) -> str:
-    found = page.frame(index)
-    assert found is not None
-    characters, _ = found.frame.to_grid()
-    return "\n".join(characters)
 
 
 class TestWhichMomentIsNow:
