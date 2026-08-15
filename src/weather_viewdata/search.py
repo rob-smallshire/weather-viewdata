@@ -13,9 +13,8 @@ from typing import Final
 from sextile import PageAddress, Sextile, TypeAhead, keyed
 from sextile.formatting import Entry, MenuItem
 from sextile.forms import SUGGESTIONS, Field, FieldSet
-from sextile.layout import CHOICES_PER_FRAME
+from sextile.layout import CHOICES_PER_FRAME, FooterItem, Priority
 from sextile.viewdata.encoding import fitted
-from sextile.viewdata.footer import FooterItem, Priority
 from sextile.viewdata.frame import COLUMNS
 from weather_viewdata.forecast_page import landmark
 from weather_viewdata.geonames import Place
