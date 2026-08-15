@@ -59,7 +59,7 @@ _POSITION_CELLS: Final = 6
 def suggest_field(app: Sextile, places: Index) -> TypeAhead:
     """The search field, told where to look and where its digits lead."""
 
-    async def look_up(typed: str) -> Sequence[Entry]:
+    async def lookup(typed: str) -> Sequence[Entry]:
         #  Asked for the long list every time and cut to the short one, which
         #  costs nothing worth counting -- a range scan already ordered, nine
         #  rows instead of three -- and is what lets the count of homographs be
@@ -76,12 +76,12 @@ def suggest_field(app: Sextile, places: Index) -> TypeAhead:
         ]
 
     return TypeAhead(
-        look_up=look_up,
+        lookup=lookup,
         field_row=FIELD_ROW,
-        first_row=FIRST_SUGGESTION_ROW,
+        suggestions_row=FIRST_SUGGESTION_ROW,
         label="PLACE:",
         limit=MANY_SUGGESTIONS,
-        empty="No place of that name is held.",
+        no_match="No place of that name is held.",
     )
 
 
