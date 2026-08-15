@@ -428,8 +428,8 @@ async def guide(request: PageRequest) -> Page:
         #  reached from a suggestion list rather than from a menu, and there is
         #  no run of them to step through. Two keys that did nothing were being
         #  drawn on the one page a reader goes to to find out what the keys do.
-        items=False,
-        moving=[
+        show_item_keys=False,
+        moving_rows=[
             GuideRow("A-Z", "type into a search field"),
             GuideRow(FIND_KEY, "back to your search"),
         ],
@@ -437,7 +437,7 @@ async def guide(request: PageRequest) -> Page:
         #  column of numbers in. Grouped by subject it was `95` before `93`,
         #  and a list of page numbers out of order reads as a mistake whatever
         #  the grouping was for.
-        asking=[
+        asking_rows=[
             GuideRow(keyed(app.address_for("goodbye")), "log off"),
             GuideRow(),
             GuideRow(keyed(app.address_for("contents")), "every page and its number"),
