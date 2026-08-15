@@ -83,7 +83,7 @@ _WARMTH_CELLS: Final = 7
 _RAIN_CELLS: Final = 3
 _WIND_CELLS: Final = 3
 
-#: Rows a day takes. A blank between two of them, which the formatter's
+#: Rows a day takes. A blank between two of them, which the sequence part's
 #: `separation` puts there rather than the day carrying it: charged to every
 #: day it would be wasted at the foot of the frame, and it is worth a fifth day.
 PICTURE_ROWS: Final = 3

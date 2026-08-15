@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import ClassVar, Final
 
-from sextile.formatting import Formatter
+from sextile.formatting import SequencePart
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Control
 from sextile.viewdata.frame import COLUMNS
@@ -58,10 +58,10 @@ def in_pairs(shown: Sequence[Shown]) -> list[tuple[Shown, ...]]:
 
 
 @dataclass(frozen=True, kw_only=True)
-class SymbolTable(Formatter[tuple[Shown, ...]]):
+class SymbolTable(SequencePart[tuple[Shown, ...]]):
     """Pictures with their words, two to a row and four rows to each.
 
-    A `Formatter` rather than a `RowFormatter`, because a mosaic picture is
+    A `SequencePart` rather than a `RowSequencePart`, because a mosaic picture is
     placed by cell and is three rows tall: a row writer walks one row from
     left to right, which is the wrong shape for this and the right shape for
     everything else.

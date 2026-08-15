@@ -13,7 +13,7 @@ from typing import ClassVar, Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, PageRequest, keyed, prose_page
-from sextile.formatting import Formatter, Lines
+from sextile.formatting import Lines, SequencePart
 from sextile.layout import Custom, Flow, OnEveryFrame, OnOneFrame, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
@@ -112,14 +112,14 @@ def forecast_page(
 
 
 @dataclass(frozen=True, kw_only=True)
-class ForecastTable(Formatter[Day]):
+class ForecastTable(SequencePart[Day]):
     """The days ahead, one to a block of four rows.
 
     Three rows of pictures and a blank, or two days running would read as one
     six-row block. Nothing on it is selectable: a forecast is something to
     read, not a menu, so no digit is spent on the rows and 1-9 do nothing here
     -- which is the rule about naming only the keys that work, rather than an
-    exception to it. A `Formatter` rather than a `RowFormatter`: a day is
+    exception to it. A `SequencePart` rather than a `RowSequencePart`: a day is
     placed by cell.
     """
 

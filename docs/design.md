@@ -612,7 +612,7 @@ as calm weather, the one wrong answer it must not give.
 ## Drawing a forecast
 
 `forecast_page` in `forecast_page.py` builds it, and `ForecastTable` — a
-`Formatter[Day]` — deals the days into frames. Both `321<geoname-id>` and
+`SequencePart[Day]` — deals the days into frames. Both `321<geoname-id>` and
 `421<lat><lon>` end here; the only difference is what the preamble says.
 
 A page with nothing to show says why: no forecast is a `Prose` page explaining
@@ -989,7 +989,7 @@ of words, and every one of these came from something that could not be drawn:
 | two clocks in one lead-in, told apart by colour | a preamble line may be `Run`s |
 | a strip of mosaics above a table | `Block`, a lead-in that is drawn |
 | a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
-| a legend of pictures, placed by cell | `Formatter.draw_entry` |
+| a legend of pictures, placed by cell | `SequencePart.draw_entry` |
 | days with air between them | `separation`, blanks between entries and not after each |
 | temperature and wind as lines, rain as bars | `charting.curve`, `charting.bars` |
 | a divider inside a page rather than at its edge | `thin_rule` |
