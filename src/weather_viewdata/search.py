@@ -10,7 +10,7 @@ from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from typing import Final
 
-from sextile import PageAddress, Sextile, Suggest, keyed
+from sextile import PageAddress, Sextile, TypeAhead, keyed
 from sextile.formatting import Entry, MenuItem
 from sextile.forms import SUGGESTIONS, Field, Fields
 from sextile.layout import CHOICES_PER_FRAME
@@ -56,7 +56,7 @@ NOTE_ROW: Final = LONGITUDE_ROW + 3
 _POSITION_CELLS: Final = 6
 
 
-def suggest_field(app: Sextile, places: Index) -> Suggest:
+def suggest_field(app: Sextile, places: Index) -> TypeAhead:
     """The search field, told where to look and where its digits lead."""
 
     async def look_up(typed: str) -> Sequence[Entry]:
@@ -75,7 +75,7 @@ def suggest_field(app: Sextile, places: Index) -> Suggest:
             for place, detail in zip(shown, _details(shown), strict=True)
         ]
 
-    return Suggest(
+    return TypeAhead(
         look_up=look_up,
         field_row=FIELD_ROW,
         first_row=FIRST_SUGGESTION_ROW,
