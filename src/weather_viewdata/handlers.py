@@ -26,9 +26,10 @@ from sextile import (
     PageRequest,
     Sextile,
     keyed,
+    menu_page,
     page,
 )
-from sextile.formatting import Lines, Menu, MenuItem, Prose, farewell_page
+from sextile.formatting import Lines, MenuItem, Prose, farewell_page
 from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -131,33 +132,19 @@ async def title(request: PageRequest) -> Page:
 async def main(request: PageRequest) -> Page:
     """The index: the ways in to a forecast, and the legend for reading one."""
     app = request.app
-    return PageLayout(
+    return menu_page(
+        request,
         title=SERVICE_NAME,
-        parts=[
-            Once(Lines(said=("Forecasts for anywhere on earth.", ""))),
-            Flowing(
-                Menu(
-                    entries=[
-                        #  The legend is on the menu because a page of symbols
-                        #  a reader cannot read is a page of symbols they will
-                        #  not trust, and this is the only place that says what
-                        #  they mean. It sits under the two forecasts, which
-                        #  are what a reader came for and what the symbols are
-                        #  drawn on.
-                        MenuItem.for_page(app, name)
-                        for name in (
-                            "by_name",
-                            "by_position",
-                            "symbols",
-                            "help",
-                            "about",
-                            "goodbye",
-                        )
-                    ]
-                )
-            ),
+        preamble=("Forecasts for anywhere on earth.",),
+        #  The legend is on the menu because a page of symbols a reader cannot
+        #  read is a page of symbols they will not trust, and this is the only
+        #  place that says what they mean. It sits under the two forecasts,
+        #  which are what a reader came for and what the symbols are drawn on.
+        items=[
+            app.menu_item(name)
+            for name in ("by_name", "by_position", "symbols", "help", "about", "goodbye")
         ],
-    ).build(request)
+    )
 
 
 #  No detail on either of the two searches. They were the only entries on
@@ -315,26 +302,15 @@ async def lately(request: PageRequest) -> Page:
     if visits is None:
         return _nothing_kept(request)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
-    return PageLayout(
-        parts=[
-            Once(Lines(said=("Places lately looked up here.", ""))),
-            Flowing(
-                Menu(
-                    entries=[
-                        MenuItem(
-                            text=place.name,
-                            detail=place.country,
-                            destination=visit.page,
-                        )
-                        for visit, place in await _places_of(
-                            app, request.service, seen
-                        )
-                    ],
-                    empty="Nobody has looked anything up yet.",
-                )
-            ),
+    return menu_page(
+        request,
+        preamble=("Places lately looked up here.",),
+        items=[
+            MenuItem(text=place.name, detail=place.country, destination=visit.page)
+            for visit, place in await _places_of(app, request.service, seen)
         ],
-    ).build(request)
+        empty="Nobody has looked anything up yet.",
+    )
 
 
 async def _places_of(
