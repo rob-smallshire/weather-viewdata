@@ -75,7 +75,7 @@ class SymbolTable(SequencePart[tuple[Shown, ...]]):
     numbered: ClassVar[bool] = False
 
     def draw_entry(
-        self, canvas: Canvas, row: int, entry: tuple[Shown, ...], digit: str | None = None
+        self, canvas: Canvas, row: int, entry: tuple[Shown, ...]
     ) -> None:
         for slot, shown in enumerate(entry):
             column = slot * _SYMBOL_CELLS
