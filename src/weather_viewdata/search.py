@@ -143,7 +143,7 @@ def position_fields(app: Sextile, places: Index) -> FieldSet:
             return "Nowhere within 111km."
         return fitted(landmark(found), COLUMNS - 1)
 
-    def complete(values: Mapping[str, str]) -> PageAddress | None:
+    def on_submit(values: Mapping[str, str]) -> PageAddress | None:
         where = _position(values)
         if where is None:
             return None
@@ -170,14 +170,14 @@ def position_fields(app: Sextile, places: Index) -> FieldSet:
                 hint_row=LONGITUDE_ROW + 1,
             ),
         ],
-        complete=complete,
-        note=nearest,
-        note_row=NOTE_ROW,
-        sends="forecast",
+        on_submit=on_submit,
+        footnote=nearest,
+        footnote_row=NOTE_ROW,
+        submit_label="forecast",
         #  This page cannot offer `0` for the index: a nought keyed into a
         #  coordinate is a nought, and the field takes it. So it says how to
         #  leave by keying a number instead.
-        advice=(FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),),
+        footer_items=(FooterItem(keyed(app.index), "menu", Priority.ESSENTIAL),),
     )
 
 
