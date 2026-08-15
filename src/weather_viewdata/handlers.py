@@ -119,7 +119,7 @@ async def title(request: PageRequest) -> Page:
         #  `follows` is what makes `#` mean something here, and brings the key
         #  that reaches it. Without it the title frame is a dead end under the
         #  one key a viewdata reader tries first.
-        follows=Sextile.of(request).index,
+        follows=request.app.index,
         parts=[Once(Drawn(rows=ROWS, draw=draw))],
     ).build(None)
 
@@ -127,7 +127,7 @@ async def title(request: PageRequest) -> Page:
 @page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
 async def main(request: PageRequest) -> Page:
     """The index: the ways in to a forecast, and the legend for reading one."""
-    app = Sextile.of(request)
+    app = request.app
     return PageLayout(
         title=SERVICE_NAME,
         home=app.index,
@@ -176,7 +176,7 @@ async def by_name(request: PageRequest) -> Page:
     again -- and a reader who wants the same search back has `*0#` and the
     history page.
     """
-    app = Sextile.of(request)
+    app = request.app
     #  There were two lines of advice here and neither earned its rows.
     #
     #  "Key a name as it is shown here" was not actionable: nothing is shown
@@ -219,7 +219,7 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
         return None
     source = FORECASTS.of(request.service)
     return forecast_page(
-        Sextile.of(request),
+        request.app,
         request.address,
         found,
         await source.forecast_for(found),
@@ -241,7 +241,7 @@ async def by_position(request: PageRequest) -> Page:
     rub-out key across two fields. Nudging is what the arrows and a fresh six
     characters are for.
     """
-    app = Sextile.of(request)
+    app = request.app
     return PageLayout(
         title=app.heading_for(request.address),
         #  No way home on this page: `0` keyed into a coordinate is a nought,
@@ -268,7 +268,7 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
     where = point_place(lat, lon, nearby)
     source = FORECASTS.of(request.service)
     return forecast_page(
-        Sextile.of(request),
+        request.app,
         request.address,
         where,
         await source.forecast_for(where),
@@ -289,7 +289,7 @@ def _searched_from(request: PageRequest) -> PageAddress:
     no search at all -- and is offered the one they would most likely have used,
     a name being how nearly everybody looks for weather.
     """
-    app = Sextile.of(request)
+    app = request.app
     searches = {app.address_for("by_name"), app.address_for("by_position")}
     for been in reversed(request.history):
         if been in searches:
@@ -311,7 +311,7 @@ async def lately(request: PageRequest) -> Page:
     and not a place: nobody looking at a list of somewhere-elses wants
     `59.7N 10.0E`, and the reader who keyed it has it in their own history.
     """
-    app = Sextile.of(request)
+    app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -384,7 +384,7 @@ async def about(request: PageRequest) -> Page:
     token minted per call and nothing else, so this can say how many and can
     never say who.
     """
-    app = Sextile.of(request)
+    app = request.app
     return PageLayout(
         title=app.heading_for(request.address),
         home=app.index,
@@ -421,7 +421,7 @@ async def _callers(request: PageRequest) -> str:
     calls = await visits.callers(since=datetime.now(UTC) - _A_WEEK)
     if not calls:
         return ""
-    app = Sextile.of(request)
+    app = request.app
     return (
         f"{calls} call{'' if calls == 1 else 's'} in the last seven days; "
         f"{keyed(app.address_for('who_called'))} for more. The log keeps a "
@@ -450,7 +450,7 @@ async def guide(request: PageRequest) -> Page:
     the way home, the shape of a request, the compass -- is the framework's,
     generated from what it actually answers rather than described here.
     """
-    app = Sextile.of(request)
+    app = request.app
     return await app.guide(
         request,
         #  No `A` and `D` on the compass. They step through the run of pages a
@@ -480,7 +480,7 @@ async def guide(request: PageRequest) -> Page:
 @page("96", title="Pages lately read", keywords=("READ",))
 async def read_lately(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = Sextile.of(request)
+    app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -490,7 +490,7 @@ async def read_lately(request: PageRequest) -> Page:
 @page("97", title="Pages read most", keywords=("POPULAR",))
 async def read_most(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = Sextile.of(request)
+    app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -500,7 +500,7 @@ async def read_most(request: PageRequest) -> Page:
 @page("98", title="Who has called", keywords=("CALLERS",))
 async def who_called(request: PageRequest) -> Page:
     """The framework's page, at this service's number."""
-    app = Sextile.of(request)
+    app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(app, request.address)
@@ -535,7 +535,7 @@ async def symbols(request: PageRequest) -> Page:
     day and showing what changes is the only reading that is right for every
     reader at once.
     """
-    app = Sextile.of(request)
+    app = request.app
     return PageLayout(
         title=app.heading_for(request.address),
         home=app.index,
