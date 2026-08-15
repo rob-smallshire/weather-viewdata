@@ -71,7 +71,7 @@ from sextile.viewdata.charset import mosaic_code
 from sextile.viewdata.charting import bars, curve
 from sextile.viewdata.controls import Colour, alpha_colour, graphics_colour
 from sextile.viewdata.drawing import thin_rule
-from sextile.viewdata.encoding import fitted
+from sextile.viewdata.measure import fitted
 from weather_viewdata.forecast.model import Moment
 from weather_viewdata.icons import BANDS, CELLS_ACROSS, COLUMN_CELLS, draw, icon_for
 from weather_viewdata.wind import from_the
