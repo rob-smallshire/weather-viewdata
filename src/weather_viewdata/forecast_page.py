@@ -12,8 +12,8 @@ from datetime import UTC, date, datetime, timedelta
 from typing import ClassVar, Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sextile import Page, PageAddress, PageRequest, keyed
-from sextile.formatting import Formatter, Lines, Prose
+from sextile import Page, PageAddress, PageRequest, keyed, prose_page
+from sextile.formatting import Formatter, Lines
 from sextile.layout import Drawn, Every, Flowing, Once, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
@@ -74,20 +74,15 @@ def forecast_page(
     #  who may prefer to go and look somewhere else instead.
     shortcuts = () if back_to is None else (Shortcut(FIND_KEY, back_to, "find"),)
     if forecast is None or not forecast.moments:
-        return PageLayout(
+        return prose_page(
+            request,
+            f"No forecast for {place.name} just now.",
+            "The Norwegian Meteorological Institute did not answer. This is our "
+            "trouble rather than yours.",
+            f"Key {keyed(request.address)} again in a few minutes.",
             title=_heading(place),
             shortcuts=shortcuts,
-            parts=[
-                Flowing(
-                    Prose.of(
-                        f"No forecast for {place.name} just now.",
-                        "The Norwegian Meteorological Institute did not answer. "
-                        "This is our trouble rather than yours.",
-                        f"Key {keyed(request.address)} again in a few minutes.",
-                    )
-                )
-            ],
-        ).build(request)
+        )
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     #  The strip shows the hours after now; the days show all of them, today

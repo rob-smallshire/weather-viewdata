@@ -28,6 +28,7 @@ from sextile import (
     keyed,
     menu_page,
     page,
+    prose_page,
 )
 from sextile.formatting import Lines, MenuItem, Prose, farewell_page
 from sextile.layout import (
@@ -337,13 +338,9 @@ async def _places_of(
 
 
 def _nothing_kept(request: PageRequest) -> Page:
-    return PageLayout(
-        parts=[
-            Flowing(
-                Prose.of("This service is not keeping a log of what has been looked up.")
-            )
-        ],
-    ).build(request)
+    return prose_page(
+        request, "This service is not keeping a log of what has been looked up."
+    )
 
 
 @page("9", title="About this service", keywords=("ABOUT",))
