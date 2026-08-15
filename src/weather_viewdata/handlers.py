@@ -361,19 +361,17 @@ async def about(request: PageRequest) -> Page:
     """
     return PageLayout(
         parts=[
-            Flowing(
-                Prose.of(
-                    "The weather, served as Viewdata frames to computers that "
-                    "were obsolete before the forecast models were written.",
-                    "Forecasts come from the Norwegian Meteorological Institute, "
-                    "who publish them for anyone to use. Place names come from "
-                    "GeoNames. Both are licensed CC BY 4.0, and neither endorses "
-                    "this service.",
-                    "Forecasts are held for as long as met.no asks them to be, so "
-                    "two readers asking about the same town within the half hour "
-                    "are one request rather than two.",
-                    await _callers(request),
-                )
+            Prose.of(
+                "The weather, served as Viewdata frames to computers that "
+                "were obsolete before the forecast models were written.",
+                "Forecasts come from the Norwegian Meteorological Institute, "
+                "who publish them for anyone to use. Place names come from "
+                "GeoNames. Both are licensed CC BY 4.0, and neither endorses "
+                "this service.",
+                "Forecasts are held for as long as met.no asks them to be, so "
+                "two readers asking about the same town within the half hour "
+                "are one request rather than two.",
+                await _callers(request),
             )
         ],
     ).build(request)
