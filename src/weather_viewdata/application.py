@@ -37,7 +37,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
-from sextile import Sextile, routes_in, standard_pages
+from sextile import Sextile, standard_pages
 from sextile.middleware import log_pages, record_visits
 from sextile.visits import KEPT, SqliteVisits
 from weather_viewdata import handlers
@@ -64,7 +64,7 @@ class StaleIndexError(RuntimeError):
 #: framework already knows, so none of them can drift from the service it
 #: describes.
 PAGES: Final = (
-    *routes_in(handlers),
+    *handlers.router,
     *standard_pages(
         history="92",
         contents="93",

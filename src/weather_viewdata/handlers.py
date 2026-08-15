@@ -2,11 +2,11 @@
 
 Ordinary functions, each taking what it needs from the request: the index
 from what the service holds, the numbering from the service itself. Nothing
-here closes over anything. The `@page` declaration above each function is
-everything the service says about it -- where it is in the numbering, what
+here closes over anything. The `@router.page` declaration above each function
+is everything the service says about it -- where it is in the numbering, what
 it is called where it is listed, and the words that reach it -- and the
 order the functions are written in is the order the contents page lists
-them.
+them. The assembly spreads `router` into the service.
 
 The drawing lives elsewhere: `forecast_page` turns a forecast into frames,
 `search` builds the two forms, `legend` draws the symbols page, and
@@ -23,12 +23,12 @@ from sextile import (
     Page,
     PageAddress,
     PageRequest,
+    PageRouter,
     Sextile,
     StateKey,
     farewell_page,
     keyed,
     menu_page,
-    page,
     prose_page,
 )
 from sextile.formatting import Lines, MenuItem, Prose
@@ -97,8 +97,12 @@ _FORECASTS_PREFIX: Final = f"3{_FORECAST}{TABLE}"
 #: What "lately" means on the about page, where the count of callers is.
 _A_WEEK: Final = timedelta(days=7)
 
+#: The service's own pages, each declared beside its handler below. The assembly
+#: spreads this into `Sextile(pages=...)`; declaration order is contents order.
+router: Final = PageRouter()
 
-@page("0")
+
+@router.page("0")
 async def title(request: PageRequest) -> Page:
     """The frame the line opens on.
 
@@ -132,7 +136,7 @@ async def title(request: PageRequest) -> Page:
     ).build(request)
 
 
-@page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
+@router.page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
 async def main(request: PageRequest) -> Page:
     """The index: the ways in to a forecast, and the legend for reading one."""
     app = request.app
@@ -155,7 +159,7 @@ async def main(request: PageRequest) -> Page:
 #  the menu that had one, so the green line under them broke the rhythm of
 #  the five rather than helping any of them -- and a title that says what
 #  the page is for needs no gloss.
-@page("3", title="Forecast by placename", keywords=("FIND", "PLACE", "SEARCH"))
+@router.page("3", title="Forecast by placename", keywords=("FIND", "PLACE", "SEARCH"))
 async def by_name(request: PageRequest) -> Page:
     """A field, with the best three places beneath it as the reader types.
 
@@ -196,7 +200,7 @@ async def by_name(request: PageRequest) -> Page:
     ).build(request)
 
 
-@page(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", title="One place")
+@router.page(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", title="One place")
 async def place(request: PageRequest, geoname_id: int) -> Page | None:
     """The forecast for one place in the gazetteer.
 
@@ -218,7 +222,7 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
     )
 
 
-@page("4", title="Forecast by lat/lon position", keywords=("POSITION", "COORDS"))
+@router.page("4", title="Forecast by lat/lon position", keywords=("POSITION", "COORDS"))
 async def by_position(request: PageRequest) -> Page:
     """Two fields, for anywhere on earth whether anybody lives there or not.
 
@@ -244,7 +248,7 @@ async def by_position(request: PageRequest) -> Page:
     ).build(request)
 
 
-@page(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", title="One point")
+@router.page(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", title="One point")
 async def point(request: PageRequest, lat: float, lon: float) -> Page:
     """The forecast for a latitude and longitude, named by what is nearest.
 
@@ -287,7 +291,7 @@ def _searched_from(request: PageRequest) -> PageAddress:
     return app.address_for("by_name")
 
 
-@page("2", title="Lately looked up", keywords=("LATELY", "RECENT"))
+@router.page("2", title="Lately looked up", keywords=("LATELY", "RECENT"))
 async def lately(request: PageRequest) -> Page:
     """The places other readers have looked up, newest first.
 
@@ -346,7 +350,7 @@ def _nothing_kept(request: PageRequest) -> Page:
     )
 
 
-@page("9", title="About this service", keywords=("ABOUT",))
+@router.page("9", title="About this service", keywords=("ABOUT",))
 async def about(request: PageRequest) -> Page:
     """What this service is, who it is built out of, and who has called.
 
@@ -397,7 +401,7 @@ async def _callers(request: PageRequest) -> str:
     )
 
 
-@page("90", title="Log off", keywords=("BYE", "OFF"))
+@router.page("90", title="Log off", keywords=("BYE", "OFF"))
 async def goodbye(request: PageRequest) -> Page:
     """The farewell frame, after which the line drops."""
     #  `Ring off` here and `Log off` on the menu, which are two different
@@ -408,7 +412,7 @@ async def goodbye(request: PageRequest) -> Page:
     return farewell_page(request, "GOODBYE", "Thank you for calling.", "", "Ring off.")
 
 
-@page("91", name="help", title="How to get about", keywords=("HELP",))
+@router.page("91", name="help", title="How to get about", keywords=("HELP",))
 async def guide(request: PageRequest) -> Page:
     """How to get about, which is mostly the framework's to say.
 
@@ -455,7 +459,7 @@ async def guide(request: PageRequest) -> Page:
 #  Not `PICTURES`, which this page answered to for a while: a keyword is a
 #  name in a namespace of one, and holding a good word against a page that has
 #  stopped needing it is how the namespace fills up.
-@page("95", title="What the symbols mean", keywords=("SYMBOLS", "KEY", "LEGEND"))
+@router.page("95", title="What the symbols mean", keywords=("SYMBOLS", "KEY", "LEGEND"))
 async def symbols(request: PageRequest) -> Page:
     """Every symbol the service draws, beside the words for it.
 
