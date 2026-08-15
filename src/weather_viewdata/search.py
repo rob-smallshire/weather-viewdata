@@ -12,7 +12,7 @@ from typing import Final
 
 from sextile import PageAddress, Sextile, TypeAhead, keyed
 from sextile.formatting import Entry, MenuItem
-from sextile.forms import SUGGESTIONS, Field, Fields
+from sextile.forms import SUGGESTIONS, Field, FieldSet
 from sextile.layout import CHOICES_PER_FRAME
 from sextile.viewdata.encoding import fitted
 from sextile.viewdata.footer import FooterItem, Priority
@@ -128,7 +128,7 @@ def _how_many(found: Sequence[Place]) -> int:
     return MANY_SUGGESTIONS if sharing > _SHARING_A_NAME else SUGGESTIONS
 
 
-def position_fields(app: Sextile, places: Index) -> Fields:
+def position_fields(app: Sextile, places: Index) -> FieldSet:
     """The two coordinate fields, and what they add up to."""
 
     async def nearest(values: Mapping[str, str]) -> str:
@@ -149,7 +149,7 @@ def position_fields(app: Sextile, places: Index) -> Fields:
             return None
         return app.address_for("point", lat=where[0], lon=where[1])
 
-    return Fields(
+    return FieldSet(
         fields=[
             Field(
                 name="latitude",
