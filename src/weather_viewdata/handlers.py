@@ -35,7 +35,7 @@ from sextile.formatting import Lines, MenuItem, Prose
 from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
-    Drawn,
+    Custom,
     Flow,
     OnFirstFrame,
     PageLayout,
@@ -132,7 +132,7 @@ async def title(request: PageRequest) -> Page:
         #  that reaches it. Without it the title frame is a dead end under the
         #  one key a viewdata reader tries first.
         follows=request.app.index,
-        parts=[OnFirstFrame(Drawn(rows=ROWS, draw=draw))],
+        parts=[OnFirstFrame(Custom(rows=ROWS, draw=draw))],
     ).build(request)
 
 

@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, PageRequest, keyed, prose_page
 from sextile.formatting import Formatter, Lines
-from sextile.layout import Drawn, Flow, OnEveryFrame, OnFirstFrame, PageLayout, Part, Shortcut
+from sextile.layout import Custom, Flow, OnEveryFrame, OnFirstFrame, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
@@ -162,7 +162,7 @@ def _preamble(
     if now is not None:
         lines.append(
             OnFirstFrame(
-                Drawn(
+                Custom(
                     rows=NOW_ROWS,
                     draw=lambda canvas, row: _draw_now(canvas, row, now, zone, issued),
                 )
@@ -179,7 +179,7 @@ def _preamble(
         clock = _clock_name(zone)
         lines.append(
             OnFirstFrame(
-                Drawn(
+                Custom(
                     rows=STRIP_ROWS,
                     draw=lambda canvas, row: draw_strip(canvas, row, hours, zone, clock),
                 )
