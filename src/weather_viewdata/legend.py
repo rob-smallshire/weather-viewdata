@@ -11,7 +11,7 @@ from typing import ClassVar, Final
 
 from sextile.formatting import SequencePart
 from sextile.viewdata.canvas import Canvas
-from sextile.viewdata.controls import Control
+from sextile.viewdata.controls import Attribute
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
@@ -91,6 +91,6 @@ class SymbolTable(SequencePart[tuple[Shown, ...]]):
             at = row + (BANDS - len(said)) // 2
             for offset, line in enumerate(said):
                 canvas.frame.set_attribute(
-                    at + offset, column + COLUMN_CELLS, Control.ALPHA_WHITE
+                    at + offset, column + COLUMN_CELLS, Attribute.ALPHA_WHITE
                 )
                 canvas.frame.write(at + offset, column + COLUMN_CELLS + 1, line)
