@@ -15,13 +15,13 @@ Sun     ▨   ▨   ▨   ▨
         ▨   ▨   ▨   ▨
 ```
 
-**The periods are the reader's, not met.no's.** Six hours each from local
+The periods are the reader's, not met.no's. Six hours each from local
 midnight, which is what `night` and `afternoon` mean to somebody looking out of
 a window. met.no's own six-hourly summaries are on the clock at Greenwich --
 00, 06, 12 and 18 UTC -- so they line up with these only where a zone is on it,
 and everywhere else they straddle two.
 
-**A moment goes in the period its middle falls in**, which is the rule that
+A moment goes in the period its middle falls in, which is the rule that
 survives the straddling. Karachi is five hours ahead: met.no's 06:00 UTC block
 is 11:00 to 17:00 there, one hour of morning and five of afternoon, and putting
 it where it *starts* would call an afternoon a morning. Denver is seven behind
@@ -32,14 +32,14 @@ It stays one moment to a period whatever the zone, since the blocks are six
 hours apart and the periods six hours wide -- and at the near end of a forecast,
 where the series is hourly, a period simply holds six of them.
 
-**One symbol has to stand for six hours, and there are two ways to pick it.**
+One symbol has to stand for six hours, and there are two ways to pick it.
 Where the period holds a moment covering the whole of it, that moment's symbol
 is met.no's own summary of those six hours and is better than anything we could
 work out. Where it holds six hourly ones instead, the worst of them wins: a
 reader asking what the afternoon will be like is asking whether they will get
 wet, and an average of six hours would answer a question nobody asked.
 
-**The figures are the day's, not the period's.** Four sets of three would want
+The figures are the day's, not the period's. Four sets of three would want
 a frame to themselves, and what is left of the row after sixteen cells of
 pictures is fifteen. High and low, the rain in the day, and the strongest wind.
 """
