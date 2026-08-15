@@ -7,7 +7,7 @@ database continuing to hold that record. A point is `4` and its coordinates:
 plainer, and stable by construction, since 63.4N 10.4E always names the same
 point.
 
-**One decimal place**, which is 11.1km of latitude everywhere and 11.1km of
+One decimal place, which is 11.1km of latitude everywhere and 11.1km of
 longitude at the equator, narrowing with the cosine: 5.0km at Trondheim, 3.9km
 at Tromsø, 2.3km at Longyearbyen. The scheme is therefore sharpest where this
 service points, which is luck rather than design.
@@ -17,7 +17,7 @@ real index, 67% of places share a cell with another and one cell in Hong Kong
 holds 182 of them -- so a coordinate page cannot name a town, and should not
 pretend to. It is the weather *about here*.
 
-**Both axes are biased into a positive range and zero-padded to four digits.**
+Both axes are biased into a positive range and zero-padded to four digits.
 There is no minus key on a viewdata keypad, and there is no separator in a page
 number either -- so two fields can only sit side by side if each is a fixed
 width known in advance. That is exactly the case the framework's `int(n)`
