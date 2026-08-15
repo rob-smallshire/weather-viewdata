@@ -82,7 +82,7 @@ def build_application(
     source: ForecastSource,
     index_filepath: Path = DEFAULT_INDEX_FILEPATH,
     visits_filepath: Path = DEFAULT_VISITS_FILEPATH,
-    kept: timedelta = RETENTION,
+    retention: timedelta = RETENTION,
 ) -> Sextile:
     """The service, assembled.
 
@@ -113,7 +113,7 @@ def build_application(
                     f"--index {index_filepath}` to rebuild it."
                 )
             visits = await asyncio.to_thread(
-                SqliteVisits.open, visits_filepath, kept=kept
+                SqliteVisits.open, visits_filepath, retention=retention
             )
         except BaseException:
             #  Whatever went wrong after the index opened, the index closes:
