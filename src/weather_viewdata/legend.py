@@ -1,8 +1,8 @@
 """Drawing the legend: every symbol beside the words for it.
 
 The shape of the page that says what the symbols mean. The handler that
-serves it is in `pages`; the codes themselves are `symbols`' business and
-the drawings are `icons`'.
+serves it is in `pages`; the codes themselves are `symbols`' and the drawings
+are `icons`'.
 """
 
 from collections.abc import Sequence

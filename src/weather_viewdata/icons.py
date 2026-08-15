@@ -155,7 +155,7 @@ EMPTY: Final = _piece("""
 """)
 
 #: A disc with corner rays, for fair and part cloudy weather -- a sky that is
-#: mostly sky, with a sun that can afford to look like one.
+#: mostly sky, with a sun large enough to look like one.
 SUN: Final = _piece("""
 #.##.#
 .####.
@@ -491,7 +491,7 @@ def _beside_the_bolt(weather: Weather, hard: int) -> Patch:
     if not weather.falling:
         #  No published code is thunder with nothing falling, but a code added
         #  next year might be, and an empty half is a better answer than a
-        #  lookup that fails at the far end of a telephone line.
+        #  lookup that raises during a call.
         return Patch(CLOUD_COLOUR, EMPTY_HALF)
     kind = "rain" if weather.core == "sleet" else weather.core
     return Patch(_FALL_COLOURS[kind], _HALF[hard])

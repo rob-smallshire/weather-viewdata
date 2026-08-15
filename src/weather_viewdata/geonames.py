@@ -86,7 +86,7 @@ class Place:
 
     elevation: int | None
     """Metres, for the forecast rather than for display: met.no recommends an
-    altitude in hilly terrain, and Norway is nothing else."""
+    altitude in hilly terrain."""
 
     timezone: str
     """The place's own, because a forecast is a run of hours and an hour shown
@@ -98,7 +98,7 @@ def read_places(lines: Iterable[str]) -> Iterator[Place]:
 
     Blank lines are passed over; a line that is not a place at all stops the
     import. A dump that has changed shape should be noticed while it is being
-    read, not discovered later as an index half full of the world.
+    read, not later as a half-filled index.
     """
     for line in lines:
         stripped = line.rstrip("\n")

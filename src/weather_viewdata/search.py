@@ -1,8 +1,8 @@
 """The two ways a reader names a forecast: a placename, or a position.
 
 The forms themselves, and the reading of what is typed into them. The pages
-that carry the forms are in `pages`; what the forms lead to is the router's
-business, asked through `address_for` so the numbering is spelled once.
+that carry the forms are in `pages`; what the forms lead to is resolved by the
+router, through `address_for`, so the numbering is spelled once.
 """
 
 import asyncio

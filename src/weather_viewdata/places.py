@@ -5,8 +5,8 @@ the digits are spoken for -- they select from the suggestions beneath the field.
 So a query is a run of letters, and the index it is matched against has to be
 letters too.
 
-**The fold is taken from what the screen shows.** That is the whole design of
-this module and the reason it is four lines long. Sextile already reduces text
+**The fold is taken from what the screen shows.** That is the core of the
+module. Sextile already reduces text
 to what the G0 set can display -- it must, or a frame would carry bytes the
 hardware cannot draw -- and a reader keys what they see. If the two folds were
 worked out separately they would drift, and a reader would be shown a name they

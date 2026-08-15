@@ -262,7 +262,7 @@ class Index:
         **With how far away it is**, because a bound of one degree is 111km and
         a place that far off is not "near" anything. The reader is told the
         distance and can judge it; a service that said `near Trowbridge` when
-        Trowbridge was ninety kilometres away would be lying politely.
+        Trowbridge was ninety kilometres away would be misleading.
 
         Bounded to a degree in each direction, so the middle of the Pacific
         finds nothing rather than somewhere a thousand miles off with the wrong

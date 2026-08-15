@@ -4,8 +4,8 @@ Two ways to reach a forecast, and they fail differently, which is why the
 service offers both. A named place is `3` and its GeoNames id: convenient,
 carrying a name, a timezone and an altitude, and dependent on somebody else's
 database continuing to hold that record. A point is `4` and its coordinates:
-plainer, and stable by construction, because 63.4N 10.4E will mean the same
-thing for as long as there is an earth.
+plainer, and stable by construction, since 63.4N 10.4E always names the same
+point.
 
 **One decimal place**, which is 11.1km of latitude everywhere and 11.1km of
 longitude at the equator, narrowing with the cosine: 5.0km at Trondheim, 3.9km
