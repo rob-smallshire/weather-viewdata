@@ -201,13 +201,13 @@ def _draw_now(
     forecast fetched at nine may have been made at five, and a reader on a slow
     line deciding whether to ask again wants to know which.
 
-    **Both clocks on one row, each saying which it is.** They were on separate
+    Both clocks on one row, each saying which it is. They were on separate
     rows -- `Times UTC and CEST (UTC+2)` above `NOW 16:00 18:00` -- and the
     saving is a row and a repetition: put the labels beside the times and the
     times explain the labels, so the offset in brackets is the only part that
     has to be said at all.
 
-    **An hour, said as an hour.** `NOW 16:00` under `Issued 16:29` reads as a
+    An hour, said as an hour. `NOW 16:00` under `Issued 16:29` reads as a
     contradiction and is not one: met.no's series begins at the hour containing
     the model run -- measured, `updated_at` 15:29 with a first moment of 15:00
     -- so a forecast issued at half past can perfectly well tell you about the
@@ -259,7 +259,7 @@ def _span(moment: Moment, zone: ZoneInfo | None) -> str:
     off and Kathmandu three quarters -- the minutes are shown, and it is the
     offset in brackets that gives way to make room for them.
 
-    **The separator is a long dash and not a hyphen.** G0 has both: 0x2D is the
+    The separator is a long dash and not a hyphen. G0 has both: 0x2D is the
     hyphen and 0x60 -- where ASCII keeps its backtick -- is a bar the full width
     of the cell, which is what a range wants. Read out of Beebium's font rather
     than guessed. It is *not* the underscore, whatever a teletext editor's
