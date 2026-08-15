@@ -11,7 +11,7 @@ from typing import ClassVar, Final
 
 from sextile.formatting import SequencePart
 from sextile.viewdata.canvas import Canvas
-from sextile.viewdata.controls import Attribute
+from sextile.viewdata.controls import Colour
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
@@ -90,7 +90,9 @@ class SymbolTable(SequencePart[tuple[Shown, ...]]):
             #  with the cloud rather than perched above it.
             at = row + (BANDS - len(said)) // 2
             for offset, line in enumerate(said):
-                canvas.frame.set_attribute(
-                    at + offset, column + COLUMN_CELLS, Attribute.ALPHA_WHITE
+                #  Beside the picture, which leaves the row in graphics; the
+                #  writer reads that and its white text emits the attribute that
+                #  returns to letters.
+                canvas.row(at + offset).starting_at(column + COLUMN_CELLS).text(
+                    line, Colour.WHITE
                 )
-                canvas.frame.write(at + offset, column + COLUMN_CELLS + 1, line)
