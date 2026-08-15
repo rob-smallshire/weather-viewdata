@@ -986,7 +986,7 @@ of words, and every one of these came from something that could not be drawn:
 
 | what was wanted | what the framework gained |
 |---|---|
-| two clocks in one lead-in, told apart by colour | a preamble line may be `Run`s |
+| two clocks in one lead-in, told apart by colour | a preamble line may be `Span`s |
 | a strip of mosaics above a table | `Block`, a lead-in that is drawn |
 | a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
 | a legend of pictures, placed by cell | `SequencePart.draw_entry` |

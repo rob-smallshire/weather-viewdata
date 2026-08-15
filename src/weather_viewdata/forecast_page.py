@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sextile import Page, PageAddress, PageRequest, keyed, prose_page
 from sextile.formatting import Lines, SequencePart
 from sextile.layout import Custom, Flow, OnEveryFrame, OnOneFrame, PageLayout, Part, Shortcut
-from sextile.viewdata.canvas import Canvas, Run
+from sextile.viewdata.canvas import Canvas, Span
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
 from sextile.viewdata.frame import COLUMNS
@@ -227,7 +227,7 @@ def _draw_now(
     canvas.row(row + 2).runs(_within(_figure_runs(moment), room))
 
 
-def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
+def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Span]:
     """`NOW 16-17 UTC 18-19 CEST (UTC+2)`, in yellow and cyan.
 
     One space between the runs rather than two, because each of them already
@@ -239,7 +239,7 @@ def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
     dropped whole where there is no room, the two clocks side by side saying
     the same thing to anyone who cares to subtract.
     """
-    runs = [Run("NOW", Colour.WHITE), Run(f" {_span(moment, None)} UTC", Colour.YELLOW)]
+    runs = [Span("NOW", Colour.WHITE), Span(f" {_span(moment, None)} UTC", Colour.YELLOW)]
     if zone is None:
         return runs
     named, offset = _zone_named(zone)
@@ -247,7 +247,7 @@ def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Run]:
     with_offset = f"{local} (UTC{offset})" if offset else local
     spent = sum(_ATTRIBUTE_CELL + cell_count(run.text) for run in runs)
     fits = spent + _ATTRIBUTE_CELL + cell_count(with_offset) <= room
-    runs.append(Run(with_offset if fits else local, Colour.CYAN))
+    runs.append(Span(with_offset if fits else local, Colour.CYAN))
     return runs
 
 
@@ -273,7 +273,7 @@ def _span(moment: Moment, zone: ZoneInfo | None) -> str:
     return f"{start:%H}{_TO}{finish:%H}"
 
 
-def _figure_runs(moment: Moment) -> list[Run]:
+def _figure_runs(moment: Moment) -> list[Span]:
     """The readings, and what the weather is called, in that order.
 
     The words go last and take what is left, which on a bad day is not all of
@@ -283,25 +283,25 @@ def _figure_runs(moment: Moment) -> list[Run]:
     lost the weather.
     """
     return [
-        Run(" ".join(_figures(moment)), Colour.WHITE),
-        Run(f" {in_words(moment.symbol)}", Colour.GREEN),
+        Span(" ".join(_figures(moment)), Colour.WHITE),
+        Span(f" {in_words(moment.symbol)}", Colour.GREEN),
     ]
 
 
-def _within(runs: list[Run], room: int) -> list[Run]:
+def _within(runs: list[Span], room: int) -> list[Span]:
     """Runs trimmed to a budget, the last of them giving way first.
 
     `RowWriter.runs` trims to the end of the row, which is the wrong edge where
     something else is drawn further along it.
     """
-    kept: list[Run] = []
+    kept: list[Span] = []
     used = 0
     for run in runs:
         left = room - used - _ATTRIBUTE_CELL
         if left <= 0:
             break
         text = fitted(run.text, left)
-        kept.append(Run(text, run.colour))
+        kept.append(Span(text, run.colour))
         used += _ATTRIBUTE_CELL + cell_count(text)
     return kept
 
