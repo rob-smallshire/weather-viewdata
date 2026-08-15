@@ -5,7 +5,7 @@ attribution. It is still somebody's bandwidth, so the fetch is conditional and
 identifies itself, and thirteen megabytes is streamed to disk rather than
 gathered in memory.
 
-**The file we already have is the condition.** Its modification time is set to
+The file we already have is the condition. Its modification time is set to
 the server's `Last-Modified` on the way in, and offered back as
 `If-Modified-Since` next time. A note kept beside the file could disagree with
 the file; the file cannot disagree with itself.
