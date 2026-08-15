@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, Sextile, keyed
 from sextile.formatting import Formatter, Lines, Prose
-from sextile.layout import Drawn, Every, Flowing, Laid, Once, PageLayout, Shortcut
+from sextile.layout import Drawn, Every, Flowing, Once, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
@@ -153,7 +153,7 @@ def _preamble(
     forecast: Forecast,
     near: Nearby | None,
     coming: Sequence[Moment],
-) -> list[Laid]:
+) -> list[Part]:
     """Where this is, which clocks it keeps, how old it is, and the weather now.
 
     A blank row after the position, and then the weather the reader is standing
@@ -163,7 +163,7 @@ def _preamble(
     Returns the parts to lay above the table, each drawn on the first frame
     alone, with a blank row after the last of them.
     """
-    lines: list[Laid] = [Once(Lines(said=(_where(place, near), "")))]
+    lines: list[Part] = [Once(Lines(said=(_where(place, near), "")))]
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     issued = f"Issued {forecast.updated_at:%H:%M} UTC"
