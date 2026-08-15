@@ -31,12 +31,12 @@ from sextile import (
     keyed,
     menu_page,
     prose_page,
+    title_page,
 )
 from sextile.formatting import Lines, MenuItem, Prose
 from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
-    Custom,
     Flow,
     OnOneFrame,
     PageLayout,
@@ -46,7 +46,6 @@ from sextile.state import StateReader
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
-from sextile.viewdata.frame import ROWS
 from sextile.visits import Visit, Visits
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.forecast_page import FIND_KEY, forecast_page, point_place
@@ -112,29 +111,17 @@ async def title(request: PageRequest) -> Page:
     """
     held = request.state[PLACES].held()
 
-    def draw(canvas: Canvas, row: int) -> None:
-        centred(canvas, row + 2, SERVICE_NAME, Colour.YELLOW)
-        centred(canvas, row + 4, "Forecasts for anywhere on earth", Colour.WHITE)
-        centred(canvas, row + 7, "from the Norwegian", Colour.CYAN)
-        centred(canvas, row + 8, "Meteorological Institute", Colour.CYAN)
-        centred(canvas, row + 11, f"{held:,} places held", Colour.WHITE)
-        centred(canvas, row + 14, "Key # to begin", Colour.YELLOW)
-        centred(canvas, row + 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
-        centred(canvas, row + 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
+    def draw(canvas: Canvas) -> None:
+        centred(canvas, 2, SERVICE_NAME, Colour.YELLOW)
+        centred(canvas, 4, "Forecasts for anywhere on earth", Colour.WHITE)
+        centred(canvas, 7, "from the Norwegian", Colour.CYAN)
+        centred(canvas, 8, "Meteorological Institute", Colour.CYAN)
+        centred(canvas, 11, f"{held:,} places held", Colour.WHITE)
+        centred(canvas, 14, "Key # to begin", Colour.YELLOW)
+        centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
+        centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
 
-    return PageLayout(
-        #  None at all: a masthead is the whole frame, and a footer offering
-        #  keys would be a footer on a page with one key.
-        furniture=(),
-        #  No `0` either: the opening frame is where a reader arrives, so there
-        #  is no index to send them back to that they are not already at.
-        home=None,
-        #  `next_page` is what makes `#` mean something here, and brings the key
-        #  that reaches it. Without it the title frame is a dead end under the
-        #  one key a viewdata reader tries first.
-        next_page=request.app.index,
-        parts=[OnOneFrame(Custom(rows=ROWS, draw=draw))],
-    ).build(request)
+    return title_page(request, draw=draw)
 
 
 @router.page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
