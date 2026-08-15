@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sextile import Page, PageAddress, PageRequest, keyed, prose_page
 from sextile.formatting import Formatter, Lines
-from sextile.layout import Custom, Flow, OnEveryFrame, OnFirstFrame, PageLayout, Part, Shortcut
+from sextile.layout import Custom, Flow, OnEveryFrame, OnOneFrame, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.encoding import cell_count, fitted
@@ -155,13 +155,13 @@ def _preamble(
     Returns the parts to lay above the table, each drawn on the first frame
     alone, with a blank row after the last of them.
     """
-    lines: list[Part] = [OnFirstFrame(Lines(said=(_where(place, near), "")))]
+    lines: list[Part] = [OnOneFrame(Lines(said=(_where(place, near), "")))]
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     issued = f"Issued {forecast.updated_at:%H:%M} UTC"
     if now is not None:
         lines.append(
-            OnFirstFrame(
+            OnOneFrame(
                 Custom(
                     rows=NOW_ROWS,
                     draw=lambda canvas, row: _draw_now(canvas, row, now, zone, issued),
@@ -169,7 +169,7 @@ def _preamble(
             )
         )
     else:
-        lines.append(OnFirstFrame(Lines(said=(issued,))))
+        lines.append(OnOneFrame(Lines(said=(issued,))))
     if coming:
         #  Drawn rather than written, and the layout counts its rows like any
         #  others -- so the strip filling what is left of the frame simply
@@ -178,7 +178,7 @@ def _preamble(
         hours = list(coming[:HOURS_SHOWN])
         clock = _clock_name(zone)
         lines.append(
-            OnFirstFrame(
+            OnOneFrame(
                 Custom(
                     rows=STRIP_ROWS,
                     draw=lambda canvas, row: draw_strip(canvas, row, hours, zone, clock),
@@ -187,7 +187,7 @@ def _preamble(
         )
     #  A blank row between the lead-in and the table, so the two read as two
     #  things, stated as a part rather than added automatically.
-    lines.append(OnFirstFrame(Lines(said=("",))))
+    lines.append(OnOneFrame(Lines(said=("",))))
     return lines
 
 
