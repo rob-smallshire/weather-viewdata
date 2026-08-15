@@ -215,19 +215,19 @@ def _draw_now(
     a single time, which promises an instant. `16-17` promises the hour, which
     is what the readings are for and what a reader at 16:45 is standing in.
     """
-    room = COLUMNS
+    cells = COLUMNS
     picture = icon_for(moment.symbol)
     if picture is not None:
         draw_icon(canvas, row, COLUMNS - COLUMN_CELLS, picture)
         #  No gap is added: the picture's own attribute cell is a blank one,
         #  and a second would be a cell spent twice on the same air.
-        room = COLUMNS - COLUMN_CELLS
-    canvas.row(row).text(fitted(issued, room), Colour.WHITE)
-    canvas.row(row + 1).runs(_clock_runs(moment, zone, room), cells=room)
-    canvas.row(row + 2).runs(_figure_runs(moment), cells=room)
+        cells = COLUMNS - COLUMN_CELLS
+    canvas.row(row).text(fitted(issued, cells), Colour.WHITE)
+    canvas.row(row + 1).runs(_clock_runs(moment, zone, cells), cells=cells)
+    canvas.row(row + 2).runs(_figure_runs(moment), cells=cells)
 
 
-def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Span]:
+def _clock_runs(moment: Moment, zone: ZoneInfo | None, cells: int) -> list[Span]:
     """`NOW 16-17 UTC 18-19 CEST (UTC+2)`, in yellow and cyan.
 
     One space between the runs rather than two, because each of them already
@@ -246,7 +246,7 @@ def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Span]:
     local = f" {_span(moment, zone)} {named}".rstrip()
     with_offset = f"{local} (UTC{offset})" if offset else local
     spent = sum(_ATTRIBUTE_CELL + cell_count(run.text) for run in runs)
-    fits = spent + _ATTRIBUTE_CELL + cell_count(with_offset) <= room
+    fits = spent + _ATTRIBUTE_CELL + cell_count(with_offset) <= cells
     runs.append(Span(with_offset if fits else local, Colour.CYAN))
     return runs
 
