@@ -1,10 +1,10 @@
 """The weather as a picture, three cells by three.
 
-**Nine cells, and the shape of them is decided by what an attribute costs.** A
+Nine cells, and the shape of them is decided by what an attribute costs. A
 mosaic run needs a graphics colour attribute, and an attribute takes a cell of
 its own -- so an hour column four cells wide is one attribute and three cells of
-picture, on each of three rows. **A row is one colour, unless it buys a second
-one out of its own picture**: two attributes and two cells of mosaic still come
+picture, on each of three rows. A row is one colour, unless it buys a second
+one out of its own picture: two attributes and two cells of mosaic still come
 to four, and what is left is two blocks, a blank, two blocks.
 
 That single fact decides every drawing here. A sun cannot sit *behind* a cloud
@@ -16,7 +16,7 @@ Only the bottom band splits, and the two things it can hold are the whole
 grammar of falling weather: sleet is snow beside rain, thunder is a bolt beside
 what falls, and three into two does not go.
 
-**The pieces are composed, not tabulated.** met.no publishes 83 codes and they
+The pieces are composed, not tabulated. met.no publishes 83 codes and they
 are built by concatenation, so the icons are built the same way from about a
 dozen pieces: a sky, a cloud, and a fall. `symbols.taken_apart` does the reading
 and this module does the drawing, so there is one place that knows how a code is
@@ -69,7 +69,7 @@ class Band:
     """One row of an icon, as the four cells it has to spend.
 
     Usually one patch: an attribute and three cells of picture, all one colour.
-    A row that wants **two** colours buys the second attribute out of the
+    A row that wants two colours buys the second attribute out of the
     picture, and is left with two cells of mosaic a blank cell apart -- two
     blocks, a gap, two blocks. That is the whole of the freedom there is, and
     the thunder icons are what it was spent on.
@@ -129,7 +129,7 @@ def _figure(art: str) -> tuple[tuple[int, ...], ...]:
     """A picture drawn across all nine cells, in one colour.
 
     The exception to the three bands, and there are exactly two of them:
-    `clearsky` and `fog` are the states with **nothing to stack** -- no cloud
+    `clearsky` and `fog` are the states with nothing to stack -- no cloud
     and nothing falling -- so there is no reason to spend the picture on layers
     that are not there. Six blocks by nine, all one colour, which costs no more
     attributes than three bands do.
@@ -224,8 +224,8 @@ CLOUD_SMALL: Final = _piece("""
 #  Two states have nothing to stack -- no cloud, and nothing falling -- so they
 #  are not assembled from bands at all. They are one picture across all nine
 #  cells, which costs no more attributes than three bands do and is not a
-#  special case so much as the other half of the grammar: **either the weather
-#  has layers, or it is one thing.**
+#  special case so much as the other half of the grammar: either the weather
+#  has layers, or it is one thing.
 
 #: A clear sky, which is worth the whole picture. Small it is a mark among
 #: marks; large it is the one frame in a strip of ten that a reader picks out
@@ -286,7 +286,7 @@ FOG_FIGURE: Final = _figure("""
 .####.
 """)
 
-#  **Rain and snow are the same drawing in different colours.** Three
+#  Rain and snow are the same drawing in different colours. Three
 #  intensities, which is met.no's whole scale -- `light`, unmarked, `heavy` --
 #  and each is drawn twice, once across a whole band and once in the half a
 #  band that is left when something else wants the other half.
@@ -316,8 +316,8 @@ FALL_HEAVY: Final = _piece("""
 
 #  -- half a band ------------------------------------------------------------
 #
-#  **The bottom band holds at most two things, and the whole grammar of falling
-#  weather is which two.** A row that wants two colours buys the second
+#  The bottom band holds at most two things, and the whole grammar of falling
+#  weather is which two. A row that wants two colours buys the second
 #  attribute out of its picture, so what is left is two blocks, a blank, two
 #  blocks -- one cell each for two of `snow`, `rain` and a bolt.
 #
@@ -326,7 +326,7 @@ FALL_HEAVY: Final = _piece("""
 #  which is also the cloud's colour and so said "cloud" more than it said
 #  "sleet". Drawn as white beside blue it says what it is.
 #
-#  Three into two does not go, and **the bolt always gets its place.** Thunder
+#  Three into two does not go, and the bolt always gets its place. Thunder
 #  is the exceptional condition and the one worth seeing from across a room,
 #  where sleet against rain is a detail the words beside the picture carry. So
 #  sleet with thunder in it is drawn as rain with thunder in it -- six of the
