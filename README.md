@@ -50,7 +50,7 @@ of Yorks somebody meant.
 They fail differently, which is why there are two. A named place carries a name,
 a timezone and an altitude, and depends on GeoNames still holding that record. A
 point carries none of those and depends on nothing at all: 63.4N 10.4E will mean
-the same thing for as long as there is an earth.
+the same place permanently.
 
 ## The third Sextile application
 

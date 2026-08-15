@@ -1,7 +1,7 @@
 # Captured responses
 
-Real responses, kept so that the parsing can be exercised against what the
-service actually sends rather than against what we imagine it sends.
+Real responses, kept so the parsing can be exercised against what the service
+actually sends rather than against a guess.
 
 | | |
 |---|---|

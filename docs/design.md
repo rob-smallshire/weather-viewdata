@@ -55,7 +55,7 @@ Two sources, and everything else is between them and a frame.
                  |
             application     the assembly: what it holds, what wraps it
                  |
-              Sextile       chrome, forms, templates, charting, the log
+              Sextile       furniture, forms, layout, charting, the log
 ```
 
 `__main__.py` carries the commands that are this application's own:
@@ -116,8 +116,8 @@ exist rather than one being the poor relation:
 | `321<geoname-id>` | a name, a timezone, an altitude | GeoNames still holding that record |
 | `421<lat><lon>` | coordinates, and says so | nothing at all |
 
-A coordinate page number is stable by construction: 63.4N 10.4E will mean the
-same thing for as long as there is an earth. A geoname id is *nearly* stable —
+A coordinate page number is stable by construction: 63.4N 10.4E means the same
+point permanently. A geoname id is *nearly* stable —
 GeoNames publishes daily deletions, one line worldwide on 8 August 2026 — and
 the likelier way it dies has nothing to do with ids at all: `cities500` means
 *population over 500 or an administrative seat*, so a village revised from 520
@@ -167,8 +167,8 @@ That test earned its keep immediately. **Two codes are misspelled at the
 source**: `lightssleetshowersandthunder` and `lightssnowshowersandthunder`, with
 two esses, in met.no's own legend and in NRK's set, for codes 26 and 28. `lights`
 is not an intensity, so the core was never found and the whole code came back
-raw — twenty-eight characters trimmed to nonsense in a sixteen-cell column, on
-exactly the sort of afternoon a reader would want to know about.
+raw — twenty-eight characters trimmed to nonsense in a sixteen-cell column, and
+codes 26 and 28 are both thunder.
 
 ### The grammar
 
@@ -199,8 +199,7 @@ and the code chooses the pieces — **unless there is nothing to stack**, in whi
 case it does not become three bands at all. `clearsky` and `fog` have no cloud
 and nothing falling, so each is one figure across all nine cells, in one colour,
 costing no more attributes than three bands would. It is the other half of the
-grammar rather than an exception to it: *either the weather has layers, or it is
-one thing.*
+grammar rather than an exception to it.
 
 A clear sky is worth the whole picture. Small, it is a mark among marks; large,
 it is the one hour in a strip of ten that a reader picks out without reading
@@ -306,8 +305,8 @@ know what `shwrs` means will go to find out, so it had better not be written
 there too. `symbols.in_words` and `symbols.in_full` are the two lengths, over
 one decomposition. The framework's `wrap_within` does the fitting.
 
-The set is drawn by day and **not time-sensitive on purpose.** A legend is a legend and not a forecast, and there is no clock it
-could sensibly follow: not the reader's, since somebody in Britain at midnight
+The set is drawn by day and **not time-sensitive, on purpose.** There is no
+clock it could sensibly follow: not the reader's, since somebody in Britain at midnight
 may be looking up Auckland at noon, and not any place's either, the page being
 about none of them. Drawn by day and saying what changes at night, it is right
 for every reader at once. Names wrap over two of the rows,
@@ -613,7 +612,7 @@ as calm weather, the one wrong answer it must not give.
 ## Drawing a forecast
 
 `forecast_page` in `forecast_page.py` builds it, and `ForecastTable` — a
-`Template[Moment]` — deals the moments into frames. Both `321<geoname-id>` and
+`Formatter[Day]` — deals the days into frames. Both `321<geoname-id>` and
 `421<lat><lon>` end here; the only difference is what the preamble says.
 
 A page with nothing to show says why: no forecast is a `Prose` page explaining
@@ -732,9 +731,9 @@ line deciding whether to ask again wants to know which.
 and no reading is not. Tromsø has no elevation at all in `cities500`, which is
 what made that concrete rather than theoretical.
 
-**Column headings on every frame**, which is why `Template` grew `headings`: a
-reader on frame c looking at four columns of figures has no way back to the
-words that say which is which.
+**Column headings on every frame**, drawn with an `Every` part: a reader on
+frame c looking at four columns of figures has no way back to the words that say
+which is which.
 
 **`F` goes back to the search.** A reader who has just found a place usually
 wants the next place, and the way back was otherwise `*0#` — or a page number
@@ -830,11 +829,12 @@ in the left margin, where a blank cell was going to be anyway, which is exactly
 enough for the abbreviations: `CEST`, `AEDT`, `NZDT`. A zone that calls itself
 `+12` has no abbreviation to show and gets `loc`.
 
-**A light rule above, and none below.** The chrome's own rule closes the frame a
-row later, and two lines together read as a border rather than as a division.
-The rule that is there is light because the chrome's is a bar, and a bar belongs
-where a page ends — between two pieces of content it reads as a second frame
-beginning, so `thin_rule` is the same construction with a sixth of the ink.
+**A light rule above, and none below.** The furniture's own rule closes the
+frame a row later, and two lines together read as a border rather than as a
+division. The rule that is there is light because the furniture's is a bar, and a
+bar belongs where a page ends — between two pieces of content it reads as a
+second frame beginning, so `thin_rule` is the same construction with a sixth of
+the ink.
 
 **A blank row between what falls and what blows.** They are two subjects, and
 set solid the eight rows read as one block of marks. It is the row the second
@@ -989,7 +989,7 @@ of words, and every one of these came from something that could not be drawn:
 | two clocks in one lead-in, told apart by colour | a preamble line may be `Run`s |
 | a strip of mosaics above a table | `Block`, a lead-in that is drawn |
 | a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
-| a legend of pictures, placed by cell | `Template.draw_entry` |
+| a legend of pictures, placed by cell | `Formatter.draw_entry` |
 | days with air between them | `separation`, blanks between entries and not after each |
 | temperature and wind as lines, rain as bars | `charting.curve`, `charting.bars` |
 | a divider inside a page rather than at its edge | `thin_rule` |
@@ -1021,8 +1021,7 @@ been dead since they were written, and nobody had pressed one.
 
 ## The two search pages
 
-Both are forms: pages a reader types into, which is the one thing a viewdata
-page could not previously do. The seam is the framework's — see
+Both are forms: pages a reader types into. The seam is the framework's — see
 [sextile/docs/design.md](../../sextile/docs/design.md) — and what is here is
 what a weather service does with it.
 
@@ -1074,10 +1073,9 @@ looks:
 | DELETE | rubs out |
 | `*1#` | the menu — see below |
 
-**Nothing advances by itself.** A field that jumped when it thought it had
-enough would put the caret where the reader did not, and with two ways of
-writing a coordinate — one ending in a letter and one not — it could not be
-consistent about when.
+**Nothing advances by itself.** A field that advanced when it judged itself full
+would put the caret where the reader did not, and with two spellings of a
+coordinate — one ending in a letter, one not — no single rule for "full" fits.
 
 **Both spellings are taken and one is advertised.** `54.0S` and `-54.0` both
 work; the advice under each field shows only the hemispheric form. A field's
@@ -1095,7 +1093,7 @@ that work amounts to when the convention cannot be kept.
 Beneath the fields it says how far the nearest known place is — `2km from
 Skelton` — rather than calling it near. `Index.nearest` bounds its search at a
 degree, which is 111km, and a service that said "near Trowbridge" about
-somewhere ninety kilometres off would be lying politely. Nowhere within a degree
+somewhere ninety kilometres off would be misleading. Nowhere within a degree
 says that too, rather than leaving a reader wondering whether the keying took.
 
 ### What the reader is shown, and what it cost
