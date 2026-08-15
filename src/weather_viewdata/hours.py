@@ -54,9 +54,9 @@ one: a strip is for glancing at, and two clocks in three cells is neither. The
 label says *which* clock -- `CEST`, the zone's own abbreviation -- and the
 hours are drawn in the cyan that has meant local since the first forecast page.
 
-A light rule above, and none below: the chrome's own rule closes the frame a
+A light rule above, and none below: the furniture's own rule closes the frame a
 row later, and two lines together read as a border rather than as a division.
-The rule that is there is light because the chrome's is a bar, and a bar
+The rule that is there is light because the furniture's is a bar, and a bar
 belongs where a page ends -- between two things that are both content it reads
 as a second frame beginning.
 """
@@ -114,7 +114,7 @@ BAND_ROWS: Final = _QUARTER_ROW + 1
 
 #: Rows the strip takes, its rule included, and hours it shows. One rule and
 #: not two: the strip fills the frame, so a rule under the last row of it would
-#: sit against the chrome's own and read as a double line.
+#: sit against the furniture's own and read as a double line.
 _RULES: Final = 1
 STRIP_ROWS: Final = BAND_ROWS + _RULES
 HOURS_SHOWN: Final = HOURS_ACROSS

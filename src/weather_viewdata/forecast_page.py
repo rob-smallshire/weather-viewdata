@@ -127,7 +127,7 @@ class ForecastTable(Formatter[Day]):
     six-row block. Nothing on it is selectable: a forecast is something to
     read, not a menu, so no digit is spent on the rows and 1-9 do nothing here
     -- which is the rule about naming only the keys that work, rather than an
-    exception to it. A `Template` rather than a `RowTemplate`: a day is
+    exception to it. A `Formatter` rather than a `RowFormatter`: a day is
     placed by cell.
     """
 
@@ -179,7 +179,7 @@ def _preamble(
     else:
         lines.append(Once(Lines(said=(issued,))))
     if coming:
-        #  Drawn rather than written, and the template counts its rows like any
+        #  Drawn rather than written, and the layout counts its rows like any
         #  others -- so the strip filling what is left of the frame simply
         #  leaves the table to start on the next one. Its own rules separate it
         #  from what is above and below.
@@ -194,8 +194,7 @@ def _preamble(
             )
         )
     #  A blank row between the lead-in and the table, so the two read as two
-    #  things. The templates added this of their own accord; a list of parts
-    #  says it.
+    #  things, stated as a part rather than added automatically.
     lines.append(Once(Lines(said=("",))))
     return lines
 

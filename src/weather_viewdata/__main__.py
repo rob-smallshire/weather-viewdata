@@ -2,8 +2,7 @@
 
 Serving and drawing are the framework's, but the place index is this
 application's own and so is filling it. Both halves default the index's location
-the same way, so that they agree about where it is without being told twice --
-which is the first thing that went wrong for Stardot.
+the same way, so that they agree about where it is without being told twice.
 """
 
 import argparse

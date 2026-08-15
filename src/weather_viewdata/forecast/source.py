@@ -1,9 +1,8 @@
 """Where a forecast comes from.
 
 The port. Everything above it asks a `ForecastSource` for a `Forecast` and has
-never heard of met.no, HTTP or JSON -- the same seam Stardot puts between its
-pages and its Atom feed, and for the same reason: a page handler that knew how
-the data arrived would have to be rewritten when it arrived differently.
+never heard of met.no, HTTP or JSON. A page handler that knew how the data
+arrived would have to be rewritten when it arrived differently.
 
 A source returns `None` where it has nothing to give. That is deliberately the
 same shape a Sextile handler uses for a page that is not there, and it means a

@@ -85,9 +85,8 @@ def build_application(
     """The service, assembled.
 
     Everything it is arrives in one call: what it holds, what field shapes its
-    numbering needs, what wraps every page, and the pages themselves. There is
-    no "before" and no "after", which is what stops registration order being
-    something a service can get wrong.
+    numbering needs, what wraps every page, and the pages themselves, so
+    registration order does not matter.
     """
 
     @asynccontextmanager
@@ -101,11 +100,10 @@ def build_application(
         """
         index = await asyncio.to_thread(Index.open, index_filepath)
         try:
-            #  Refused rather than warned about. A stale index does not fail,
-            #  it answers -- by rules the code stopped using, with nothing on
-            #  the screen to say so. A service that will not start says exactly
-            #  what to run; one that starts and lies costs somebody an
-            #  afternoon.
+            #  Refused rather than warned about. A stale index still answers,
+            #  by rules the code stopped using, with nothing on the screen to
+            #  say so. Better to refuse to start and name the fix than to start
+            #  and answer wrongly.
             if index.stale:
                 raise StaleIndexError(
                     f"{index_filepath} was built by older rules and would "

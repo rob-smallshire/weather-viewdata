@@ -1,10 +1,9 @@
 """The domain: what this service knows about weather.
 
 Nothing here mentions met.no, JSON or HTTP. That is the seam another source
-slots into -- and unlike Stardot's, whose second implementation is expected,
-this one exists mainly to keep the page handlers honest: a page drawn from a
-`Forecast` cannot accidentally come to depend on the shape of somebody's API
-response.
+slots into, and it exists mainly to keep the page handlers honest: a page drawn
+from a `Forecast` cannot accidentally come to depend on the shape of somebody's
+API response.
 
 Readings are optional throughout. A missing reading is not nought degrees, and
 on a weather page that difference matters more than almost anywhere else.
@@ -45,7 +44,7 @@ class Moment:
 
     Kept as the source's word rather than mapped to something of our own here:
     what a symbol becomes on a forty-column screen is the drawing layer's
-    business, and there are ninety of them.
+    concern, and there are ninety of them.
     """
 
     precipitation: float | None = None

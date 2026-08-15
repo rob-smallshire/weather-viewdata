@@ -66,16 +66,16 @@ PLACES: Final = Held("places", Index)
 FORECASTS: Final[Held[ForecastSource]] = Held.checking("forecasts", ForecastSource)
 
 #: What kind of page this is, within a namespace whose root is a search frame.
-#: There is only one kind so far, and naming it leaves room beside it for a
-#: page about a place that is not its weather.
+#: There is only one kind so far; the digit leaves room for another about a
+#: place that is not its weather.
 _FORECAST: Final = "2"
 
 #: How a forecast is drawn, as the digit that says so. A forecast is one body
-#: of numbers and there is more than one honest way to show it: a table reads
-#: exactly and a graph reads at a glance, and neither is the poor relation. So
-#: the presentation is part of the address rather than a mode the reader has to
-#: get the frame into -- a number written down fetches back what was written
-#: down, and a reader can key straight to the one they want.
+#: of numbers with more than one honest presentation: a table reads exactly and
+#: a graph reads at a glance, and both are wanted. So the presentation is part
+#: of the address rather than a mode the reader has to get the frame into -- a
+#: number written down fetches back what was written down, and a reader can key
+#: straight to the one they want.
 #:
 #: It goes before the subject and not after because a geoname id has no fixed
 #: width: `321` then the id can be split apart, `32` then the id then a digit
@@ -91,10 +91,6 @@ _FORECASTS_PREFIX: Final = f"3{_FORECAST}{TABLE}"
 
 #: What "lately" means on the about page, where the count of callers is.
 _A_WEEK: Final = timedelta(days=7)
-
-#: The last content row, where the count of places held sits. At the foot
-#: rather than under the list: it is a thing to read once and never again,
-#: and the rows it was taking are the ones a long list needs.
 
 
 @page("0")
@@ -170,18 +166,15 @@ async def main(request: PageRequest) -> Page:
 async def by_name(request: PageRequest) -> Page:
     """A field, with the best three places beneath it as the reader types.
 
-    **The field is empty every time the page is fetched.** It used to be kept
-    in the session and to survive leaving the page and coming back, on the
-    argument that a reader looking at one of three candidates would want the
-    word still there to refine. Used, it turns out the other way round: a
-    reader who has just read a forecast is looking for somewhere *else*, and
-    what the kept word costs them is ten presses of the rub-out key, each one a
+    **The field is empty every time the page is fetched**, not kept in the
+    session. A reader who has just read a forecast is looking for somewhere
+    else, so a kept word would cost them ten presses of the rub-out key, each a
     round trip and a redraw at 1200 baud.
 
     Nothing is lost by forgetting. The typing itself does not go through here
     -- a form answers a keypress by redrawing, without the page being fetched
-    again -- and a reader who did want the same search back has `*0#` and the
-    history page, which is what a history is for.
+    again -- and a reader who wants the same search back has `*0#` and the
+    history page.
     """
     app = Sextile.of(request)
     #  There were two lines of advice here and neither earned its rows.
@@ -243,12 +236,10 @@ async def by_position(request: PageRequest) -> Page:
     that ate a coordinate.
 
     **Both fields are empty every time the page is fetched**, as the search
-    field is and for the same reason. This one looked like the exception --
-    two figures are more trouble to type than a name, and a reader nudging a
-    latitude would want the old one there -- and it is not: a reader comes back
-    here to look at somewhere *else*, and what a remembered position costs them
-    is twelve presses of the rub-out key across two fields. Nudging is what the
-    arrows and a fresh six characters are for.
+    field is and for the same reason: a reader comes back here to look at
+    somewhere else, and a remembered position would cost twelve presses of the
+    rub-out key across two fields. Nudging is what the arrows and a fresh six
+    characters are for.
     """
     app = Sextile.of(request)
     return PageLayout(
