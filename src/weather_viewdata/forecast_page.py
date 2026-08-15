@@ -223,8 +223,8 @@ def _draw_now(
         #  and a second would be a cell spent twice on the same air.
         room = COLUMNS - COLUMN_CELLS
     canvas.row(row).text(fitted(issued, room), Colour.WHITE)
-    canvas.row(row + 1).runs(_within(_clock_runs(moment, zone, room), room))
-    canvas.row(row + 2).runs(_within(_figure_runs(moment), room))
+    canvas.row(row + 1).runs(_clock_runs(moment, zone, room), cells=room)
+    canvas.row(row + 2).runs(_figure_runs(moment), cells=room)
 
 
 def _clock_runs(moment: Moment, zone: ZoneInfo | None, room: int) -> list[Span]:
@@ -287,23 +287,6 @@ def _figure_runs(moment: Moment) -> list[Span]:
         Span(f" {in_words(moment.symbol)}", Colour.GREEN),
     ]
 
-
-def _within(runs: list[Span], room: int) -> list[Span]:
-    """Runs trimmed to a budget, the last of them giving way first.
-
-    `RowWriter.runs` trims to the end of the row, which is the wrong edge where
-    something else is drawn further along it.
-    """
-    kept: list[Span] = []
-    used = 0
-    for run in runs:
-        left = room - used - _ATTRIBUTE_CELL
-        if left <= 0:
-            break
-        text = fitted(run.text, left)
-        kept.append(Span(text, run.colour))
-        used += _ATTRIBUTE_CELL + cell_count(text)
-    return kept
 
 
 def _figures(moment: Moment) -> list[str]:
