@@ -7,12 +7,12 @@ lets it be exercised against a real capture rather than a mock.
 Two things about the format are worth knowing before reading the code, both
 established from a real response rather than from documentation:
 
-**The series changes resolution part way along.** The first two or three days
+The series changes resolution part way along. The first two or three days
 are hourly and the rest six-hourly, so `next_1_hours` is present at the start
 and absent later. Which blocks a moment carries shows how specific the source
 is at that point.
 
-**A block describes the period *after* the moment it hangs on**, not the moment
+A block describes the period *after* the moment it hangs on, not the moment
 itself. So a moment's symbol is what the weather will do next, and the last
 moment in the series has no block at all -- there is no next hour inside the
 forecast for it to summarise.
