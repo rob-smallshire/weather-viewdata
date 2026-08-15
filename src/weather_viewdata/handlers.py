@@ -31,7 +31,7 @@ from sextile import (
     prose_page,
     title_page,
 )
-from sextile.formatting import Lines, MenuItem, Prose
+from sextile.formatting import Lines, MenuItem
 from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -149,7 +149,7 @@ async def main(request: PageRequest) -> Page:
 async def by_name(request: PageRequest) -> Page:
     """A field, with the best three places beneath it as the reader types.
 
-    **The field is empty every time the page is fetched**, not kept in the
+    The field is empty every time the page is fetched, not kept in the
     session. A reader who has just read a forecast is looking for somewhere
     else, so a kept word would cost them ten presses of the rub-out key, each a
     round trip and a redraw at 1200 baud.
@@ -216,7 +216,7 @@ async def by_position(request: PageRequest) -> Page:
     a page where digits are data, a `0` that went to the menu would be a key
     that ate a coordinate.
 
-    **Both fields are empty every time the page is fetched**, as the search
+    Both fields are empty every time the page is fetched, as the search
     field is and for the same reason: a reader comes back here to look at
     somewhere else, and a remembered position would cost twelve presses of the
     rub-out key across two fields. Nudging is what the arrows and a fresh six
@@ -331,8 +331,12 @@ async def _places_of(
 
 
 def _nothing_kept(request: PageRequest) -> Page:
-    return prose_page(
-        request, "This service is not keeping a log of what has been looked up."
+    #  The empty state of the lately-looked-up menu, said as menu rows in place
+    #  rather than on a page of its own.
+    return menu_page(
+        request,
+        items=[],
+        empty=["This service is not keeping a log", "of what has been looked up."],
     )
 
 
@@ -345,22 +349,23 @@ async def about(request: PageRequest) -> Page:
     token minted per call and nothing else, so this can say how many and can
     never say who.
     """
-    return PageLayout(
-        parts=[
-            Prose.of(
-                "The weather, served as Viewdata frames to computers that "
-                "were obsolete before the forecast models were written.",
-                "Forecasts come from the Norwegian Meteorological Institute, "
-                "who publish them for anyone to use. Place names come from "
-                "GeoNames. Both are licensed CC BY 4.0, and neither endorses "
-                "this service.",
-                "Forecasts are held for as long as met.no asks them to be, so "
-                "two readers asking about the same town within the half hour "
-                "are one request rather than two.",
-                await _callers(request),
-            )
-        ],
-    ).build(request)
+    paragraphs = [
+        "The weather, served as Viewdata frames to computers that "
+        "were obsolete before the forecast models were written.",
+        "Forecasts come from the Norwegian Meteorological Institute, "
+        "who publish them for anyone to use. Place names come from "
+        "GeoNames. Both are licensed CC BY 4.0, and neither endorses "
+        "this service.",
+        "Forecasts are held for as long as met.no asks them to be, so "
+        "two readers asking about the same town within the half hour "
+        "are one request rather than two.",
+    ]
+    #  The caller count is left off where there is no log to draw it from,
+    #  filtered here rather than passed as an empty paragraph.
+    callers = await _callers(request)
+    if callers:
+        paragraphs.append(callers)
+    return prose_page(request, *paragraphs)
 
 
 async def _callers(request: PageRequest) -> str:
@@ -456,7 +461,7 @@ async def symbols(request: PageRequest) -> Page:
     a shower, which is the whole of what the time of day changes. Forty more
     drawings would say the same thing four times over.
 
-    **The set is drawn by day whatever the hour.** A legend is a legend and not
+    The set is drawn by day whatever the hour. A legend is a legend and not
     a forecast: there is no clock it could sensibly follow. Not the reader's --
     somebody in Britain at midnight may be looking up Auckland at noon -- and
     not any place's either, since the page is about none of them. Drawing it by
