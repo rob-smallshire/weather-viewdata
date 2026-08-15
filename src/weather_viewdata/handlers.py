@@ -417,7 +417,7 @@ async def guide(request: PageRequest) -> Page:
     generated from what it actually answers rather than described here.
     """
     app = request.app
-    return await app.guide(
+    return await app.guide_page(
         request,
         #  No `A` and `D` on the compass. They step through the run of pages a
         #  menu offered, and this service does not wire them: a forecast is
@@ -450,7 +450,7 @@ async def read_lately(request: PageRequest) -> Page:
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(request)
-    return await app.lately_read(request, visits)
+    return await app.recent_page(request, visits)
 
 
 @page("97", title="Pages read most", keywords=("POPULAR",))
@@ -460,7 +460,7 @@ async def read_most(request: PageRequest) -> Page:
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(request)
-    return await app.most_read(request, visits)
+    return await app.popular_page(request, visits)
 
 
 @page("98", title="Who has called", keywords=("CALLERS",))
@@ -470,7 +470,7 @@ async def who_called(request: PageRequest) -> Page:
     visits = VISITS.found_in(request.service)
     if visits is None:
         return _nothing_kept(request)
-    return await app.who_has_called(request, visits)
+    return await app.callers_page(request, visits)
 
 
 #  `LEGEND` among the keywords, which is the word for this on a map and in
