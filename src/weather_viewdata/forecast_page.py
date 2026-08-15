@@ -12,7 +12,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import ClassVar, Final
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sextile import Page, PageAddress, Sextile, keyed
+from sextile import Page, PageAddress, PageRequest, keyed
 from sextile.formatting import Formatter, Lines, Prose
 from sextile.layout import Drawn, Every, Flowing, Once, PageLayout, Part, Shortcut
 from sextile.viewdata.canvas import Canvas, Run
@@ -57,8 +57,7 @@ _TO: Final = "―"
 
 
 def forecast_page(
-    app: Sextile,
-    address: PageAddress,
+    request: PageRequest,
     place: Place,
     forecast: Forecast | None,
     *,
@@ -77,7 +76,6 @@ def forecast_page(
     if forecast is None or not forecast.moments:
         return PageLayout(
             title=_heading(place),
-            home=app.index,
             shortcuts=shortcuts,
             parts=[
                 Flowing(
@@ -85,11 +83,11 @@ def forecast_page(
                         f"No forecast for {place.name} just now.",
                         "The Norwegian Meteorological Institute did not answer. "
                         "This is our trouble rather than yours.",
-                        f"Key {keyed(address)} again in a few minutes.",
+                        f"Key {keyed(request.address)} again in a few minutes.",
                     )
                 )
             ],
-        ).build(address)
+        ).build(request)
     zone = _zone_of(place)
     now = forecast.current(datetime.now(UTC))
     #  The strip shows the hours after now; the days show all of them, today
@@ -98,7 +96,6 @@ def forecast_page(
     coming = [moment for moment in forecast.moments if now is None or moment.at > now.at]
     return PageLayout(
         title=_heading(place),
-        home=app.index,
         #  Not `S`, which pages down, and not `0`, which is the index. A reader
         #  who has just found a place usually wants the next place, and the way
         #  back to the search is otherwise three keys and a page they have to
@@ -116,7 +113,7 @@ def forecast_page(
                 )
             ),
         ],
-    ).build(address)
+    ).build(request)
 
 
 @dataclass(frozen=True, kw_only=True)

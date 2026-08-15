@@ -116,12 +116,15 @@ async def title(request: PageRequest) -> Page:
         #  None at all: a masthead is the whole frame, and a footer offering
         #  keys would be a footer on a page with one key.
         furniture=(),
+        #  No `0` either: the opening frame is where a reader arrives, so there
+        #  is no index to send them back to that they are not already at.
+        home=None,
         #  `follows` is what makes `#` mean something here, and brings the key
         #  that reaches it. Without it the title frame is a dead end under the
         #  one key a viewdata reader tries first.
         follows=request.app.index,
         parts=[Once(Drawn(rows=ROWS, draw=draw))],
-    ).build(None)
+    ).build(request)
 
 
 @page("1", title="Main menu", keywords=("MAIN", "INDEX", "HOME"))
@@ -130,7 +133,6 @@ async def main(request: PageRequest) -> Page:
     app = request.app
     return PageLayout(
         title=SERVICE_NAME,
-        home=app.index,
         parts=[
             Once(Lines(said=("Forecasts for anywhere on earth.", ""))),
             Flowing(
@@ -155,7 +157,7 @@ async def main(request: PageRequest) -> Page:
                 )
             ),
         ],
-    ).build(request.address)
+    ).build(request)
 
 
 #  No detail on either of the two searches. They were the only entries on
@@ -190,7 +192,6 @@ async def by_name(request: PageRequest) -> Page:
     #  a blank changes nothing and the repaint had nothing to send. That is
     #  fixed in the framework rather than warned about here.
     return PageLayout(
-        title=app.heading_for(request.address),
         home=Shortcut(key=HOME_KEY, destination=app.index, says="menu"),
         parts=[
             Once(Lines(said=("Key a place name.", ""))),
@@ -201,7 +202,7 @@ async def by_name(request: PageRequest) -> Page:
                 )
             ),
         ],
-    ).build(request.address)
+    ).build(request)
 
 
 @page(f"3{_FORECAST}{TABLE}{{geoname_id:int}}", title="One place")
@@ -219,8 +220,7 @@ async def place(request: PageRequest, geoname_id: int) -> Page | None:
         return None
     source = FORECASTS.of(request.service)
     return forecast_page(
-        request.app,
-        request.address,
+        request,
         found,
         await source.forecast_for(found),
         back_to=_searched_from(request),
@@ -243,14 +243,14 @@ async def by_position(request: PageRequest) -> Page:
     """
     app = request.app
     return PageLayout(
-        title=app.heading_for(request.address),
         #  No way home on this page: `0` keyed into a coordinate is a nought,
         #  so the field takes it and the prompt says how to leave instead.
+        home=None,
         parts=[
             Once(Lines(said=("Key a position in degrees,", "to one decimal place."))),
             Once(position_fields(app, PLACES.of(request.service))),
         ],
-    ).build(request.address)
+    ).build(request)
 
 
 @page(f"4{_FORECAST}{TABLE}{{lat:latitude}}{{lon:longitude}}", title="One point")
@@ -268,8 +268,7 @@ async def point(request: PageRequest, lat: float, lon: float) -> Page:
     where = point_place(lat, lon, nearby)
     source = FORECASTS.of(request.service)
     return forecast_page(
-        request.app,
-        request.address,
+        request,
         where,
         await source.forecast_for(where),
         near=nearby,
@@ -314,11 +313,9 @@ async def lately(request: PageRequest) -> Page:
     app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
-        return _nothing_kept(app, request.address)
+        return _nothing_kept(request)
     seen = await visits.recent(CHOICES_PER_FRAME, prefix=_FORECASTS_PREFIX)
     return PageLayout(
-        title=app.heading_for(request.address),
-        home=app.index,
         parts=[
             Once(Lines(said=("Places lately looked up here.", ""))),
             Flowing(
@@ -337,7 +334,7 @@ async def lately(request: PageRequest) -> Page:
                 )
             ),
         ],
-    ).build(request.address)
+    ).build(request)
 
 
 async def _places_of(
@@ -363,16 +360,14 @@ async def _places_of(
     return found
 
 
-def _nothing_kept(app: Sextile, address: PageAddress) -> Page:
+def _nothing_kept(request: PageRequest) -> Page:
     return PageLayout(
-        title=app.heading_for(address),
-        home=app.index,
         parts=[
             Flowing(
                 Prose.of("This service is not keeping a log of what has been looked up.")
             )
         ],
-    ).build(address)
+    ).build(request)
 
 
 @page("9", title="About this service", keywords=("ABOUT",))
@@ -384,10 +379,7 @@ async def about(request: PageRequest) -> Page:
     token minted per call and nothing else, so this can say how many and can
     never say who.
     """
-    app = request.app
     return PageLayout(
-        title=app.heading_for(request.address),
-        home=app.index,
         parts=[
             Flowing(
                 Prose.of(
@@ -404,7 +396,7 @@ async def about(request: PageRequest) -> Page:
                 )
             )
         ],
-    ).build(request.address)
+    ).build(request)
 
 
 async def _callers(request: PageRequest) -> str:
@@ -483,7 +475,7 @@ async def read_lately(request: PageRequest) -> Page:
     app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
-        return _nothing_kept(app, request.address)
+        return _nothing_kept(request)
     return await app.lately_read(request, visits)
 
 
@@ -493,7 +485,7 @@ async def read_most(request: PageRequest) -> Page:
     app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
-        return _nothing_kept(app, request.address)
+        return _nothing_kept(request)
     return await app.most_read(request, visits)
 
 
@@ -503,7 +495,7 @@ async def who_called(request: PageRequest) -> Page:
     app = request.app
     visits = VISITS.found_in(request.service)
     if visits is None:
-        return _nothing_kept(app, request.address)
+        return _nothing_kept(request)
     return await app.who_has_called(request, visits)
 
 
@@ -535,10 +527,7 @@ async def symbols(request: PageRequest) -> Page:
     day and showing what changes is the only reading that is right for every
     reader at once.
     """
-    app = request.app
     return PageLayout(
-        title=app.heading_for(request.address),
-        home=app.index,
         parts=[
             Once(Lines(said=("Drawn by day, except where it says.", ""))),
             Flowing(
@@ -550,4 +539,4 @@ async def symbols(request: PageRequest) -> Page:
                 )
             ),
         ],
-    ).build(request.address)
+    ).build(request)
