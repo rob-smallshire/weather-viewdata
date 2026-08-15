@@ -4,7 +4,7 @@ The forecast read across instead of down. A table of hours is exact and has to
 be read a row at a time; a strip of them is a shape, and a reader takes in
 "cold and wet till six, clearing after" without reading anything at all.
 
-**Eight hours to a band, and the arithmetic is forced rather than chosen.** An
+Eight hours to a band, and the arithmetic is forced rather than chosen. An
 hour column is four cells -- for a picture, an attribute and three cells of it
 -- and a row of forty holds ten. Ten leaves nothing for saying which row is the
 temperature and which the wind, and unlabelled rows of figures on a page a
@@ -29,14 +29,14 @@ below it. Eight.
    dir  S   S  SW  SW   W   W  NW  NW
 ```
 
-**A chart takes all four cells of an hour, where a picture takes three.** The
+A chart takes all four cells of an hour, where a picture takes three. The
 figures and the pictures each need an attribute at the head of their column;
 a chart needs one for the whole row, since a row of a chart is one colour
 throughout. So a chart is eight blocks to the hour, and the attribute it would
 otherwise have spent comes out of the label column -- which is why a chart's
 label is three characters where `CEST` is four.
 
-**The temperature scale puts freezing on a row boundary.** One colour to a row
+The temperature scale puts freezing on a row boundary. One colour to a row
 is the rule the whole page is built on, so a chart wanting warm in red and cold
 in cyan has to put nought degrees where one row ends and the next begins: a
 third of the way up, or two thirds. That choice then fixes the rest of the
@@ -44,7 +44,7 @@ scale rather than the data fixing it, and the one that wastes less of the
 height wins. A series that stays one side of freezing needs no boundary and is
 drawn in a single colour over all three rows.
 
-**Rain is not scaled at all.** Its four levels are millimetres in the hour and
+Rain is not scaled at all. Its four levels are millimetres in the hour and
 mean the same on every page, which a scaled bar could not: on a dry afternoon a
 scaled chart draws a drizzle full height, and the reader who wanted to know
 whether to take a coat has been told the wrong thing loudly.
@@ -296,7 +296,7 @@ def rain_level(millimetres: float | None) -> int | None:
 def _draw_wind(canvas: Canvas, row: int, moments: list[Moment]) -> None:
     """The wind, as a line over two rows, from a standstill to the strongest.
 
-    **The bottom is nought and the top is whatever the strongest hour is**, and
+    The bottom is nought and the top is whatever the strongest hour is, and
     the top is written beside it. The temperature chart needs a floor under how
     narrow it may be, because a flat line halfway up a chart of unsaid limits
     means nothing; wind needs none, because the bottom of the chart is a real
