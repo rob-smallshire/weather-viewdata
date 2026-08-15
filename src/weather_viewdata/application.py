@@ -37,8 +37,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
-from sextile import PageRoute, Sextile, routes_in
-from sextile.handlers import contents, history, names
+from sextile import Sextile, routes_in, standard_pages
 from sextile.middleware import log_pages, record_visits
 from sextile.visits import KEPT, SqliteVisits
 from weather_viewdata import handlers
@@ -66,12 +65,15 @@ class StaleIndexError(RuntimeError):
 #: describes.
 PAGES: Final = (
     *routes_in(handlers),
-    PageRoute("92", history, title="Where you have been",
-              detail="this call, newest first", keywords=("HISTORY",)),
-    PageRoute("93", contents, title="Every page",
-              detail="and the number that fetches it", keywords=("PAGES",)),
-    PageRoute("94", names, title="Words you can key",
-              detail="instead of a page number", keywords=("KEYWORDS", "WORDS")),
+    *standard_pages(
+        history="92",
+        contents="93",
+        keywords="94",
+        recent="96",
+        popular="97",
+        callers="98",
+        visits=VISITS.find,
+    ),
 )
 
 

@@ -500,7 +500,7 @@ class TestHowManyHaveCalled:
         )
         page = await app.ask("98")
         assert page is not None
-        assert "not keeping a log" in _text(page)
+        assert "No log" in _text(page)
 
 
 class TestTheLifespanClosesWhatItOpens:

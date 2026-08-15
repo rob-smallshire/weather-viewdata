@@ -390,7 +390,7 @@ async def _callers(request: PageRequest) -> str:
     app = request.app
     return (
         f"{calls} call{'' if calls == 1 else 's'} in the last seven days; "
-        f"{keyed(app.address_for('who_called'))} for more. The log keeps a "
+        f"{keyed(app.address_for('callers'))} for more. The log keeps a "
         "token for each and nothing else: it can say how many and never who."
     )
 
@@ -437,40 +437,12 @@ async def guide(request: PageRequest) -> Page:
             GuideRow(keyed(app.address_for("goodbye")), "log off"),
             GuideRow(),
             GuideRow(keyed(app.address_for("contents")), "every page and its number"),
-            GuideRow(keyed(app.address_for("names")), "every word you can key"),
+            GuideRow(keyed(app.address_for("keywords")), "every word you can key"),
             GuideRow(keyed(app.address_for("symbols")), "what the symbols mean"),
         ],
     )
 
 
-@page("96", title="Pages lately read", keywords=("READ",))
-async def read_lately(request: PageRequest) -> Page:
-    """The framework's page, at this service's number."""
-    app = request.app
-    visits = VISITS.found_in(request.service)
-    if visits is None:
-        return _nothing_kept(request)
-    return await app.recent_page(request, visits)
-
-
-@page("97", title="Pages read most", keywords=("POPULAR",))
-async def read_most(request: PageRequest) -> Page:
-    """The framework's page, at this service's number."""
-    app = request.app
-    visits = VISITS.found_in(request.service)
-    if visits is None:
-        return _nothing_kept(request)
-    return await app.popular_page(request, visits)
-
-
-@page("98", title="Who has called", keywords=("CALLERS",))
-async def who_called(request: PageRequest) -> Page:
-    """The framework's page, at this service's number."""
-    app = request.app
-    visits = VISITS.found_in(request.service)
-    if visits is None:
-        return _nothing_kept(request)
-    return await app.callers_page(request, visits)
 
 
 #  `LEGEND` among the keywords, which is the word for this on a map and in
