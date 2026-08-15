@@ -27,6 +27,7 @@ from sextile import (
     Sextile,
     StateKey,
     farewell_page,
+    handlers,
     keyed,
     menu_page,
     prose_page,
@@ -421,7 +422,7 @@ async def guide(request: PageRequest) -> Page:
     generated from what it actually answers rather than described here.
     """
     app = request.app
-    return await app.guide_page(
+    return await handlers.guide_page(
         request,
         #  No `A` and `D` on the compass. They step through the run of pages a
         #  menu offered, and this service does not wire them: a forecast is
