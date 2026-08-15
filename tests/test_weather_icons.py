@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from sextile.testing import fetch
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.wrapping import wrap_within
 from weather_viewdata import build_application
@@ -282,10 +283,9 @@ async def _legend(tmp_path: Path) -> str:
     )
     await app.startup()
     try:
-        page = await app.fetch("95")
+        page = await fetch(app, "95")
     finally:
         await app.shutdown()
-    assert page is not None
     return "\n".join(
         line for frame in page.frames for line in frame.frame.to_grid()[0]
     )

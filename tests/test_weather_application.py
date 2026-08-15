@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from sextile import PageAddress, Sextile, UnknownPageError
-from sextile.testing import Caller, connect, text_of
+from sextile.testing import Caller, connect, fetch, text_of
 from sextile.visits import SqliteVisits
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
@@ -325,8 +325,7 @@ class TestHowLongTheSuggestionListIs:
 
 
 async def _offered(app: Sextile, typed: str) -> list[tuple[str, str]]:
-    page = await app.fetch("3")
-    assert page is not None
+    page = await fetch(app, "3")
     form = page.frames[0].form
     assert form is not None
     for letter in typed:
@@ -335,8 +334,7 @@ async def _offered(app: Sextile, typed: str) -> list[tuple[str, str]]:
 
 
 async def _suggestions(app: Sextile, typed: str) -> int:
-    page = await app.fetch("3")
-    assert page is not None
+    page = await fetch(app, "3")
     form = page.frames[0].form
     assert form is not None
     for letter in typed:
@@ -426,8 +424,7 @@ class TestThePlacesLatelyLookedUp:
     ) -> None:
         async with _held(tmp_path) as app:
             await _looked_at(app, "3213133880")
-            page = await app.fetch("2")
-            assert page is not None
+            page = await fetch(app, "2")
             assert "Trondheim" in text_of(page)
 
     async def test_and_going_there_is_going_to_the_forecast(
@@ -435,8 +432,7 @@ class TestThePlacesLatelyLookedUp:
     ) -> None:
         async with _held(tmp_path) as app:
             await _looked_at(app, "3213133880")
-            page = await app.fetch("2")
-            assert page is not None
+            page = await fetch(app, "2")
             assert page.frames[0].destination("1") == PageAddress("3213133880")
 
     async def test_a_place_no_longer_held_is_left_off(self, tmp_path: Path) -> None:
@@ -445,8 +441,7 @@ class TestThePlacesLatelyLookedUp:
         #  can use.
         async with _held(tmp_path) as app:
             await _looked_at(app, "3219999999")
-            page = await app.fetch("2")
-            assert page is not None
+            page = await fetch(app, "2")
             assert "Nobody has looked anything up yet." in text_of(page)
 
     async def test_and_so_are_positions(self, tmp_path: Path) -> None:
@@ -454,8 +449,7 @@ class TestThePlacesLatelyLookedUp:
         #  somewhere-elses wants `59.7N 10.0E`.
         async with _held(tmp_path) as app:
             await _looked_at(app, "42114971900")
-            page = await app.fetch("2")
-            assert page is not None
+            page = await fetch(app, "2")
             assert "Nobody has looked anything up yet." in text_of(page)
 
     async def test_a_service_keeping_no_log_says_so(self, tmp_path: Path) -> None:
@@ -464,8 +458,7 @@ class TestThePlacesLatelyLookedUp:
         app = build_application(
             source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
         )
-        page = await app.fetch("2")
-        assert page is not None
+        page = await fetch(app, "2")
         assert "not keeping a log" in text_of(page)
 
 
@@ -484,8 +477,7 @@ class TestHowManyHaveCalled:
             assert isinstance(visits, SqliteVisits)
             for caller in ("a", "b", "a"):
                 await visits.record(PageAddress("1"), caller=caller, found=True)
-            page = await app.fetch("98")
-            assert page is not None
+            page = await fetch(app, "98")
             shown = text_of(page)
             assert "Last 24 hours" in shown
             assert "2" in shown
@@ -494,8 +486,7 @@ class TestHowManyHaveCalled:
         app = build_application(
             source=NoForecasts(), index_filepath=tmp_path / "places.sqlite"
         )
-        page = await app.fetch("98")
-        assert page is not None
+        page = await fetch(app, "98")
         assert "No log" in text_of(page)
 
 

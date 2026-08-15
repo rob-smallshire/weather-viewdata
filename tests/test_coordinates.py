@@ -17,6 +17,7 @@ fields sit side by side in a page number with nothing between them.
 import pytest
 
 from sextile import NoSuchRouteError, Page, PageAddress, PageFrame, PageRequest, Sextile
+from sextile.testing import fetch
 from sextile.viewdata.canvas import Canvas
 from weather_viewdata.coordinates import (
     LATITUDE,
@@ -156,8 +157,7 @@ class TestAsAPageNumber:
         #  Not a code to decode. The converter is where the arithmetic lives,
         #  so a handler that draws a forecast never sees a biased integer.
         app = _app()
-        page = await app.fetch("415341904")
-        assert page is not None
+        await fetch(app, "415341904")
         assert _seen == [(63.4, 10.4)]
 
     async def test_a_number_past_the_pole_is_not_a_page(self) -> None:
