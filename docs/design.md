@@ -731,7 +731,7 @@ line deciding whether to ask again wants to know which.
 and no reading is not. Tromsø has no elevation at all in `cities500`, which is
 what made that concrete rather than theoretical.
 
-**Column headings on every frame**, drawn with an `Every` part: a reader on
+**Column headings on every frame**, drawn with an `OnEveryFrame` part: a reader on
 frame c looking at four columns of figures has no way back to the words that say
 which is which.
 

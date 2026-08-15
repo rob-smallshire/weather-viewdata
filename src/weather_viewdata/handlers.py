@@ -36,8 +36,8 @@ from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
     Drawn,
-    Flowing,
-    Once,
+    Flow,
+    OnFirstFrame,
     PageLayout,
     Shortcut,
 )
@@ -132,7 +132,7 @@ async def title(request: PageRequest) -> Page:
         #  that reaches it. Without it the title frame is a dead end under the
         #  one key a viewdata reader tries first.
         follows=request.app.index,
-        parts=[Once(Drawn(rows=ROWS, draw=draw))],
+        parts=[OnFirstFrame(Drawn(rows=ROWS, draw=draw))],
     ).build(request)
 
 
@@ -189,9 +189,9 @@ async def by_name(request: PageRequest) -> Page:
     return PageLayout(
         home=Shortcut(key=HOME_KEY, destination=app.index, says="menu"),
         parts=[
-            Once(Lines(said=("Key a place name.", ""))),
-            Once(suggest_field(app, request.state[PLACES])),
-            Once(
+            OnFirstFrame(Lines(said=("Key a place name.", ""))),
+            OnFirstFrame(suggest_field(app, request.state[PLACES])),
+            OnFirstFrame(
                 Lines(
                     said=("", f"{request.state[PLACES].held():,} places held.")
                 )
@@ -242,8 +242,8 @@ async def by_position(request: PageRequest) -> Page:
         #  so the field takes it and the prompt says how to leave instead.
         home=None,
         parts=[
-            Once(Lines(said=("Key a position in degrees,", "to one decimal place."))),
-            Once(position_fields(app, request.state[PLACES])),
+            OnFirstFrame(Lines(said=("Key a position in degrees,", "to one decimal place."))),
+            OnFirstFrame(position_fields(app, request.state[PLACES])),
         ],
     ).build(request)
 
@@ -479,8 +479,8 @@ async def symbols(request: PageRequest) -> Page:
     """
     return PageLayout(
         parts=[
-            Once(Lines(said=("Drawn by day, except where it says.", ""))),
-            Flowing(
+            OnFirstFrame(Lines(said=("Drawn by day, except where it says.", ""))),
+            Flow(
                 SymbolTable(
                     entries=in_pairs(
                         [Shown(code, in_full(code)) for code in PUBLISHED]
