@@ -1,6 +1,6 @@
 """Which way the wind is blowing, in the letters a forecast says it in.
 
-**From, not towards.** A wind named south-westerly comes *from* the south-west,
+From, not towards. A wind named south-westerly comes *from* the south-west,
 which is the meteorological convention and the one met.no's `wind_from_direction`
 follows. Saying it the other way round would be wrong rather than unusual, which
 is why the function is named after the preposition.
