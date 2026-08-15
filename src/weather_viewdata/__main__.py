@@ -6,7 +6,6 @@ the same way, so that they agree about where it is without being told twice.
 """
 
 import argparse
-import asyncio
 import logging
 import sys
 from collections.abc import Sequence
@@ -14,7 +13,7 @@ from pathlib import Path
 from typing import Final
 
 from sextile import Sextile
-from sextile.cli import add_form_arguments, add_listening_arguments, render_page, run_service
+from sextile.cli import add_standard_subcommands, run_standard
 from weather_viewdata import __version__
 from weather_viewdata.application import build_application
 from weather_viewdata.dump import CITIES_500, download_dump
@@ -75,14 +74,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_index_argument(importing)
 
-    render = subcommands.add_parser("render", help="Show a frame without a BBC Micro")
-    render.add_argument("--page", help="Render a page by its number, such as 1 or 3213133880")
-    add_form_arguments(render)
-    _add_index_argument(render)
-
-    serve = subcommands.add_parser("serve", help="Answer calls")
-    add_listening_arguments(serve)
-    _add_index_argument(serve)
+    add_standard_subcommands(
+        subcommands, configure=_add_index_argument, page_example="1 or 3213133880"
+    )
 
     return parser
 
@@ -146,12 +140,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser = build_parser()
     arguments = parser.parse_args(argv)
+
+    standard = run_standard(arguments, load=_application)
+    if standard is not None:
+        return standard
+
     if arguments.command == "import-places":
         return import_command(arguments)
-    if arguments.command == "render":
-        return asyncio.run(render_page(_application(arguments), arguments))
-    if arguments.command == "serve":
-        return asyncio.run(run_service(_application(arguments), arguments))
     parser.print_help()
     return 1
 
