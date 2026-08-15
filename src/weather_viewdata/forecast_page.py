@@ -130,9 +130,8 @@ class ForecastTable(SequencePart[Day]):
     today: date
 
     def draw_entry(
-        self, canvas: Canvas, row: int, entry: Day, digit: str | None
+        self, canvas: Canvas, row: int, entry: Day, digit: str | None = None
     ) -> None:
-        del digit  # a forecast numbers nothing
         draw_day(canvas, row, entry, self.today)
 
 
