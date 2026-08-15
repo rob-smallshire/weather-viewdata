@@ -25,12 +25,13 @@ from sextile import (
     PageAddress,
     PageRequest,
     Sextile,
+    farewell_page,
     keyed,
     menu_page,
     page,
     prose_page,
 )
-from sextile.formatting import Lines, MenuItem, Prose, farewell_page
+from sextile.formatting import Lines, MenuItem, Prose
 from sextile.layout import (
     CHOICES_PER_FRAME,
     HOME_KEY,
@@ -402,7 +403,7 @@ async def goodbye(request: PageRequest) -> Page:
     #  where this is an instruction to somebody holding a handset. Dated
     #  British rather than an Americanism -- the American is "hang up" -- and
     #  the register the rest of the service is written in.
-    return farewell_page("GOODBYE", "Thank you for calling.", "", "Ring off.")
+    return farewell_page(request, "GOODBYE", "Thank you for calling.", "", "Ring off.")
 
 
 @page("91", name="help", title="How to get about", keywords=("HELP",))
