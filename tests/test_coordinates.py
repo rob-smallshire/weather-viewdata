@@ -178,8 +178,8 @@ _seen: list[tuple[float, float]] = []
 def _app() -> Sextile:
     _seen.clear()
     app = Sextile(name="Weather")
-    app.converter("latitude", LATITUDE)
-    app.converter("longitude", LONGITUDE)
+    app.add_converter("latitude", LATITUDE)
+    app.add_converter("longitude", LONGITUDE)
 
     @app.page("4{lat:latitude}{lon:longitude}", name="point")
     async def point(request: PageRequest, lat: float, lon: float) -> Page:
