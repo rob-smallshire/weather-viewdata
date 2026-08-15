@@ -187,7 +187,7 @@ async def by_name(request: PageRequest) -> Page:
     #  a blank changes nothing and the repaint had nothing to send. That is
     #  fixed in the framework rather than warned about here.
     return PageLayout(
-        home=Shortcut(key=HOME_KEY, destination=app.index, says="menu"),
+        home=Shortcut(key=HOME_KEY, destination=app.index, label="menu"),
         parts=[
             OnFirstFrame(Lines(said=("Key a place name.", ""))),
             OnFirstFrame(suggest_field(app, request.state[PLACES])),
