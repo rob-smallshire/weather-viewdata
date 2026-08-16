@@ -13,6 +13,8 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "sextile",
     "httpx>=0.27",
+    #  Windows ships no system time-zone database, so zoneinfo needs its own.
+    "tzdata; sys_platform == 'win32'",
 ]
 
 [project.scripts]
