@@ -100,7 +100,7 @@ class Index:
         self._preferred_country: str | None = None
         self._home_bonus = HOME_BONUS
         with self._lock:
-            self._connection.executescript(_SCHEMA_FILEPATH.read_text())
+            self._connection.executescript(_SCHEMA_FILEPATH.read_text(encoding="utf-8"))
             (built_by,) = self._connection.execute("PRAGMA user_version").fetchone()
         self._built_by = int(built_by)
 

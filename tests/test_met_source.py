@@ -23,7 +23,7 @@ from weather_viewdata.forecast.source import AnonymousError
 from weather_viewdata.geonames import Place
 
 FIXTURES = Path(__file__).parent / "data"
-RESPONSE = (FIXTURES / "trondheim-compact.json").read_text()
+RESPONSE = (FIXTURES / "trondheim-compact.json").read_text(encoding="utf-8")
 
 WHEN = datetime(2026, 8, 9, 6, 0, tzinfo=UTC)
 EXPIRES = "Sun, 09 Aug 2026 06:17:24 GMT"

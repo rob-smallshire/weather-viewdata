@@ -16,7 +16,7 @@ from weather_viewdata.forecast import Forecast
 from weather_viewdata.forecast.met import parse_forecast
 
 FIXTURES = Path(__file__).parent / "data"
-TRONDHEIM = json.loads((FIXTURES / "trondheim-compact.json").read_text())
+TRONDHEIM = json.loads((FIXTURES / "trondheim-compact.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture
