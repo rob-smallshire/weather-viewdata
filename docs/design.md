@@ -961,63 +961,11 @@ nought:
 
 ## What it asked of the framework
 
-This is the point of the exercise, so it is worth having in one place. The
-calendar's design document records that it needed no framework change at all.
-This one has needed a great many, and **not one of them was about weather** —
-which is the test the arrangement had to pass.
-
-**The first five were one thing wearing five hats: registration order was
-observable**, so each style of declaring a service was missing whatever the
-other had.
-
-- A converter could not be registered in time for a class-declared pattern that
-  used one — `self.converter` needs a router that `super().__init__` creates and
-  then immediately uses. Not a missing feature; an unfixable ordering deadlock.
-- A module-level application could not open anything, could not resolve a word
-  of its own, and could not say a page's keywords beside it.
-- `Handler` was typed as returning a `Page`, so the decorator refused the
-  `-> Page | None` handlers the documentation showed on that very decorator.
-
-The answer was to follow Starlette: a lifespan yielding what the service holds,
-`request.application`, pages declared as data, and a middleware stack.
-
-**Then the drawing.** A weather page is a page of shapes where a forum is a page
-of words, and every one of these came from something that could not be drawn:
-
-| what was wanted | what the framework gained |
-|---|---|
-| two clocks in one lead-in, told apart by colour | a preamble line may be `Span`s |
-| a strip of mosaics above a table | `Block`, a lead-in that is drawn |
-| a lead-in filling the whole first frame | capacity may be nought; headings only where there are entries |
-| a legend of pictures, placed by cell | `SequencePart.draw_entry` |
-| days with air between them | `gap`, blanks between entries and not after each |
-| temperature and wind as lines, rain as bars | `charting.curve`, `charting.bars` |
-| a divider inside a page rather than at its edge | `thin_rule` |
-| a symbol name in three rows of fourteen cells | `wrap_within` |
-| `F` back to the search, on every frame | `Shortcut` |
-| a title too long for a contents column | `Listing` carries it on rather than cutting |
-| a help page as good as Stardot's | `guide`, and Stardot is 122 lines lighter |
-| a page of what has been looked at | `visits`, `record_visits`, and two pages |
-| a compass for a service with no item keys | `compass(items=False)` |
-| the number a page was served under, read back | `Sextile.params_for` |
-
-**And three faults, which are the ones worth having found.** Each was invisible
-until a service did something no service had done before, and each was in the
-framework rather than here:
-
-- **A keystroke that draws nothing still moves the cursor.** A space is a blank
-  cell over a blank cell, so the frame came out identical, the repaint had no
-  rows to send, and the cursor sat a cell behind the form for the rest of the
-  word. Found by typing `ULAN BATOR`.
-- **A field lost its cursor when a `*` request was cancelled.** Putting the
-  footer back begins by hiding the cursor and nothing turned it on again.
-- **The arrow keys did nothing, on any service.** A page names its keys in
-  letters and `with_arrows` offers the arrows beside them, and nothing read a
-  pressed arrow back as the letter it stood for. Every multi-frame page in the
-  workspace advertised the cursor keys and none of them moved.
-
-The last is the clearest argument for a third application: Stardot's arrows had
-been dead since they were written, and nobody had pressed one.
+Moved. The catalogue of what this service drove the framework to grow — the
+table of drawing it needed, and the three faults it found — is on the worked
+example page in the documentation, at `docs/applications/weather.md`. It is the
+best evidence the framework is general, so it lives where the framework's own
+documentation is read.
 
 ## The two search pages
 
