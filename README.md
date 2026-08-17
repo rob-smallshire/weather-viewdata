@@ -7,8 +7,8 @@ Meteorological Institute; places from a local
 ```sh
 uv run weather-viewdata import-places            # 235,176 places, 11 seconds
 uv run weather-viewdata render --page 3213133880  # Trondheim, without a Beeb
-uv run weather-viewdata serve                    # answer calls on port 6850
-nc localhost 6850                                # and call it
+uv run weather-viewdata serve                    # answer calls on port 16650
+nc localhost 16650                                # and call it
 ```
 
 ```
