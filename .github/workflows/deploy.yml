@@ -13,7 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The same checks CI runs, on the tagged commit. Deploy waits for this, so a
+  # tag on broken code fails here and never reaches the server.
+  gate:
+    uses: ./.github/workflows/gate.yml
+
   deploy:
+    needs: gate
     runs-on: ubuntu-latest
     # Secrets live on this environment; add required reviewers in the repo's
     # environment settings to gate each deploy behind a manual approval.
