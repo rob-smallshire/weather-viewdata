@@ -81,6 +81,10 @@ commit = true
 tag = true
 tag_name = "v{new_version}"
 message = "Bump weather-viewdata to {new_version}"
+#  Keep the committed lockfile in step with the bumped version: regenerate it and
+#  stage it, so it rides in the bump commit (which is `git commit -F`, no pathspec,
+#  and so includes whatever is staged). Neither hook uses shell syntax.
+pre_commit_hooks = ["uv lock", "git add uv.lock"]
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
