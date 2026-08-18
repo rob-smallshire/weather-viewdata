@@ -42,9 +42,14 @@ from sextile.layout import (
     Shortcut,
 )
 from sextile.state import StateReader
+from sextile.viewdata import lettering
 from sextile.viewdata.canvas import Canvas
+from sextile.viewdata.composition import Align, Composition
 from sextile.viewdata.controls import Colour
-from sextile.viewdata.drawing import centred
+from sextile.viewdata.drawing import centred, rule
+from sextile.viewdata.font import load_font
+from sextile.viewdata.frame import COLUMNS
+from sextile.viewdata.lettering import Spacing
 from sextile.visits import Visit, Visits
 
 from weather_viewdata.forecast.source import ForecastSource
@@ -61,6 +66,14 @@ SERVICE_NAME: Final = "WEATHER"
 #: the deployed release and refreshes with each `uv sync`. Shown on the title
 #: frame so a caller can see which build answered.
 SERVICE_VERSION: Final = version("weather-viewdata")
+
+#: The masthead: the service name set in a mosaic face on a stripe, the kind of
+#: service beneath it, ruled top and bottom -- the stardot pattern, in the
+#: lighter `acorn` face throughout. Yellow on blue is the strongest pair the
+#: hardware has (no alpha black, so light on dark) and Ceefax's colour for a
+#: page's own name; `Spacing.KERNED` because the row is only 78 blocks wide.
+MASTHEAD_FACE: Final = "acorn"
+MASTHEAD_KIND: Final = "VIEWDATA"
 
 #: What the log is held under, in what the service holds. Read with
 #: `request.state.get(VISITS)` rather than `request.state[VISITS]` at each use,
@@ -107,6 +120,42 @@ _A_WEEK: Final = timedelta(days=7)
 router: Final = PageRouter()
 
 
+def _draw_masthead(canvas: Canvas) -> None:
+    """The service name and kind, set in a mosaic face on a stripe, ruled off.
+
+    The letters do not know about the stripe: the stripe is declared once and
+    the lettering drawn on it, the composition working out where in it the
+    letters go. A rule sits on the top row and the tenth so the masthead reads
+    as a block with a blank row above and below.
+    """
+    rule(canvas, 0)
+    face = load_font(MASTHEAD_FACE)
+    layout = Composition()
+    stripe = layout.panel(
+        2,
+        Align.START,
+        colour=Colour.BLUE,
+        width=COLUMNS - 1,
+        rows=lettering.rows_needed(face),
+    )
+    lettering.place(
+        layout,
+        Align.CENTRE,
+        SERVICE_NAME,
+        face,
+        Colour.YELLOW,
+        within=stripe,
+        spacing=Spacing.KERNED,
+    )
+    #  The kind of service, three rows down, centred; a stripe fitted round the
+    #  word after it is placed, so the colour reaches the same distance past it
+    #  at both ends however the word is set.
+    lettering.place(layout, 6, MASTHEAD_KIND, face, Colour.YELLOW, spacing=Spacing.KERNED)
+    layout.panel(7, colour=Colour.BLUE, around=range(6, 9), padding=3)
+    layout.draw(canvas)
+    rule(canvas, 10)
+
+
 @router.page("0")
 async def title(request: PageRequest) -> Page:
     """The frame the line opens on.
@@ -117,12 +166,10 @@ async def title(request: PageRequest) -> Page:
     held = request.state[PLACES].held()
 
     def draw(canvas: Canvas) -> None:
-        centred(canvas, 2, SERVICE_NAME, Colour.YELLOW)
-        centred(canvas, 4, "Forecasts for anywhere on earth", Colour.WHITE)
-        centred(canvas, 7, "from the Norwegian", Colour.CYAN)
-        centred(canvas, 8, "Meteorological Institute", Colour.CYAN)
-        centred(canvas, 11, f"{held:,} places held", Colour.WHITE)
-        centred(canvas, 14, "Key # to begin", Colour.YELLOW)
+        _draw_masthead(canvas)
+        centred(canvas, 12, "Forecasts for anywhere on earth", Colour.WHITE)
+        centred(canvas, 15, f"{held:,} places held", Colour.WHITE)
+        centred(canvas, 17, "Key # to begin", Colour.YELLOW)
         centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
         centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
         centred(canvas, 23, f"v{SERVICE_VERSION}", Colour.BLUE)

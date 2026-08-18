@@ -19,3 +19,6 @@ __pycache__/
 *.sqlite
 *.sqlite3
 cities500.zip
+
+# Local render previews (weather-viewdata render --form html)
+title-preview.html
