@@ -30,8 +30,8 @@ from types import TracebackType
 from typing import Any, Final, Self
 
 import httpx
-
 from sextile import __version__
+
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import AnonymousError, ForecastSource
 from weather_viewdata.geonames import Place

@@ -12,12 +12,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
-
 from sextile import Page, PageAddress, PageRequest
 from sextile.layout import DEFAULT_FURNITURE, content_rows
 from sextile.testing import text_of
 from sextile.viewdata.charset import encode_g0
 from sextile.viewdata.frame import COLUMNS
+
 from weather_viewdata import build_application
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.forecast.source import ForecastSource

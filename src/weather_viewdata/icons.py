@@ -38,6 +38,7 @@ from sextile.viewdata.blocks import Icon, icon
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.charset import mosaic_code
 from sextile.viewdata.controls import Colour, graphics_colour
+
 from weather_viewdata.symbols import NIGHT, TWILIGHT, Weather, taken_apart
 
 #: Cells an icon occupies each way, and so the shape every piece is drawn to.

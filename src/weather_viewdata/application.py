@@ -29,6 +29,7 @@ from typing import Final
 from sextile import Sextile, standard_pages
 from sextile.middleware import log_pages, record_visits
 from sextile.visits import RETENTION, SqliteVisits
+
 from weather_viewdata import handlers
 from weather_viewdata.coordinates import LATITUDE, LONGITUDE
 from weather_viewdata.forecast.source import ForecastSource

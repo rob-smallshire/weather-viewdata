@@ -15,10 +15,10 @@ fields sit side by side in a page number with nothing between them.
 """
 
 import pytest
-
 from sextile import NoSuchRouteError, Page, PageAddress, PageFrame, PageRequest, Sextile
 from sextile.testing import fetch
 from sextile.viewdata.canvas import Canvas
+
 from weather_viewdata.coordinates import (
     LATITUDE,
     LATITUDE_CODES,

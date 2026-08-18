@@ -19,6 +19,7 @@ from sextile.viewdata.canvas import Canvas, Span
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.measure import cell_count, fitted
+
 from weather_viewdata.days import HEADINGS, PICTURE_ROWS, Day, days_of, draw_day
 from weather_viewdata.forecast.model import Forecast, Moment
 from weather_viewdata.geonames import Place

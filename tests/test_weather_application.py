@@ -14,10 +14,10 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
-
 from sextile import PageAddress, Sextile, UnknownPageError
 from sextile.testing import Caller, connect, fetch, text_of
 from sextile.visits import SqliteVisits
+
 from weather_viewdata import build_application
 from weather_viewdata.application import StaleIndexError
 from weather_viewdata.forecast.model import Forecast

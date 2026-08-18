@@ -14,6 +14,7 @@ from typing import Final
 
 from sextile import Sextile
 from sextile.cli import add_standard_subcommands, run_standard
+
 from weather_viewdata import __version__
 from weather_viewdata.application import build_application
 from weather_viewdata.dump import CITIES_500, download_dump

@@ -52,6 +52,7 @@ from zoneinfo import ZoneInfo
 
 from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour, alpha_colour
+
 from weather_viewdata.forecast.model import Moment
 from weather_viewdata.icons import COLUMN_CELLS, draw, icon_for
 from weather_viewdata.symbols import severity

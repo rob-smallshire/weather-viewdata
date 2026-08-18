@@ -14,6 +14,7 @@ from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.frame import COLUMNS
 from sextile.viewdata.wrapping import wrap_within
+
 from weather_viewdata.icons import BANDS, COLUMN_CELLS, icon_for
 from weather_viewdata.icons import draw as draw_icon
 

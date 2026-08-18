@@ -24,8 +24,8 @@ from pathlib import Path
 from typing import Final
 
 import httpx
-
 from sextile import __version__
+
 from weather_viewdata.geonames import Place, read_places
 
 _BASE_URL: Final = "https://download.geonames.org/export/dump/"

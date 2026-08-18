@@ -10,10 +10,10 @@ import csv
 from pathlib import Path
 
 import pytest
-
 from sextile.testing import fetch
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.wrapping import wrap_within
+
 from weather_viewdata import build_application
 from weather_viewdata.forecast.model import Forecast
 from weather_viewdata.forecast.source import ForecastSource

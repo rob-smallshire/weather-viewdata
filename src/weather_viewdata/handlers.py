@@ -45,6 +45,7 @@ from sextile.viewdata.canvas import Canvas
 from sextile.viewdata.controls import Colour
 from sextile.viewdata.drawing import centred
 from sextile.visits import Visit, Visits
+
 from weather_viewdata.forecast.source import ForecastSource
 from weather_viewdata.forecast_page import FIND_KEY, forecast_page, point_place
 from weather_viewdata.geonames import Place

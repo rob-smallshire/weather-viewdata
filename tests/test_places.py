@@ -12,8 +12,8 @@ Tromsø.
 """
 
 import pytest
-
 from sextile.viewdata.frame import COLUMNS, Frame
+
 from weather_viewdata.places import search_key
 
 

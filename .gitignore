@@ -1,0 +1,21 @@
+# uv.lock is deliberately tracked: this is a deployable application, and the
+# lock is what makes `uv sync --frozen` reproducible on the server.
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Build output
+/dist/
+*.egg-info/
+
+# Local runtime data, never committed
+*.sqlite
+*.sqlite3
+cities500.zip
