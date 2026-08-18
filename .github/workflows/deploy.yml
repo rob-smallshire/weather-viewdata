@@ -1,0 +1,55 @@
+name: Deploy
+
+# A release tag (v1.2.3, as bump-my-version writes) deploys that exact commit to
+# the server. The tag is the human decision: only a maintainer pushes one.
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Never let two deploys run at once; do not cancel one midway.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Secrets live on this environment; add required reviewers in the repo's
+    # environment settings to gate each deploy behind a manual approval.
+    environment: production
+    steps:
+      - name: Validate the release tag
+        env:
+          TAG: ${{ github.ref_name }}
+        # Refuse anything that is not a plain vX.Y.Z, so the tag is safe to pass
+        # to a shell on the server below.
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Refusing to deploy non-release tag: $TAG"
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy ${{ github.ref_name }}
+        env:
+          TAG: ${{ github.ref_name }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$DEPLOY_USER@$DEPLOY_HOST" \
+            "set -eu; \
+             cd /srv/weather-viewdata; \
+             git fetch origin --tags --prune; \
+             git checkout --force '$TAG'; \
+             UV_PYTHON_INSTALL_DIR=/opt/uv/python /usr/local/bin/uv sync --frozen; \
+             sudo /usr/bin/systemctl restart weather-viewdata"
