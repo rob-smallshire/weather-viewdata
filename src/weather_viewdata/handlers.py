@@ -14,6 +14,7 @@ The drawing lives elsewhere: `forecast_page` turns a forecast into frames,
 import asyncio
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from importlib.metadata import version
 from typing import Final
 
 from sextile import (
@@ -55,6 +56,11 @@ from weather_viewdata.store import Index
 from weather_viewdata.symbols import PUBLISHED, in_full
 
 SERVICE_NAME: Final = "WEATHER"
+
+#: The running version, read from the installed package metadata so it tracks
+#: the deployed release and refreshes with each `uv sync`. Shown on the title
+#: frame so a caller can see which build answered.
+SERVICE_VERSION: Final = version("weather-viewdata")
 
 #: What the log is held under, in what the service holds. Read with
 #: `request.state.get(VISITS)` rather than `request.state[VISITS]` at each use,
@@ -119,6 +125,7 @@ async def title(request: PageRequest) -> Page:
         centred(canvas, 14, "Key # to begin", Colour.YELLOW)
         centred(canvas, 20, "Weather from met.no, CC BY 4.0", Colour.GREEN)
         centred(canvas, 21, "Places from GeoNames, CC BY 4.0", Colour.GREEN)
+        centred(canvas, 23, f"v{SERVICE_VERSION}", Colour.BLUE)
 
     return title_page(request, draw=draw)
 

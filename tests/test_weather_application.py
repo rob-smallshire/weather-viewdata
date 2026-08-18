@@ -18,7 +18,7 @@ from sextile import PageAddress, Sextile, UnknownPageError
 from sextile.testing import Caller, connect, fetch, text_of
 from sextile.visits import SqliteVisits
 
-from weather_viewdata import build_application
+from weather_viewdata import __version__, build_application
 from weather_viewdata.application import StaleIndexError
 from weather_viewdata.forecast.model import Forecast
 from weather_viewdata.forecast.source import ForecastSource
@@ -543,3 +543,10 @@ class TestTheLifespanClosesWhatItOpens:
         (index,) = opened
         with pytest.raises(sqlite3.ProgrammingError):
             index.held()
+
+
+async def test_the_title_frame_names_the_running_version(tmp_path: Path) -> None:
+    """A caller landing on the title frame can see which build answered."""
+    async with _held(tmp_path) as app:
+        page = await fetch(app, "0")
+        assert __version__ in text_of(page)
