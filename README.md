@@ -57,9 +57,16 @@ the same place permanently.
 It exists to hold the framework to its claim, and it is the first application to
 have found anything: five framework defects in a day, all of them registration
 order showing through. [docs/design.md](docs/design.md) is the design as built,
-and says what each was; the worked example in the documentation,
-[docs/applications/weather.md](../../docs/applications/weather.md), carries the
-catalogue of what this service asked of the framework and draws a forecast live.
+and says what each was; the worked example in the framework's documentation (in
+the [`sextile`](https://github.com/rob-smallshire/sextile) repo) carries the
+catalogue of what this service asked of the framework.
+
+## Live, and how it ships
+
+Live at **weather.viewdata.no**, port 16651 — the first Sextile service on the
+internet. Releases go out with `bump-my-version`: a `vX.Y.Z` tag runs the tests
+and, only if they pass, deploys to the VPS. [docs/deployment.md](docs/deployment.md)
+is the whole picture; [CLAUDE.md](CLAUDE.md) is the guide to working on it.
 
 ## Attribution
 
