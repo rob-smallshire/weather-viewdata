@@ -29,7 +29,7 @@ from email.utils import parsedate_to_datetime
 from types import TracebackType
 from typing import Any, Final, Self
 
-import httpx
+import httpx2
 from sextile import __version__
 
 from weather_viewdata.forecast.model import Forecast, Moment
@@ -153,7 +153,7 @@ class MetNoSource(ForecastSource):
     def __init__(
         self,
         *,
-        client: httpx.AsyncClient | None = None,
+        client: httpx2.AsyncClient | None = None,
         user_agent: str = USER_AGENT,
         now: Callable[[], datetime] | None = None,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
@@ -164,7 +164,7 @@ class MetNoSource(ForecastSource):
                 "User-Agent"
             )
         self._user_agent = user_agent
-        self._client = client or httpx.AsyncClient()
+        self._client = client or httpx2.AsyncClient()
         self._now = now or (lambda: datetime.now(UTC))
         self._sleep = sleep
         self._held: dict[tuple[float, float], _Held] = {}
@@ -219,20 +219,20 @@ class MetNoSource(ForecastSource):
             response = await self._client.get(
                 FORECAST_URL, params=parameters, headers=headers
             )
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             _logger.exception("Could not reach met.no for %s", place.name)
             return None
         finally:
             self._last_asked = self._now()
 
-        if response.status_code == httpx.codes.NOT_MODIFIED and held is not None:
+        if response.status_code == httpx2.codes.NOT_MODIFIED and held is not None:
             #  Nothing has changed, and the response carries a fresh Expires.
             #  Not taking it would mean asking again at once, which is exactly
             #  the traffic the header exists to prevent.
             held.expires = self._expiry(response)
             return held.forecast
 
-        if response.status_code != httpx.codes.OK:
+        if response.status_code != httpx2.codes.OK:
             #  Not cached: a refusal is not an answer, and holding one would
             #  keep a place unforecastable for half an hour over a blip.
             _logger.warning(
@@ -256,7 +256,7 @@ class MetNoSource(ForecastSource):
         if since < MIN_INTERVAL:
             await self._sleep(MIN_INTERVAL - since)
 
-    def _expiry(self, response: httpx.Response) -> datetime:
+    def _expiry(self, response: httpx2.Response) -> datetime:
         """When this answer stops being good enough to hand out again."""
         now = self._now()
         stated = response.headers.get("Expires")

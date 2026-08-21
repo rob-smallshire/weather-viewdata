@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from email.utils import format_datetime
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from weather_viewdata.dump import CITIES_500, download_dump, places_in
@@ -65,11 +65,11 @@ class TestFetchingItPolitely:
     def test_it_is_downloaded_when_we_have_none(self, tmp_path: Path) -> None:
         into = tmp_path / "cities500.zip"
 
-        def respond(request: httpx.Request) -> httpx.Response:
+        def respond(request: httpx2.Request) -> httpx2.Response:
             assert "If-Modified-Since" not in request.headers
-            return httpx.Response(200, content=b"a zip, notionally")
+            return httpx2.Response(200, content=b"a zip, notionally")
 
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
             assert download_dump(CITIES_500, into, client=client) is True
         assert into.read_bytes() == b"a zip, notionally"
 
@@ -78,11 +78,11 @@ class TestFetchingItPolitely:
         #  from somebody giving it away should be attributable to a person.
         seen: list[str] = []
 
-        def respond(request: httpx.Request) -> httpx.Response:
+        def respond(request: httpx2.Request) -> httpx2.Response:
             seen.append(request.headers["User-Agent"])
-            return httpx.Response(200, content=b"")
+            return httpx2.Response(200, content=b"")
 
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
             download_dump(CITIES_500, tmp_path / "d.zip", client=client)
         assert "Sextile" in seen[0]
 
@@ -91,11 +91,11 @@ class TestFetchingItPolitely:
         into.write_bytes(b"what we already have")
         seen: list[str] = []
 
-        def respond(request: httpx.Request) -> httpx.Response:
+        def respond(request: httpx2.Request) -> httpx2.Response:
             seen.append(request.headers["If-Modified-Since"])
-            return httpx.Response(304)
+            return httpx2.Response(304)
 
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
             assert download_dump(CITIES_500, into, client=client) is False
         assert seen and "GMT" in seen[0]
 
@@ -103,8 +103,8 @@ class TestFetchingItPolitely:
         into = tmp_path / "cities500.zip"
         into.write_bytes(b"what we already have")
 
-        with httpx.Client(
-            transport=httpx.MockTransport(lambda request: httpx.Response(304))
+        with httpx2.Client(
+            transport=httpx2.MockTransport(lambda request: httpx2.Response(304))
         ) as client:
             download_dump(CITIES_500, into, client=client)
         assert into.read_bytes() == b"what we already have"
@@ -113,10 +113,10 @@ class TestFetchingItPolitely:
         into = tmp_path / "cities500.zip"
         into.write_bytes(b"stale")
 
-        def respond(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, content=b"fresh")
+        def respond(request: httpx2.Request) -> httpx2.Response:
+            return httpx2.Response(200, content=b"fresh")
 
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
             assert download_dump(CITIES_500, into, client=client) is True
         assert into.read_bytes() == b"fresh"
 
@@ -127,10 +127,10 @@ class TestFetchingItPolitely:
         into = tmp_path / "cities500.zip"
         when = "Sat, 08 Aug 2026 03:14:00 GMT"
 
-        def respond(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(200, content=b"x", headers={"Last-Modified": when})
+        def respond(request: httpx2.Request) -> httpx2.Response:
+            return httpx2.Response(200, content=b"x", headers={"Last-Modified": when})
 
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
             download_dump(CITIES_500, into, client=client)
 
         stamped = datetime.fromtimestamp(into.stat().st_mtime, UTC)
@@ -140,10 +140,10 @@ class TestFetchingItPolitely:
         #  A 404 leaving an empty file behind would be imported as an empty
         #  index, which looks exactly like a service with no places in it.
         with (
-            httpx.Client(
-                transport=httpx.MockTransport(lambda request: httpx.Response(404))
+            httpx2.Client(
+                transport=httpx2.MockTransport(lambda request: httpx2.Response(404))
             ) as client,
-            pytest.raises(httpx.HTTPStatusError),
+            pytest.raises(httpx2.HTTPStatusError),
         ):
             download_dump(CITIES_500, tmp_path / "d.zip", client=client)
         assert not (tmp_path / "d.zip").exists()

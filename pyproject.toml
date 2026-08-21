@@ -17,7 +17,9 @@ dependencies = [
     #  The command line is a Click group of our own, holding the render and serve
     #  commands sextile.cli hands back; we import click directly to build it.
     "click>=8.1",
-    "httpx>=0.27",
+    #  The actively-maintained 2.x line (pydantic org), not the frozen httpx 0.x;
+    #  its public surface here is the same shape (AsyncClient, codes, HTTPError).
+    "httpx2>=2.11,<3",
     #  Windows ships no system time-zone database, so zoneinfo needs its own.
     "tzdata; sys_platform == 'win32'",
 ]

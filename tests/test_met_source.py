@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from weather_viewdata.forecast.met import MetNoSource
@@ -73,7 +73,7 @@ class Server:
     """
 
     def __init__(self, clock: "FakeClock", *, status: int = 200) -> None:
-        self.requests: list[httpx.Request] = []
+        self.requests: list[httpx2.Request] = []
         self.status = status
         self._clock = clock
         #: Overridden by the test that asks what we do with a stale one.
@@ -84,11 +84,11 @@ class Server:
             return self.expires
         return format_datetime(self._clock.now + timedelta(minutes=30), usegmt=True)
 
-    def __call__(self, request: httpx.Request) -> httpx.Response:
+    def __call__(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(request)
         if self.status == 304:
-            return httpx.Response(304, headers={"Expires": self._expires()})
-        return httpx.Response(
+            return httpx2.Response(304, headers={"Expires": self._expires()})
+        return httpx2.Response(
             self.status,
             text=RESPONSE if self.status == 200 else "",
             headers={"Expires": self._expires(), "Last-Modified": LAST_MODIFIED},
@@ -97,7 +97,7 @@ class Server:
 
 def source_for(server: Server, clock: FakeClock) -> MetNoSource:
     return MetNoSource(
-        client=httpx.AsyncClient(transport=httpx.MockTransport(server)),
+        client=httpx2.AsyncClient(transport=httpx2.MockTransport(server)),
         now=clock.time,
         sleep=clock.sleep,
     )

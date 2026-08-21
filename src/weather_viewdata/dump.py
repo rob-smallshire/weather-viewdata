@@ -23,7 +23,7 @@ from email.utils import format_datetime, parsedate_to_datetime
 from pathlib import Path
 from typing import Final
 
-import httpx
+import httpx2
 from sextile import __version__
 
 from weather_viewdata.geonames import Place, read_places
@@ -43,7 +43,7 @@ _CHUNK: Final = 64 * 1024
 
 
 def download_dump(
-    url: str, into_filepath: Path, *, client: httpx.Client | None = None
+    url: str, into_filepath: Path, *, client: httpx2.Client | None = None
 ) -> bool:
     """Fetch the dump unless the copy on disk is already current.
 
@@ -55,7 +55,7 @@ def download_dump(
     is searching places looks exactly like a service with no places in it.
     """
     owned = client is None
-    client = client or httpx.Client(follow_redirects=True)
+    client = client or httpx2.Client(follow_redirects=True)
     try:
         headers = {"User-Agent": USER_AGENT}
         if into_filepath.exists():
@@ -63,7 +63,7 @@ def download_dump(
             headers["If-Modified-Since"] = format_datetime(since, usegmt=True)
 
         with client.stream("GET", url, headers=headers) as response:
-            if response.status_code == httpx.codes.NOT_MODIFIED:
+            if response.status_code == httpx2.codes.NOT_MODIFIED:
                 return False
             response.raise_for_status()
             into_filepath.parent.mkdir(parents=True, exist_ok=True)
