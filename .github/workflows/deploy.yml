@@ -59,3 +59,52 @@ jobs:
              git checkout --force '$TAG'; \
              UV_PYTHON_INSTALL_DIR=/opt/uv/python /usr/local/bin/uv sync --frozen; \
              sudo /usr/bin/systemctl restart weather-viewdata"
+
+      # Prove the service actually came back up on the new version, rather than
+      # trusting that `systemctl restart` returning meant it did: dial the public
+      # port as a caller would, read the title frame, and check it names this
+      # tag. This catches a crash on startup, a stale index the service refuses,
+      # or a port left unbound -- none of which the restart above would report.
+      - name: Verify the live service answers as ${{ github.ref_name }}
+        env:
+          TAG: ${{ github.ref_name }}
+          #  The public service, not the deploy host: this exercises DNS and the
+          #  firewall a real caller crosses. The version renders as plain ASCII
+          #  in the viewdata stream, so a byte match on the frame is enough.
+          SERVICE_HOST: weather.viewdata.no
+          SERVICE_PORT: "16651"
+        run: |
+          python - <<'PY'
+          import os, socket, sys, time
+
+          host = os.environ["SERVICE_HOST"]
+          port = int(os.environ["SERVICE_PORT"])
+          marker = os.environ["TAG"].encode()  # e.g. b"v0.2.0", as the frame shows it
+
+          #  The service reopens its index on startup, so it may not accept a
+          #  call the instant the restart returns. Poll for a while before
+          #  giving up, closing each attempt promptly so we never hold the line.
+          deadline = time.monotonic() + 45
+          last = "no connection yet"
+          while time.monotonic() < deadline:
+              try:
+                  with socket.create_connection((host, port), timeout=5) as call:
+                      call.settimeout(5)
+                      frame = b""
+                      while len(frame) < 8192:
+                          chunk = call.recv(1024)
+                          if not chunk:
+                              break
+                          frame += chunk
+                          if marker in frame:
+                              print(f"{host}:{port} is answering as {marker.decode()}.")
+                              sys.exit(0)
+                  last = f"answered, but {marker.decode()} was not on the frame"
+              except OSError as error:
+                  last = f"not ready: {error}"
+              print(f"{last}; retrying...")
+              time.sleep(3)
+
+          print(f"Gave up after 45s: {host}:{port} never answered as {marker.decode()} ({last}).")
+          sys.exit(1)
+          PY
