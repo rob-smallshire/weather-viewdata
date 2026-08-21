@@ -463,11 +463,11 @@ class TestThePlacesLatelyLookedUp:
 
 
 async def _looked_at(app: Sextile, page: str) -> None:
-    from sextile.middleware import CALLER
-
     visits = app.state[VISITS]
     assert isinstance(visits, SqliteVisits)
-    await visits.record(PageAddress(page), caller=CALLER, found=True)
+    #  Any caller will do: these tests care that the page was looked at, not
+    #  by whom.
+    await visits.record(PageAddress(page), caller="a-caller", found=True)
 
 
 class TestHowManyHaveCalled:

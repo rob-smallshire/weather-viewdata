@@ -13,7 +13,10 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     #  Depends on the framework as a published release, not a workspace sibling:
     #  this repo is the deployable service, sextile is its library.
-    "sextile>=0.1.3,<0.2",
+    "sextile>=0.3,<0.4",
+    #  The command line is a Click group of our own, holding the render and serve
+    #  commands sextile.cli hands back; we import click directly to build it.
+    "click>=8.1",
     "httpx>=0.27",
     #  Windows ships no system time-zone database, so zoneinfo needs its own.
     "tzdata; sys_platform == 'win32'",
